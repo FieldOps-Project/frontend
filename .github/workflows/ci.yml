@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verificação (lint, tipos, testes e build)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # npm ci instala exatamente o lockfile versionado. npm install poderia
+      # atualizar dependencias em silencio e fazer o pipeline testar uma arvore
+      # diferente da que o desenvolvedor tem na maquina.
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      # Passo dedicado, e nao apenas o build: o build do Next pode ser
+      # configurado para ignorar erro de tipo, e nesse caso a verificacao
+      # exigida pelo RNF-009 deixaria de acontecer.
+      - name: Verificar tipos
+        run: npm run typecheck
+
+      - name: Testes
+        run: npm test
+
+      # Valores ficticios: o build precisa das variaveis publicas, e segredo
+      # real nunca entra no workflow.
+      - name: Build de produção
+        run: npm run build
+        env:
+          API_BASE_URL: http://localhost:8080/api/v1
+          SESSION_SECRET: ci-placeholder-secret
+          NEXT_PUBLIC_APP_ENV: development
