@@ -1,7 +1,9 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  /* config options here */
-};
+  // O repositorio nao versiona instrucoes geradas para agentes; o conteudo
+  // equivalente vive no README e nos documentos de docs/notion.
+  agentRules: false,
+}
 
-export default nextConfig;
+export default nextConfig
