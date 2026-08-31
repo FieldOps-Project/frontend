@@ -12,7 +12,7 @@ camadas, guarda de rota, verificação de tipos, lint e testes. O shell administ
 
 | Ferramenta | Versão             | Observação                       |
 | ---------- | ------------------ | -------------------------------- |
-| Node.js    | 20 LTS ou superior | Verifique com `node -v`          |
+| Node.js    | 22 LTS ou superior | Verifique com `node -v`          |
 | npm        | 10 ou superior     | Instalado junto com o Node       |
 
 ## Como rodar
