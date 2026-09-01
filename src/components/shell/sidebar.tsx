@@ -1,6 +1,6 @@
 'use client'
 
-import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { IoChevronBackOutline, IoChevronForwardOutline } from 'react-icons/io5'
 import { useState } from 'react'
 
 import { NavList } from '@/components/shell/nav-list'
@@ -59,9 +59,9 @@ export function Sidebar({ items }: { items: readonly NavigationItem[] }) {
         }`}
       >
         {collapsed ? (
-          <PanelLeftOpen aria-hidden className="size-[18px] shrink-0" />
+          <IoChevronForwardOutline aria-hidden className="size-[18px] shrink-0" />
         ) : (
-          <PanelLeftClose aria-hidden className="size-[18px] shrink-0" />
+          <IoChevronBackOutline aria-hidden className="size-[18px] shrink-0" />
         )}
         {!collapsed && <span>Recolher menu</span>}
       </button>
