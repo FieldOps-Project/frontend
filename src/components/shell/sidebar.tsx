@@ -1,6 +1,8 @@
 'use client'
 
 import { IoChevronBackOutline, IoChevronForwardOutline } from 'react-icons/io5'
+
+import { BrandMark } from '@/components/ui/brand-mark'
 import { useState } from 'react'
 
 import { NavList } from '@/components/shell/nav-list'
@@ -31,12 +33,7 @@ export function Sidebar({ items }: { items: readonly NavigationItem[] }) {
           collapsed ? 'justify-center px-0' : ''
         }`}
       >
-        <span
-          aria-hidden
-          className="grid size-9 shrink-0 place-items-center rounded-field bg-brand-600 text-sm font-bold text-neutral-0"
-        >
-          FO
-        </span>
+        <BrandMark />
         {!collapsed && (
           <span className="flex min-w-0 flex-col leading-tight">
             <span className="truncate font-semibold">FieldOps</span>
