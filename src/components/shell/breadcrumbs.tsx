@@ -46,8 +46,8 @@ export function Breadcrumbs() {
   }
 
   return (
-    <nav aria-label="Você está em" className="px-6 py-3 text-sm text-neutral-500">
-      <ol className="flex flex-wrap items-center gap-2">
+    <nav aria-label="Você está em" className="px-4 pt-4 text-sm text-neutral-500 sm:px-6">
+      <ol className="flex flex-wrap items-center gap-1.5">
         <li>
           <Link href="/dashboard" className="hover:text-neutral-700">
             Início
