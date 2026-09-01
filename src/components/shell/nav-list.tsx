@@ -1,40 +1,42 @@
 'use client'
 
-import {
-  Boxes,
-  ClipboardList,
-  Building2,
-  FileText,
-  LayoutDashboard,
-  MapPin,
-  ScrollText,
-  TriangleAlert,
-  Users,
-  type LucideIcon,
-} from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import type { IconType } from 'react-icons'
+import {
+  IoAlertCircleOutline,
+  IoBusinessOutline,
+  IoClipboardOutline,
+  IoConstructOutline,
+  IoDocumentTextOutline,
+  IoHomeOutline,
+  IoLocationOutline,
+  IoPeopleOutline,
+  IoTimeOutline,
+} from 'react-icons/io5'
 
 import { isActive, type NavigationItem } from '@/lib/navigation'
 
 /**
- * Icone por area. Fica aqui, e nao no mapa de navegacao, porque o mapa e um
- * modulo de servidor com as regras de perfil: misturar componente de React nele
- * obrigaria a marca-lo como codigo de cliente.
+ * Icone por area, na mesma familia e no mesmo estilo do aplicativo de campo
+ * (Ionicons outline): tecnico e supervisor usam pontas do mesmo produto, e
+ * simbolo diferente para a mesma coisa faz parecerem dois sistemas. Inspecoes e
+ * nao conformidades usam literalmente os mesmos simbolos das abas do app.
  *
- * O icone acompanha o rotulo, nunca o substitui em tela larga -- icone sozinho
- * e adivinhacao para quem entra no sistema pela primeira vez.
+ * O mapa fica aqui, e nao no modulo de navegacao, porque aquele carrega as
+ * regras de perfil e roda no servidor: importar componente de React nele
+ * obrigaria a marca-lo como codigo de cliente.
  */
-const ICONS: Record<string, LucideIcon> = {
-  '/dashboard': LayoutDashboard,
-  '/users': Users,
-  '/clients': Building2,
-  '/sites': MapPin,
-  '/equipment': Boxes,
-  '/inspection-templates': FileText,
-  '/inspections': ClipboardList,
-  '/non-conformities': TriangleAlert,
-  '/audit': ScrollText,
+const ICONS: Record<string, IconType> = {
+  '/dashboard': IoHomeOutline,
+  '/users': IoPeopleOutline,
+  '/clients': IoBusinessOutline,
+  '/sites': IoLocationOutline,
+  '/equipment': IoConstructOutline,
+  '/inspection-templates': IoDocumentTextOutline,
+  '/inspections': IoClipboardOutline,
+  '/non-conformities': IoAlertCircleOutline,
+  '/audit': IoTimeOutline,
 }
 
 export function NavList({
