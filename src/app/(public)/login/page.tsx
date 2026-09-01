@@ -1,5 +1,6 @@
 import { IoLogInOutline } from 'react-icons/io5'
 
+import { BrandMark } from '@/components/ui/brand-mark'
 import { signInForDevelopment } from '@/features/auth/development-sign-in'
 import { ASSIGNABLE_USER_ROLES, USER_ROLE_LABELS } from '@/lib/domain/user'
 
@@ -15,12 +16,7 @@ export default function LoginPage() {
     <main className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-neutral-50 p-4 sm:p-6">
       <section className="flex w-full max-w-sm flex-col gap-6 rounded-card border border-neutral-200 bg-neutral-0 p-6 shadow-sm sm:p-8">
         <div className="flex flex-col gap-3">
-          <span
-            aria-hidden
-            className="grid size-11 place-items-center rounded-field bg-brand-600 font-bold text-neutral-0"
-          >
-            FO
-          </span>
+          <BrandMark className="size-12" />
           <div className="flex flex-col gap-0.5">
             <h1 className="text-xl font-semibold text-neutral-900">FieldOps</h1>
             <p className="text-sm text-neutral-500">Painel administrativo</p>
