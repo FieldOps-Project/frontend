@@ -4,6 +4,7 @@ import { IoCloseOutline, IoMenuOutline } from 'react-icons/io5'
 import { useEffect, useState } from 'react'
 
 import { NavList } from '@/components/shell/nav-list'
+import { BrandMark } from '@/components/ui/brand-mark'
 import type { NavigationItem } from '@/lib/navigation'
 
 /**
@@ -60,12 +61,7 @@ export function MobileNav({ items }: { items: readonly NavigationItem[] }) {
           <div className="relative flex h-full w-72 max-w-[85%] flex-col border-r border-neutral-200 bg-neutral-0">
             <div className="flex h-16 items-center justify-between border-b border-neutral-200 px-4">
               <span className="flex items-center gap-2.5">
-                <span
-                  aria-hidden
-                  className="grid size-9 place-items-center rounded-field bg-brand-600 text-sm font-bold text-neutral-0"
-                >
-                  FO
-                </span>
+                <BrandMark />
                 <span className="font-semibold">FieldOps</span>
               </span>
 
