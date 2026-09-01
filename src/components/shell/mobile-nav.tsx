@@ -1,6 +1,6 @@
 'use client'
 
-import { Menu, X } from 'lucide-react'
+import { IoCloseOutline, IoMenuOutline } from 'react-icons/io5'
 import { useEffect, useState } from 'react'
 
 import { NavList } from '@/components/shell/nav-list'
@@ -46,7 +46,7 @@ export function MobileNav({ items }: { items: readonly NavigationItem[] }) {
         aria-expanded={open}
         className="grid size-10 place-items-center rounded-field text-neutral-600 hover:bg-neutral-100"
       >
-        <Menu aria-hidden className="size-5" />
+        <IoMenuOutline aria-hidden className="size-5" />
       </button>
 
       {open && (
@@ -75,7 +75,7 @@ export function MobileNav({ items }: { items: readonly NavigationItem[] }) {
                 aria-label="Fechar menu"
                 className="grid size-10 place-items-center rounded-field text-neutral-500 hover:bg-neutral-100"
               >
-                <X aria-hidden className="size-5" />
+                <IoCloseOutline aria-hidden className="size-5" />
               </button>
             </div>
 
