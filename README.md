@@ -6,7 +6,8 @@ TypeScript, com estrutura por feature e acesso à API a partir do servidor.
 Este repositório contém a fundação técnica do painel (EP-01 / PBI-003): rotas de esqueleto,
 camadas, guarda de rota, verificação de tipos, lint e testes. O shell administrativo
 (issue #2), a camada de acesso a dados (issue #3) e os componentes compartilhados
-(issue #4) entram em cards próprios. Autenticação real é EP-02.
+(issue #4) entram em cards próprios. O login com a API está descrito em
+[Autenticação](#autenticação).
 
 ## Pré-requisitos
 
@@ -66,6 +67,54 @@ src/
 
 As rotas de esqueleto cobrem o mapa de navegação do documento 14.3 e existem desde o
 bootstrap para que a navegação seja verificável antes das telas ficarem prontas.
+
+## Autenticação
+
+O login usa a autenticação JWT da API (`/api/v1/auth`) e nunca expõe token ao navegador:
+
+```text
+formulário -> Server Action signIn -> POST /auth/login (servidor do Next -> API)
+           -> accessToken em fo_at, refreshToken em fo_rt (cookies httpOnly)
+           -> redireciona para ?redirect= (só caminho interno) ou /dashboard
+```
+
+| Peça                               | Papel                                                         |
+| ---------------------------------- | ------------------------------------------------------------- |
+| `features/auth/login.ts`           | Server Action: revalida com Zod, autentica e grava a sessão   |
+| `features/auth/login-form.tsx`     | Formulário, com validação imediata no navegador               |
+| `features/auth/redirect-target.ts` | Aceita só destino interno, para o login não virar redirecionador aberto |
+| `features/auth/error-messages.ts`  | Traduz o código de erro da API para linguagem de negócio      |
+| `lib/session.ts`                   | Confirma a sessão em `GET /auth/me` a cada renderização do shell |
+| `features/auth/actions.ts`         | Logout: revoga o refresh token em `POST /auth/logout` e apaga os cookies |
+
+- Credencial inválida e e-mail inexistente mostram a mesma mensagem; conta inativa recebe
+  orientação própria.
+- O perfil **Técnico** é recusado no login e usa o aplicativo de campo. Decisão provisória,
+  ainda a confirmar com o grupo.
+- O cookie `fo_at` expira junto com o access token (15 minutos no backend). A renovação
+  automática com `POST /auth/refresh` é a issue #8; até lá, a pessoa volta ao login quando o
+  token vence.
+
+### Usuário para testar localmente
+
+As migrations do backend criam a tabela `users` vazia. Para o primeiro acesso, insira um
+administrador direto no Postgres local; a coluna `password_hash` guarda um hash BCrypt, nunca
+a senha em texto. O `pgcrypto` do próprio Postgres gera esse hash no formato `$2a$`, que o
+`BCryptPasswordEncoder` do backend aceita:
+
+```bash
+docker exec -i fieldops-db psql -U fieldops -d fieldops <<'SQL'
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+INSERT INTO users (name, email, password_hash, role) VALUES
+  ('Admin Local',      'admin@fieldops.local',      crypt('Admin@123', gen_salt('bf', 10)), 'ADMIN'),
+  ('Supervisor Local', 'supervisor@fieldops.local', crypt('Admin@123', gen_salt('bf', 10)), 'SUPERVISOR'),
+  ('Técnico Local',    'tecnico@fieldops.local',    crypt('Admin@123', gen_salt('bf', 10)), 'TECHNICIAN')
+ON CONFLICT DO NOTHING;
+SQL
+```
+
+Isso altera só o banco da sua máquina, nunca o repositório do backend. O técnico serve para
+conferir a recusa do perfil no painel.
 
 ## Proteção de rota
 
