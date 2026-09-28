@@ -80,7 +80,7 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
       action={formAction}
       onSubmit={handleSubmit}
       noValidate
-      className="flex flex-col gap-5"
+      className="flex flex-col gap-4"
     >
       {redirectTo && <input type="hidden" name="redirect" value={redirectTo} />}
 
