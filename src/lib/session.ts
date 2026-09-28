@@ -1,49 +1,46 @@
 import 'server-only'
 
-import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
+import { cache } from 'react'
 
-import { USER_ROLES, type UserRole } from '@/lib/domain/user'
+import type { AuthUser } from '@/features/auth/contract'
+import { apiFetch } from '@/lib/api/client'
+import { ApiError } from '@/lib/api/errors'
+import { readAccessToken } from '@/lib/session-cookies'
 
 /**
  * Identidade minima que o shell precisa para se desenhar: quem esta na tela e
- * o que essa pessoa enxerga. Os campos sao os que o documento 12.4 devolve em
+ * o que essa pessoa enxerga. Os campos sao os que a API devolve em
  * `GET /auth/me` e no corpo do login.
  */
-export type SessionUser = {
-  readonly id: string
-  readonly name: string
-  readonly email: string
-  readonly role: UserRole
-}
-
-/** Perfil escolhido na entrada provisoria de desenvolvimento. */
-const DEVELOPMENT_ROLE_COOKIE = 'fo_dev_role'
-
-function isUserRole(value: string | undefined): value is UserRole {
-  return value !== undefined && (USER_ROLES as readonly string[]).includes(value)
-}
+export type SessionUser = AuthUser
 
 /**
  * Ponto unico de leitura da sessao.
  *
- * Enquanto a issue #6 nao entrega o login e a `backend#6` nao entrega o JWT,
- * esta funcao monta a identidade a partir do perfil escolhido na entrada de
- * desenvolvimento -- e so ela sabe disso. Quando o login existir, o corpo passa
- * a ler o cookie `httpOnly` de sessao e a confirmar em `GET /auth/me`; nenhum
- * componente do shell muda, porque todos recebem o usuario ja pronto.
+ * Confirma o access token do cookie `httpOnly` em `GET /auth/me`, em vez de
+ * confiar no que o cookie diz: a API e quem sabe se a conta continua ativa e
+ * com o mesmo perfil. Sem token, ou com token recusado, a pessoa volta ao
+ * login. O perfil Tecnico tambem volta, pela mesma regra que o login aplica.
  *
- * `import 'server-only'` faz o build falhar se um componente de cliente tentar
- * importar este modulo, que e o que impede a sessao de vazar para o navegador.
+ * `cache()` do React faz a consulta uma vez por renderizacao, por mais que
+ * layout e paginas a chamem. `import 'server-only'` faz o build falhar se um
+ * componente de cliente importar este modulo, que e o que impede a sessao de
+ * vazar para o navegador.
  */
-export async function getSessionUser(): Promise<SessionUser> {
-  const cookieStore = await cookies()
-  const chosen = cookieStore.get(DEVELOPMENT_ROLE_COOKIE)?.value
-  const role: UserRole = isUserRole(chosen) ? chosen : 'ADMIN'
+export const getSessionUser = cache(async (): Promise<SessionUser> => {
+  const accessToken = await readAccessToken()
+  if (!accessToken) redirect('/login')
 
-  return {
-    id: '00000000-0000-0000-0000-000000000000',
-    name: 'Usuário de desenvolvimento',
-    email: 'dev@fieldops.local',
-    role,
+  let user: SessionUser
+  try {
+    user = await apiFetch<SessionUser>('/auth/me', { accessToken })
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) redirect('/login')
+    throw error
   }
-}
+
+  if (user.role === 'TECHNICIAN') redirect('/login')
+
+  return user
+})
