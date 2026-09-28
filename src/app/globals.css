@@ -71,8 +71,15 @@ body {
 /*
  * Foco sempre visivel: o criterio de aceitacao da issue #2 exige navegacao por
  * teclado no menu, e o anel padrao do navegador some em fundo colorido.
+ *
+ * Fica na camada `base` para que um componente com indicador proprio -- o campo
+ * de texto, que acende o anel na caixa inteira -- possa substitui-lo com uma
+ * utilidade. Fora de camada, esta regra venceria qualquer classe do Tailwind e
+ * desenharia um segundo contorno por dentro do campo.
  */
-:focus-visible {
-  outline: 2px solid var(--color-brand-600);
-  outline-offset: 2px;
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--color-brand-600);
+    outline-offset: 2px;
+  }
 }
