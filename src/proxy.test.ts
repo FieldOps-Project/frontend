@@ -26,10 +26,10 @@ describe('proxy', () => {
   })
 
   it('preserva o destino pretendido para o login devolver a pessoa ao lugar certo', () => {
-    const response = proxy(requestFor('/inspections/abc/review'))
+    const response = proxy(requestFor('/inspections/abc/review?tab=items'))
     const location = new URL(response.headers.get('location') ?? '')
 
-    expect(location.searchParams.get('redirect')).toBe('/inspections/abc/review')
+    expect(location.searchParams.get('redirect')).toBe('/inspections/abc/review?tab=items')
   })
 
   it('deixa passar quem ja tem sessao', () => {
@@ -38,8 +38,22 @@ describe('proxy', () => {
     expect(response.headers.get('location')).toBeNull()
   })
 
+  it('renova a sessao quando so resta o refresh token', () => {
+    const response = proxy(requestFor('/clients?page=2', { fo_rt: 'refresh' }))
+    const location = new URL(response.headers.get('location') ?? '')
+
+    expect(location.pathname).toBe('/api/auth/refresh')
+    expect(location.searchParams.get('redirect')).toBe('/clients?page=2')
+  })
+
   it('nao desvia a propria rota de login, para nao criar laco de redirecionamento', () => {
     const response = proxy(requestFor('/login'))
+
+    expect(response.headers.get('location')).toBeNull()
+  })
+
+  it('nao desvia a rota de renovacao, que precisa rodar sem access token', () => {
+    const response = proxy(requestFor('/api/auth/refresh?redirect=/dashboard', { fo_rt: 'refresh' }))
 
     expect(response.headers.get('location')).toBeNull()
   })
