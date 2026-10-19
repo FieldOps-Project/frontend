@@ -60,3 +60,20 @@ body {
   outline: 2px solid var(--color-brand-600);
   outline-offset: 2px;
 }
+
+/*
+ * Impressao da etiqueta de equipamento: so a etiqueta sai no papel. A moldura
+ * do painel trava a altura em uma tela, o que cortaria a impressao.
+ */
+@media print {
+  body:has(#equipment-label) aside,
+  body:has(#equipment-label) header,
+  body:has(#equipment-label) nav {
+    display: none !important;
+  }
+
+  body:has(#equipment-label) .h-dvh {
+    height: auto;
+    overflow: visible;
+  }
+}
