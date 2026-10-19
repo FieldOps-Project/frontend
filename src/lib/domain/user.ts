@@ -1,3 +1,5 @@
+import type { StatusTone } from '@/lib/domain/page'
+
 /**
  * Perfis e situacoes do usuario, com os rotulos que a interface exibe.
  *
@@ -25,6 +27,9 @@ export const USER_ROLE_LABELS: Record<UserRole, string> = {
  */
 export const ASSIGNABLE_USER_ROLES: readonly UserRole[] = ['ADMIN', 'SUPERVISOR', 'TECHNICIAN']
 
+/** Perfis que operam cadastros, modelos e agendamentos (matriz do documento 5.2). */
+export const MANAGER_ROLES: readonly UserRole[] = ['ADMIN', 'SUPERVISOR']
+
 export const USER_STATUSES = ['ACTIVE', 'INACTIVE', 'BLOCKED'] as const
 
 export type UserStatus = (typeof USER_STATUSES)[number]
@@ -33,4 +38,22 @@ export const USER_STATUS_LABELS: Record<UserStatus, string> = {
   ACTIVE: 'Ativo',
   INACTIVE: 'Inativo',
   BLOCKED: 'Bloqueado',
+}
+
+export const USER_STATUS_TONES: Record<UserStatus, StatusTone> = {
+  ACTIVE: 'success',
+  INACTIVE: 'neutral',
+  BLOCKED: 'danger',
+}
+
+export type User = {
+  readonly id: string
+  readonly name: string
+  readonly email: string
+  readonly role: UserRole
+  readonly status: UserStatus
+  readonly phone: string | null
+  readonly createdAt: string
+  readonly updatedAt: string
+  readonly version: number
 }
