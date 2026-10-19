@@ -1,12 +1,22 @@
 import 'server-only'
 
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
+import { redirect } from 'next/navigation'
+import { cache } from 'react'
 
-import { USER_ROLES, type UserRole } from '@/lib/domain/user'
+import { apiFetch } from '@/lib/api/client'
+import { isApiError } from '@/lib/api/errors'
+import type { UserRole } from '@/lib/domain/user'
+import {
+  ACCESS_TOKEN_COOKIE,
+  PATHNAME_HEADER,
+  REFRESH_TOKEN_COOKIE,
+  refreshPath,
+} from '@/lib/session-cookies'
 
 /**
  * Identidade minima que o shell precisa para se desenhar: quem esta na tela e
- * o que essa pessoa enxerga. Os campos sao os que o documento 12.4 devolve em
+ * o que essa pessoa enxerga. Os campos sao os que a API devolve em
  * `GET /auth/me` e no corpo do login.
  */
 export type SessionUser = {
@@ -16,34 +26,141 @@ export type SessionUser = {
   readonly role: UserRole
 }
 
-/** Perfil escolhido na entrada provisoria de desenvolvimento. */
-const DEVELOPMENT_ROLE_COOKIE = 'fo_dev_role'
+export type TokenPair = {
+  readonly accessToken: string
+  readonly refreshToken: string
+  readonly expiresIn: number
+}
 
-function isUserRole(value: string | undefined): value is UserRole {
-  return value !== undefined && (USER_ROLES as readonly string[]).includes(value)
+/** Mesmo valor padrao de `JWT_REFRESH_TOKEN_TTL` na API (P30D). */
+const REFRESH_TOKEN_MAX_AGE = 30 * 24 * 60 * 60
+
+/**
+ * O cookie do access token expira um pouco antes do proprio token. Assim o
+ * proxy percebe a expiracao e renova antes de a API recusar a chamada no meio
+ * de uma renderizacao.
+ */
+const ACCESS_TOKEN_MARGIN = 30
+
+/** Marca curta gravada logo apos uma renovacao, para nunca renovar em laco. */
+const REFRESHED_COOKIE = 'fo_rf'
+
+/**
+ * `secure` por padrao. Em demonstracao local por HTTP, fora de `localhost`, o
+ * navegador descartaria o cookie; `SESSION_COOKIE_SECURE=false` existe para
+ * esse caso e nunca deve ser usado em ambiente publicado.
+ */
+function secureCookies(): boolean {
+  return process.env.SESSION_COOKIE_SECURE !== 'false'
+}
+
+export async function getAccessToken(): Promise<string | null> {
+  return (await cookies()).get(ACCESS_TOKEN_COOKIE)?.value ?? null
+}
+
+export async function getRefreshToken(): Promise<string | null> {
+  return (await cookies()).get(REFRESH_TOKEN_COOKIE)?.value ?? null
+}
+
+/** Grava a sessao. So funciona em Server Action e Route Handler. */
+export async function storeTokens(tokens: TokenPair): Promise<void> {
+  const cookieStore = await cookies()
+  const base = { httpOnly: true, secure: secureCookies(), sameSite: 'lax' as const, path: '/' }
+
+  cookieStore.set(ACCESS_TOKEN_COOKIE, tokens.accessToken, {
+    ...base,
+    maxAge: Math.max(tokens.expiresIn - ACCESS_TOKEN_MARGIN, 30),
+  })
+  cookieStore.set(REFRESH_TOKEN_COOKIE, tokens.refreshToken, {
+    ...base,
+    maxAge: REFRESH_TOKEN_MAX_AGE,
+  })
+}
+
+export async function markRefreshed(): Promise<void> {
+  ;(await cookies()).set(REFRESHED_COOKIE, '1', {
+    httpOnly: true,
+    secure: secureCookies(),
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 15,
+  })
+}
+
+export async function clearSession(): Promise<void> {
+  const cookieStore = await cookies()
+
+  for (const name of [ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE, REFRESHED_COOKIE]) {
+    cookieStore.delete(name)
+  }
+}
+
+/**
+ * Troca o refresh token por um novo par. Refresh tokens sao rotativos: o
+ * anterior deixa de valer, entao o novo precisa ser gravado na mesma operacao.
+ * Devolve `null` quando a sessao nao pode ser renovada.
+ */
+export async function refreshTokens(): Promise<TokenPair | null> {
+  const refreshToken = await getRefreshToken()
+  if (!refreshToken) {
+    return null
+  }
+
+  try {
+    const tokens = await apiFetch<TokenPair>('/auth/refresh', {
+      method: 'POST',
+      body: { refreshToken },
+      token: null,
+    })
+    await storeTokens(tokens)
+    return tokens
+  } catch {
+    await clearSession()
+    return null
+  }
+}
+
+async function currentPath(): Promise<string> {
+  return (await headers()).get(PATHNAME_HEADER) ?? '/dashboard'
+}
+
+/**
+ * A API recusou o token durante uma renderizacao. Server Component nao grava
+ * cookie, entao a renovacao acontece no Route Handler, que devolve a pessoa ao
+ * mesmo lugar. Se a renovacao acabou de acontecer e a API ainda recusa, a
+ * sessao nao tem conserto: volta ao login em vez de renovar em laco.
+ */
+export async function handleExpiredSession(): Promise<never> {
+  const justRefreshed = (await cookies()).has(REFRESHED_COOKIE)
+
+  if (justRefreshed) {
+    redirect('/login?expired=1')
+  }
+
+  redirect(refreshPath(await currentPath()))
 }
 
 /**
  * Ponto unico de leitura da sessao.
  *
- * Enquanto a issue #6 nao entrega o login e a `backend#6` nao entrega o JWT,
- * esta funcao monta a identidade a partir do perfil escolhido na entrada de
- * desenvolvimento -- e so ela sabe disso. Quando o login existir, o corpo passa
- * a ler o cookie `httpOnly` de sessao e a confirmar em `GET /auth/me`; nenhum
- * componente do shell muda, porque todos recebem o usuario ja pronto.
- *
- * `import 'server-only'` faz o build falhar se um componente de cliente tentar
- * importar este modulo, que e o que impede a sessao de vazar para o navegador.
+ * Confirma o token em `GET /auth/me` em vez de confiar no conteudo do cookie:
+ * usuario inativado ou com sessoes invalidadas perde o acesso na proxima
+ * navegacao. O `cache()` do React faz a confirmacao acontecer uma vez por
+ * renderizacao, mesmo com layout e pagina pedindo o usuario.
  */
-export async function getSessionUser(): Promise<SessionUser> {
-  const cookieStore = await cookies()
-  const chosen = cookieStore.get(DEVELOPMENT_ROLE_COOKIE)?.value
-  const role: UserRole = isUserRole(chosen) ? chosen : 'ADMIN'
+export const getSessionUser = cache(async (): Promise<SessionUser> => {
+  const token = await getAccessToken()
 
-  return {
-    id: '00000000-0000-0000-0000-000000000000',
-    name: 'Usuário de desenvolvimento',
-    email: 'dev@fieldops.local',
-    role,
+  if (!token) {
+    return handleExpiredSession()
   }
-}
+
+  try {
+    return await apiFetch<SessionUser>('/auth/me', { token })
+  } catch (error) {
+    if (isApiError(error) && error.status === 401) {
+      return handleExpiredSession()
+    }
+    throw error
+  }
+})
