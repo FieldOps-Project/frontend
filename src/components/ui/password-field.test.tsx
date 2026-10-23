@@ -67,3 +67,11 @@ describe('FieldFrame', () => {
     expect(container.querySelector('label')).toHaveClass('text-danger')
   })
 })
+
+describe('labelNote', () => {
+  it('completa o rotulo sem deixar de associa-lo ao campo', () => {
+    render(<TextField name="equipment" label="Equipamento" labelNote="(opcional)" />)
+
+    expect(screen.getByLabelText('Equipamento (opcional)')).toBeInTheDocument()
+  })
+})

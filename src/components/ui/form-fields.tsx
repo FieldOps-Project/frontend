@@ -5,6 +5,8 @@ import { INPUT, INPUT_BARE, INPUT_BOX } from '@/components/ui/styles'
 type FieldFrameProps = {
   readonly name: string
   readonly label: string
+  /** Complemento do rotulo em texto mais leve, como `(opcional para ...)`. */
+  readonly labelNote?: string
   readonly error?: string
   readonly hint?: string
   readonly required?: boolean
@@ -17,7 +19,7 @@ type FieldFrameProps = {
  * `aria-describedby`. E o que faz o leitor de tela anunciar "Este e-mail ja
  * esta cadastrado" ao entrar no campo, e nao so quem enxerga o vermelho.
  */
-function FieldFrame({ name, label, error, hint, required, className = '', children }: FieldFrameProps) {
+function FieldFrame({ name, label, labelNote, error, hint, required, className = '', children }: FieldFrameProps) {
   const id = `field-${name}`
   const hintId = hint ? `${id}-hint` : undefined
   const errorId = error ? `${id}-error` : undefined
@@ -27,6 +29,7 @@ function FieldFrame({ name, label, error, hint, required, className = '', childr
     <div className={`flex flex-col gap-1.5 ${className}`}>
       <label htmlFor={id} className={`text-sm font-medium ${error ? 'text-danger' : 'text-neutral-700'}`}>
         {label}
+        {labelNote && <span className="font-normal text-neutral-500"> {labelNote}</span>}
         {required && (
           <span aria-hidden className="text-danger">
             {' '}
@@ -52,6 +55,7 @@ function FieldFrame({ name, label, error, hint, required, className = '', childr
 type BaseProps = {
   readonly name: string
   readonly label: string
+  readonly labelNote?: string
   readonly error?: string
   readonly hint?: string
   readonly className?: string
@@ -70,9 +74,9 @@ export type TextFieldProps = BaseProps &
  * eles, a borda e o anel de foco passam para a caixa que envolve o input, para
  * que icone e botao fiquem dentro do campo e nao ao lado dele.
  */
-export function TextField({ name, label, error, hint, className, icon, trailing, ...input }: TextFieldProps) {
+export function TextField({ name, label, labelNote, error, hint, className, icon, trailing, ...input }: TextFieldProps) {
   return (
-    <FieldFrame name={name} label={label} error={error} hint={hint} required={input.required} className={className}>
+    <FieldFrame name={name} label={label} labelNote={labelNote} error={error} hint={hint} required={input.required} className={className}>
       {({ id, describedBy, invalid }) =>
         icon || trailing ? (
           <div className={INPUT_BOX}>
@@ -109,13 +113,14 @@ export function TextField({ name, label, error, hint, className, icon, trailing,
 export function TextAreaField({
   name,
   label,
+  labelNote,
   error,
   hint,
   className,
   ...textarea
 }: BaseProps & Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'name' | 'id'>) {
   return (
-    <FieldFrame name={name} label={label} error={error} hint={hint} required={textarea.required} className={className}>
+    <FieldFrame name={name} label={label} labelNote={labelNote} error={error} hint={hint} required={textarea.required} className={className}>
       {({ id, describedBy, invalid }) => (
         <textarea
           id={id}
@@ -137,6 +142,7 @@ export type SelectGroup = { readonly label: string; readonly options: readonly S
 export function SelectField({
   name,
   label,
+  labelNote,
   error,
   hint,
   className,
@@ -150,7 +156,7 @@ export function SelectField({
   readonly placeholder?: string
 } & Omit<SelectHTMLAttributes<HTMLSelectElement>, 'name' | 'id'>) {
   return (
-    <FieldFrame name={name} label={label} error={error} hint={hint} required={select.required} className={className}>
+    <FieldFrame name={name} label={label} labelNote={labelNote} error={error} hint={hint} required={select.required} className={className}>
       {({ id, describedBy, invalid }) => (
         <select id={id} name={name} aria-invalid={invalid} aria-describedby={describedBy} className={INPUT} {...select}>
           {placeholder !== undefined && <option value="">{placeholder}</option>}
