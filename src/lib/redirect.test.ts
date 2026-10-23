@@ -14,6 +14,13 @@ describe('safeRedirect', () => {
     },
   )
 
+  it.each(['/\t/evil.example', '/\n/evil.example', '/\r\n/evil.example', '/clients\u0000', '/\u007fx'])(
+    'recusa caractere de controle, que o navegador descarta da URL: %j',
+    (target) => {
+      expect(safeRedirect(target)).toBe('/dashboard')
+    },
+  )
+
   it('nao devolve ao proprio login nem a rotas de API', () => {
     expect(safeRedirect('/login?redirect=/x')).toBe('/dashboard')
     expect(safeRedirect('/api/auth/refresh')).toBe('/dashboard')
