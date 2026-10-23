@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { IoAddOutline } from 'react-icons/io5'
+import { IoAddOutline, IoDownloadOutline } from 'react-icons/io5'
 
 import { EmptyState } from '@/components/ui/empty-state'
 import { FlashNotice, Notice } from '@/components/ui/notice'
@@ -12,7 +12,10 @@ import { filterParams, hasActiveFilters, parseInspectionFilters } from '@/featur
 import { requireRole } from '@/lib/dal'
 import { dayInSaoPaulo } from '@/lib/domain/inspection-list'
 import { MANAGER_ROLES } from '@/lib/domain/user'
-import { pageParam, param } from '@/lib/search-params'
+import { pageParam, param, withParams } from '@/lib/search-params'
+
+const OUTLINE =
+  'inline-flex h-12 items-center gap-2 rounded-field border border-neutral-300 bg-neutral-0 px-5 text-base font-medium text-neutral-900 transition-colors hover:bg-neutral-100'
 
 const PRIMARY =
   'inline-flex h-12 items-center gap-2 rounded-field bg-brand-700 px-5 text-base font-semibold text-neutral-0 transition-colors hover:bg-brand-800'
@@ -42,6 +45,10 @@ export default async function InspectionsPage(props: PageProps<'/inspections'>) 
           <p className="text-lg text-neutral-700">Gerencie e acompanhe todas as inspeções de campo.</p>
         </div>
         <div className="flex flex-wrap gap-3">
+          <a href={withParams('/inspections/export', filterParams(filters))} download className={OUTLINE}>
+            <IoDownloadOutline aria-hidden className="size-5" />
+            Exportar
+          </a>
           <Link href="/inspections/new" className={PRIMARY}>
             <IoAddOutline aria-hidden className="size-6" />
             Nova Inspeção
