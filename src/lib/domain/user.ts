@@ -30,6 +30,22 @@ export const ASSIGNABLE_USER_ROLES: readonly UserRole[] = ['ADMIN', 'SUPERVISOR'
 /** Perfis que operam cadastros, modelos e agendamentos (matriz do documento 5.2). */
 export const MANAGER_ROLES: readonly UserRole[] = ['ADMIN', 'SUPERVISOR']
 
+/**
+ * Quem usa o painel. A matriz do documento 5.2 deixa o tecnico como "opcional"
+ * na interface administrativa e o cliente como "futuro"; o documento 14.1 define
+ * o painel para administradores e supervisores. Pelo menor privilegio (5.3), os
+ * demais perfis ficam de fora: o tecnico trabalha pelo aplicativo de campo.
+ */
+export function canUsePanel(role: UserRole): boolean {
+  return MANAGER_ROLES.includes(role)
+}
+
+export function panelDeniedMessage(role: UserRole): string {
+  return role === 'TECHNICIAN'
+    ? 'O perfil Técnico não usa o painel administrativo. Acesse pelo aplicativo de campo.'
+    : 'Seu perfil ainda não tem acesso ao painel administrativo.'
+}
+
 export const USER_STATUSES = ['ACTIVE', 'INACTIVE', 'BLOCKED'] as const
 
 export type UserStatus = (typeof USER_STATUSES)[number]

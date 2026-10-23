@@ -141,6 +141,21 @@ describe('signIn', () => {
     })
   })
 
+  it.each([
+    ['TECHNICIAN', 'O perfil Técnico não usa o painel administrativo. Acesse pelo aplicativo de campo.'],
+    ['CLIENT_VIEWER', 'Seu perfil ainda não tem acesso ao painel administrativo.'],
+  ])('recusa o perfil %s, revoga o refresh token emitido e nao grava sessao', async (role, message) => {
+    fetchMock.mockResolvedValueOnce(loginSuccess(role)).mockResolvedValueOnce(new Response(null, { status: 204 }))
+
+    const result = await submit({ ...credentials, redirect: '/dashboard' })
+
+    expect(result.state).toEqual({ error: message, email: credentials.email })
+    expect(cookieJar.size).toBe(0)
+    const [url, init] = fetchMock.mock.calls[1] ?? []
+    expect(String(url)).toBe('http://api.test/api/v1/auth/logout')
+    expect(JSON.parse(String(init?.body))).toEqual({ refreshToken: 'refresh-token' })
+  })
+
   it('avisa quando a API esta fora do ar', async () => {
     fetchMock.mockRejectedValueOnce(new TypeError('fetch failed'))
 

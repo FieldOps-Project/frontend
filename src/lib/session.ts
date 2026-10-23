@@ -6,9 +6,10 @@ import { cache } from 'react'
 
 import { apiFetch } from '@/lib/api/client'
 import { isApiError } from '@/lib/api/errors'
-import type { UserRole } from '@/lib/domain/user'
+import { canUsePanel, type UserRole } from '@/lib/domain/user'
 import {
   ACCESS_TOKEN_COOKIE,
+  PANEL_DENIED_PATH,
   PATHNAME_HEADER,
   REFRESH_TOKEN_COOKIE,
   refreshPath,
@@ -155,12 +156,23 @@ export const getSessionUser = cache(async (): Promise<SessionUser> => {
     return handleExpiredSession()
   }
 
+  let user: SessionUser
   try {
-    return await apiFetch<SessionUser>('/auth/me', { token })
+    user = await apiFetch<SessionUser>('/auth/me', { token })
   } catch (error) {
     if (isApiError(error) && error.status === 401) {
       return handleExpiredSession()
     }
     throw error
   }
+
+  /*
+   * Perfil que nao usa o painel -- trocado depois do login, por exemplo. Server
+   * Component nao apaga cookie, entao a sessao e encerrada no Route Handler.
+   */
+  if (!canUsePanel(user.role)) {
+    redirect(PANEL_DENIED_PATH)
+  }
+
+  return user
 })

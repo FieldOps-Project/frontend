@@ -9,6 +9,9 @@ export const REFRESH_TOKEN_COOKIE = 'fo_rt'
 /** Cabecalho com o caminho atual, repassado pelo proxy aos Server Components. */
 export const PATHNAME_HEADER = 'x-fo-pathname'
 
+/** Rota que encerra a sessao de um perfil que nao usa o painel. */
+export const PANEL_DENIED_PATH = '/api/auth/denied'
+
 /** Rota que troca o refresh token por um novo par e devolve a pessoa ao destino. */
 export function refreshPath(redirectTo: string): string {
   return `/api/auth/refresh?redirect=${encodeURIComponent(redirectTo)}`
