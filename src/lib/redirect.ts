@@ -13,6 +13,11 @@ export function safeRedirect(target: unknown, fallback = '/dashboard'): string {
   if (target.startsWith('//') || target.startsWith('/\\')) {
     return fallback
   }
+  // Caractere de controle: o navegador descarta tabulacao e quebra de linha da
+  // URL, e `/\t/host` viraria `//host` depois de passar pela checagem acima.
+  if (/[\u0000-\u001f\u007f]/.test(target)) {
+    return fallback
+  }
   if (target.startsWith('/login') || target.startsWith('/api/')) {
     return fallback
   }
