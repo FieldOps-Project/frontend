@@ -24,7 +24,17 @@ const SEGMENT_LABELS: Record<string, string> = {
  */
 const IDENTIFIER = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-function labelFor(segment: string): string {
+/** Passos com nome proprio dentro de uma area, como a criacao de inspecao. */
+const PATH_LABELS: Record<string, string> = {
+  'inspections/new': 'Nova inspeção',
+}
+
+function labelFor(segment: string, parent?: string): string {
+  const named = parent ? PATH_LABELS[`${parent}/${segment}`] : undefined
+  if (named) {
+    return named
+  }
+
   if (IDENTIFIER.test(segment)) {
     return 'Detalhe'
   }
@@ -63,11 +73,11 @@ export function Breadcrumbs() {
               <span aria-hidden>›</span>
               {last ? (
                 <span aria-current="page" className="font-medium text-neutral-700">
-                  {labelFor(segment)}
+                  {labelFor(segment, segments[index - 1])}
                 </span>
               ) : (
                 <Link href={href} className="hover:text-neutral-700">
-                  {labelFor(segment)}
+                  {labelFor(segment, segments[index - 1])}
                 </Link>
               )}
             </li>
