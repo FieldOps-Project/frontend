@@ -16,4 +16,15 @@ export const LINK = 'font-medium text-brand-700 hover:text-brand-800 hover:under
 export const INPUT =
   'w-full rounded-field border border-neutral-200 bg-neutral-0 px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-100 disabled:bg-neutral-100 disabled:text-neutral-500 aria-[invalid=true]:border-danger'
 
+/**
+ * Caixa de campo com conteudo ao lado do valor (icone, botao de ver a senha).
+ * A borda e o anel ficam na caixa inteira, que acende quando o input dentro
+ * dela recebe foco; o input em si nao desenha contorno.
+ */
+export const INPUT_BOX =
+  'flex w-full items-center gap-2.5 rounded-field border border-neutral-200 bg-neutral-0 px-3 text-sm transition-colors focus-within:border-brand-600 focus-within:ring-2 focus-within:ring-brand-100 has-[:disabled]:bg-neutral-100 has-[[aria-invalid=true]]:border-danger'
+
+export const INPUT_BARE =
+  'min-w-0 flex-1 bg-transparent py-2 text-neutral-900 outline-none placeholder:text-neutral-400 focus-visible:outline-none disabled:text-neutral-500'
+
 export const CARD = 'rounded-card border border-neutral-200 bg-neutral-0'
