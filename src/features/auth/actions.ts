@@ -2,19 +2,30 @@
 
 import { redirect } from 'next/navigation'
 
+import { hasLoginErrors, validateLogin, type LoginFieldErrors } from '@/features/auth/login-validation'
 import { apiFetch } from '@/lib/api/client'
-import { isApiError } from '@/lib/api/errors'
-import { messageFor } from '@/lib/api/messages'
+import { isApiError, type ApiError } from '@/lib/api/errors'
+import { fieldErrorsFor, messageFor } from '@/lib/api/messages'
 import { text } from '@/lib/form-data'
 import { safeRedirect } from '@/lib/redirect'
 import { clearSession, getRefreshToken, storeTokens, type SessionUser, type TokenPair } from '@/lib/session'
 
 export type SignInState = {
+  /** Mensagem geral, como credencial recusada ou API fora do ar. */
   readonly error?: string
+  /** Erro de cada campo, para a mensagem aparecer embaixo do campo certo. */
+  readonly fieldErrors?: LoginFieldErrors
+  /** Devolvido para o formulario nao apagar o que a pessoa digitou. */
   readonly email?: string
 }
 
 type LoginResponse = TokenPair & { readonly user: SessionUser }
+
+/** So os campos que existem no formulario; outro campo vindo da API nao tem onde aparecer. */
+function loginFieldErrorsFor(error: ApiError): LoginFieldErrors | undefined {
+  const { email, password } = fieldErrorsFor(error)
+  return email || password ? { email, password } : undefined
+}
 
 /**
  * Entrada no painel.
@@ -27,8 +38,10 @@ export async function signIn(_previous: SignInState, formData: FormData): Promis
   const email = text(formData, 'email')
   const password = formData.get('password')
 
-  if (!email || typeof password !== 'string' || password === '') {
-    return { error: 'Informe e-mail e senha.', email: email ?? '' }
+  const fieldErrors = validateLogin({ email, password })
+
+  if (!email || typeof password !== 'string' || hasLoginErrors(fieldErrors)) {
+    return { fieldErrors, email: email ?? '' }
   }
 
   try {
@@ -40,7 +53,7 @@ export async function signIn(_previous: SignInState, formData: FormData): Promis
     await storeTokens(session)
   } catch (error) {
     if (isApiError(error)) {
-      return { error: messageFor(error), email }
+      return { error: messageFor(error), fieldErrors: loginFieldErrorsFor(error), email }
     }
     throw error
   }
