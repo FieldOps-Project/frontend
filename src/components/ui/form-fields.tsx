@@ -1,6 +1,6 @@
 import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react'
 
-import { INPUT } from '@/components/ui/styles'
+import { INPUT, INPUT_BARE, INPUT_BOX } from '@/components/ui/styles'
 
 type FieldFrameProps = {
   readonly name: string
@@ -57,26 +57,51 @@ type BaseProps = {
   readonly className?: string
 }
 
-export function TextField({
-  name,
-  label,
-  error,
-  hint,
-  className,
-  ...input
-}: BaseProps & Omit<InputHTMLAttributes<HTMLInputElement>, 'name' | 'id'>) {
+export type TextFieldProps = BaseProps &
+  Omit<InputHTMLAttributes<HTMLInputElement>, 'name' | 'id'> & {
+    /** Icone decorativo a esquerda do valor. */
+    readonly icon?: ReactNode
+    /** Controle dentro da caixa, a direita do valor -- o botao de ver a senha, por exemplo. */
+    readonly trailing?: ReactNode
+  }
+
+/**
+ * Campo de texto. Sem `icon` nem `trailing` e o input simples de sempre; com
+ * eles, a borda e o anel de foco passam para a caixa que envolve o input, para
+ * que icone e botao fiquem dentro do campo e nao ao lado dele.
+ */
+export function TextField({ name, label, error, hint, className, icon, trailing, ...input }: TextFieldProps) {
   return (
     <FieldFrame name={name} label={label} error={error} hint={hint} required={input.required} className={className}>
-      {({ id, describedBy, invalid }) => (
-        <input
-          id={id}
-          name={name}
-          aria-invalid={invalid}
-          aria-describedby={describedBy}
-          className={INPUT}
-          {...input}
-        />
-      )}
+      {({ id, describedBy, invalid }) =>
+        icon || trailing ? (
+          <div className={INPUT_BOX}>
+            {icon && (
+              <span aria-hidden className="flex shrink-0 text-neutral-500 [&>svg]:size-[18px]">
+                {icon}
+              </span>
+            )}
+            <input
+              id={id}
+              name={name}
+              aria-invalid={invalid}
+              aria-describedby={describedBy}
+              className={INPUT_BARE}
+              {...input}
+            />
+            {trailing}
+          </div>
+        ) : (
+          <input
+            id={id}
+            name={name}
+            aria-invalid={invalid}
+            aria-describedby={describedBy}
+            className={INPUT}
+            {...input}
+          />
+        )
+      }
     </FieldFrame>
   )
 }

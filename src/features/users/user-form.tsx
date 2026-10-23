@@ -4,6 +4,7 @@ import { useActionState } from 'react'
 
 import { FormAlert, FormFooter } from '@/components/ui/form-actions'
 import { FormSection, SelectField, TextField } from '@/components/ui/form-fields'
+import { PasswordField } from '@/components/ui/password-field'
 import {
   ASSIGNABLE_USER_ROLES,
   USER_ROLE_LABELS,
@@ -72,10 +73,9 @@ export function UserForm({
 
       {!user && (
         <FormSection title="Acesso">
-          <TextField
+          <PasswordField
             name="password"
             label="Senha inicial"
-            type="password"
             required
             minLength={8}
             maxLength={128}
