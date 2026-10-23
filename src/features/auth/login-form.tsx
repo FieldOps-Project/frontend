@@ -8,7 +8,7 @@ import { signIn, type SignInState } from '@/features/auth/actions'
 const INITIAL: SignInState = {}
 
 const INPUT =
-  'w-full rounded-field border border-neutral-200 bg-neutral-0 px-3 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-brand-500 focus:outline-none'
+  'w-full rounded-field border border-neutral-200 bg-neutral-0 px-3 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-100'
 
 export function LoginForm({ redirectTo, notice }: { redirectTo: string; notice?: string }) {
   const [state, action, pending] = useActionState(signIn, INITIAL)

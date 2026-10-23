@@ -14,6 +14,6 @@ export const BUTTON_DANGER =
 export const LINK = 'font-medium text-brand-700 hover:text-brand-800 hover:underline'
 
 export const INPUT =
-  'w-full rounded-field border border-neutral-200 bg-neutral-0 px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-brand-500 focus:outline-none disabled:bg-neutral-100 disabled:text-neutral-500 aria-[invalid=true]:border-danger'
+  'w-full rounded-field border border-neutral-200 bg-neutral-0 px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-100 disabled:bg-neutral-100 disabled:text-neutral-500 aria-[invalid=true]:border-danger'
 
 export const CARD = 'rounded-card border border-neutral-200 bg-neutral-0'
