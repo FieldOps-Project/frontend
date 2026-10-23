@@ -23,6 +23,7 @@ export function Notice({ tone = 'info', children }: { tone?: keyof typeof TONES;
 const NOTICES: Record<string, string> = {
   created: 'Registro criado com sucesso.',
   updated: 'Alterações salvas.',
+  scheduled: 'Inspeção agendada e atribuída ao técnico.',
 }
 
 export function FlashNotice({ code }: { code: string | undefined }) {
