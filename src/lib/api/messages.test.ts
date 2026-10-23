@@ -48,3 +48,13 @@ describe('fieldErrorsFor', () => {
     expect(fieldErrorsFor(error)).toEqual({ name: 'Campo obrigatório.', email: 'Informe um e-mail válido.' })
   })
 })
+
+describe('erros do agendamento', () => {
+  it('levam cliente e local inativos ao campo certo, com a mensagem do agendamento', () => {
+    const client = new ApiError({ status: 422, code: 'CLIENT_INACTIVE', message: 'x' })
+    const site = new ApiError({ status: 422, code: 'INSPECTION_SITE_INACTIVE', message: 'x' })
+
+    expect(fieldErrorsFor(client)).toEqual({ clientId: 'O cliente está inativo e não pode receber novas inspeções.' })
+    expect(fieldErrorsFor(site)).toEqual({ siteId: 'O local está inativo e não pode receber novas inspeções.' })
+  })
+})

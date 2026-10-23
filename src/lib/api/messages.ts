@@ -19,8 +19,8 @@ const CODE_MESSAGES: Record<string, string> = {
   INVALID_QR_CODE: 'Informe um QR Code.',
   EQUIPMENT_NOT_FOUND: 'Nenhum equipamento encontrado com este QR Code.',
   INACTIVE_SITE: 'O local está inativo e não aceita novos equipamentos.',
-  INSPECTION_SITE_INACTIVE: 'O local está inativo.',
-  CLIENT_INACTIVE: 'O cliente está inativo e não aceita novos locais.',
+  INSPECTION_SITE_INACTIVE: 'O local está inativo e não pode receber novas inspeções.',
+  CLIENT_INACTIVE: 'O cliente está inativo e não pode receber novas inspeções.',
   INVALID_CLIENT_DOCUMENT: 'Documento inválido: informe um CPF (11 dígitos) ou CNPJ (14 dígitos).',
   INVALID_COORDINATES:
     'Coordenadas inválidas: informe latitude e longitude juntas, dentro dos limites permitidos.',
@@ -39,6 +39,7 @@ const CODE_FIELDS: Record<string, string> = {
   EQUIPMENT_QR_CODE_ALREADY_EXISTS: 'qrCode',
   INACTIVE_SITE: 'siteId',
   CLIENT_INACTIVE: 'clientId',
+  INSPECTION_SITE_INACTIVE: 'siteId',
   INVALID_CLIENT_DOCUMENT: 'document',
   INVALID_COORDINATES: 'latitude',
 }
