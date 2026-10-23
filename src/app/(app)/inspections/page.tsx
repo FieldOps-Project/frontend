@@ -3,73 +3,81 @@ import { IoAddOutline } from 'react-icons/io5'
 
 import { EmptyState } from '@/components/ui/empty-state'
 import { FlashNotice, Notice } from '@/components/ui/notice'
-import { PageHeader } from '@/components/ui/page-header'
-import { StatusBadge } from '@/components/ui/status-badge'
-import { BUTTON_PRIMARY, CARD } from '@/components/ui/styles'
-import { Table, Td } from '@/components/ui/table'
-import { load, requireRole } from '@/lib/dal'
-import {
-  INSPECTION_STATUS_LABELS,
-  INSPECTION_STATUS_TONES,
-  isInspectionStatus,
-  type InspectionSummary,
-} from '@/lib/domain/inspection'
+import { NumberedPagination } from '@/components/ui/numbered-pagination'
+import { CARD } from '@/components/ui/styles'
+import { InspectionFilters } from '@/features/inspections/inspection-filters'
+import { InspectionTable } from '@/features/inspections/inspection-table'
+import { loadInspectionFilterOptions, loadInspectionPage } from '@/features/inspections/list-data'
+import { filterParams, hasActiveFilters, parseInspectionFilters } from '@/features/inspections/list-filters'
+import { requireRole } from '@/lib/dal'
+import { dayInSaoPaulo } from '@/lib/domain/inspection-list'
 import { MANAGER_ROLES } from '@/lib/domain/user'
-import { formatDateTime } from '@/lib/format'
-import { param } from '@/lib/search-params'
+import { pageParam, param } from '@/lib/search-params'
+
+const PRIMARY =
+  'inline-flex h-12 items-center gap-2 rounded-field bg-brand-700 px-5 text-base font-semibold text-neutral-0 transition-colors hover:bg-brand-800'
 
 /**
- * Acompanhamento de inspecoes (issue #17). A API ja publica o contrato de
- * listagem, mas ainda responde com um exemplo fixo; filtros, paginacao e as
- * acoes de agendar e revisar chegam com os endpoints de inspecao.
+ * Acompanhamento de inspecoes (issue #17 e documento 14.10).
+ *
+ * Filtros e pagina vivem na URL e a paginacao acontece no servidor. Sem cache:
+ * recarregar depois que o tecnico sincroniza ja mostra o novo estado.
  */
 export default async function InspectionsPage(props: PageProps<'/inspections'>) {
   await requireRole(MANAGER_ROLES)
   const searchParams = await props.searchParams
-  const inspections = await load<readonly InspectionSummary[]>('/inspections')
+  const filters = parseInspectionFilters(searchParams)
+
+  const [page, options] = await Promise.all([
+    loadInspectionPage(filters, pageParam(searchParams)),
+    loadInspectionFilterOptions(),
+  ])
+  const filtered = hasActiveFilters(filters)
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Inspeções"
-        description="Acompanhamento das inspeções agendadas e em execução."
-        actions={
-          <Link href="/inspections/new" className={BUTTON_PRIMARY}>
-            <IoAddOutline aria-hidden className="size-4" />
-            Nova inspeção
+    <div className="flex flex-col gap-8">
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-4xl font-semibold tracking-tight text-neutral-950">Inspeções</h1>
+          <p className="text-lg text-neutral-700">Gerencie e acompanhe todas as inspeções de campo.</p>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <Link href="/inspections/new" className={PRIMARY}>
+            <IoAddOutline aria-hidden className="size-6" />
+            Nova Inspeção
           </Link>
-        }
-      />
+        </div>
+      </header>
 
       <FlashNotice code={param(searchParams, 'notice')} />
 
-      <Notice tone="warning">
-        Dados de exemplo: a API já publica o contrato desta listagem, mas ainda devolve uma inspeção fixa. O
-        agendamento e a revisão já têm tela, com dados de demonstração até os endpoints do backend chegarem.
-      </Notice>
+      {process.env.NEXT_PUBLIC_APP_ENV === 'development' && (
+        <Notice tone="warning">
+          Dados de demonstração: a API ainda não publica a listagem paginada de inspeções. Filtros, atraso, progresso e
+          paginação já funcionam sobre estas inspeções de exemplo.
+        </Notice>
+      )}
 
-      <section className={CARD}>
-        {inspections.length === 0 ? (
-          <EmptyState title="Nenhuma inspeção" />
+      <InspectionFilters
+        pathname="/inspections"
+        filters={filters}
+        technicians={options.technicians}
+        clients={options.clients}
+      />
+
+      <section aria-label="Resultados" className={`${CARD} overflow-hidden`}>
+        {page.totalElements === 0 ? (
+          <EmptyState
+            title={filtered ? 'Nenhuma inspeção encontrada' : 'Nenhuma inspeção'}
+            description={
+              filtered ? 'Ajuste ou limpe os filtros para ver mais resultados.' : 'Crie a primeira em "Nova Inspeção".'
+            }
+          />
         ) : (
-          <Table caption="Inspeções" head={['Inspeção', 'Estado', 'Data prevista']}>
-            {inspections.map((inspection) => (
-              <tr key={inspection.id}>
-                <Td className="font-medium text-neutral-900">{inspection.title}</Td>
-                <Td>
-                  {isInspectionStatus(inspection.status) ? (
-                    <StatusBadge
-                      label={INSPECTION_STATUS_LABELS[inspection.status]}
-                      tone={INSPECTION_STATUS_TONES[inspection.status]}
-                    />
-                  ) : (
-                    <StatusBadge label={inspection.status} tone="neutral" />
-                  )}
-                </Td>
-                <Td className="whitespace-nowrap">{formatDateTime(inspection.scheduledAt)}</Td>
-              </tr>
-            ))}
-          </Table>
+          <>
+            <InspectionTable items={page.content} today={dayInSaoPaulo(new Date())} />
+            <NumberedPagination page={page} pathname="/inspections" params={filterParams(filters)} />
+          </>
         )}
       </section>
     </div>
