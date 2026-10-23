@@ -6,6 +6,7 @@ import { hasLoginErrors, validateLogin, type LoginFieldErrors } from '@/features
 import { apiFetch } from '@/lib/api/client'
 import { isApiError, type ApiError } from '@/lib/api/errors'
 import { fieldErrorsFor, messageFor } from '@/lib/api/messages'
+import { canUsePanel, panelDeniedMessage } from '@/lib/domain/user'
 import { text } from '@/lib/form-data'
 import { safeRedirect } from '@/lib/redirect'
 import { clearSession, getRefreshToken, storeTokens, type SessionUser, type TokenPair } from '@/lib/session'
@@ -20,6 +21,14 @@ export type SignInState = {
 }
 
 type LoginResponse = TokenPair & { readonly user: SessionUser }
+
+/**
+ * Revoga um refresh token na API. Melhor esforco: se a API falhar, o token
+ * expira pela validade definida no backend.
+ */
+async function revokeRefreshToken(refreshToken: string): Promise<void> {
+  await apiFetch('/auth/logout', { method: 'POST', body: { refreshToken }, token: null }).catch(() => undefined)
+}
 
 /** So os campos que existem no formulario; outro campo vindo da API nao tem onde aparecer. */
 function loginFieldErrorsFor(error: ApiError): LoginFieldErrors | undefined {
@@ -50,6 +59,12 @@ export async function signIn(_previous: SignInState, formData: FormData): Promis
       body: { email, password },
       token: null,
     })
+
+    if (!canUsePanel(session.user.role)) {
+      await revokeRefreshToken(session.refreshToken)
+      return { error: panelDeniedMessage(session.user.role), email }
+    }
+
     await storeTokens(session)
   } catch (error) {
     if (isApiError(error)) {
@@ -72,7 +87,7 @@ export async function signOut(): Promise<never> {
   const refreshToken = await getRefreshToken()
 
   if (refreshToken) {
-    await apiFetch('/auth/logout', { method: 'POST', body: { refreshToken }, token: null }).catch(() => undefined)
+    await revokeRefreshToken(refreshToken)
   }
 
   await clearSession()

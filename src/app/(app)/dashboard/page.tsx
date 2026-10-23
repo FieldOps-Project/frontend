@@ -8,13 +8,11 @@ import {
   IoPeopleOutline,
 } from 'react-icons/io5'
 
-import { Notice } from '@/components/ui/notice'
 import { PageHeader } from '@/components/ui/page-header'
 import { CARD } from '@/components/ui/styles'
 import { load, verifySession } from '@/lib/dal'
 import type { InspectionSummary } from '@/lib/domain/inspection'
 import type { Page } from '@/lib/domain/page'
-import { MANAGER_ROLES } from '@/lib/domain/user'
 
 type Card = {
   readonly label: string
@@ -37,18 +35,6 @@ async function count(path: string, query: Record<string, string> = {}): Promise<
  */
 export default async function DashboardPage() {
   const user = await verifySession()
-
-  if (!MANAGER_ROLES.includes(user.role)) {
-    return (
-      <div className="flex flex-col gap-6">
-        <PageHeader title={`Olá, ${user.name}`} />
-        <Notice>
-          O painel administrativo é usado por administradores e supervisores. As inspeções atribuídas a você ficam no
-          aplicativo de campo.
-        </Notice>
-      </div>
-    )
-  }
 
   const [clients, sites, equipment, inspections, users] = await Promise.all([
     count('/clients', { status: 'ACTIVE' }),

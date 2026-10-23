@@ -11,6 +11,13 @@ export const metadata: Metadata = {
   title: 'Entrar — FieldOps',
 }
 
+/** Aviso acima do formulario: perfil recusado tem precedencia sobre sessao expirada. */
+function noticeFor({ denied, expired }: { denied: boolean; expired: boolean }): string | undefined {
+  if (denied) return 'Seu perfil não tem acesso ao painel administrativo. Técnicos usam o aplicativo de campo.'
+  if (expired) return 'Sua sessão expirou. Entre novamente para continuar.'
+  return undefined
+}
+
 /**
  * Tela de acesso. Unica rota publica do painel: autentica contra a API e a
  * sessao fica em cookie `httpOnly`, gravado pelo servidor do Next.
@@ -23,6 +30,7 @@ export default async function LoginPage(props: PageProps<'/login'>) {
   const searchParams = await props.searchParams
   const redirectTo = safeRedirect(param(searchParams, 'redirect'))
   const expired = param(searchParams, 'expired') === '1'
+  const denied = param(searchParams, 'denied') === '1'
 
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center bg-neutral-50 px-4 py-6">
@@ -42,7 +50,7 @@ export default async function LoginPage(props: PageProps<'/login'>) {
         >
           <LoginForm
             redirectTo={redirectTo}
-            notice={expired ? 'Sua sessão expirou. Entre novamente para continuar.' : undefined}
+            notice={noticeFor({ denied, expired })}
           />
         </section>
 
