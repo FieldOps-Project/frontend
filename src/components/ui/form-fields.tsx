@@ -25,7 +25,7 @@ function FieldFrame({ name, label, error, hint, required, className = '', childr
 
   return (
     <div className={`flex flex-col gap-1.5 ${className}`}>
-      <label htmlFor={id} className="text-sm font-medium text-neutral-700">
+      <label htmlFor={id} className={`text-sm font-medium ${error ? 'text-danger' : 'text-neutral-700'}`}>
         {label}
         {required && (
           <span aria-hidden className="text-danger">

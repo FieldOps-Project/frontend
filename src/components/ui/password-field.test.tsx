@@ -59,3 +59,11 @@ describe('PasswordField', () => {
     expect(submitted).toBe(false)
   })
 })
+
+describe('FieldFrame', () => {
+  it('destaca o rotulo do campo com erro, alem da borda e da mensagem', () => {
+    const { container } = render(<TextField name="client" label="Cliente" error="Selecione o cliente." />)
+
+    expect(container.querySelector('label')).toHaveClass('text-danger')
+  })
+})
