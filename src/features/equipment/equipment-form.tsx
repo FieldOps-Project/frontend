@@ -165,7 +165,7 @@ function QrInput({
         placeholder="Gerado automaticamente se ficar em branco"
         aria-invalid={Boolean(error)}
         aria-describedby={error ? errorId : hintId}
-        className="w-full rounded-field border border-neutral-200 bg-neutral-0 px-3 py-2 font-mono text-sm text-neutral-900 placeholder:font-sans placeholder:text-neutral-400 focus:border-brand-500 focus:outline-none aria-[invalid=true]:border-danger"
+        className="w-full rounded-field border border-neutral-200 bg-neutral-0 px-3 py-2 font-mono text-sm text-neutral-900 placeholder:font-sans placeholder:text-neutral-400 focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-100 aria-[invalid=true]:border-danger"
       />
       {error ? (
         <p id={errorId} className="text-xs text-danger">
