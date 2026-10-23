@@ -52,3 +52,11 @@ describe('NumberedPagination', () => {
     expect(container).toBeEmptyDOMElement()
   })
 })
+
+describe('NumberedPagination: singular', () => {
+  it('fala "resultado" quando ha um so', () => {
+    render(<NumberedPagination page={page(0, 1)} pathname="/inspections" params={{}} />)
+
+    expect(screen.getByRole('navigation', { name: 'Paginação' })).toHaveTextContent('Mostrando 1 a 1 de 1 resultado')
+  })
+})

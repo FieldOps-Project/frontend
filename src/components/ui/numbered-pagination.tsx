@@ -57,7 +57,8 @@ export function NumberedPagination({
       <p>
         Mostrando <strong className="font-semibold text-neutral-900">{from}</strong> a{' '}
         <strong className="font-semibold text-neutral-900">{to}</strong> de{' '}
-        <strong className="font-semibold text-neutral-900">{page.totalElements}</strong> resultados
+        <strong className="font-semibold text-neutral-900">{page.totalElements}</strong>{' '}
+        {page.totalElements === 1 ? 'resultado' : 'resultados'}
       </p>
       <ul className="flex items-center gap-2">
         <li>
