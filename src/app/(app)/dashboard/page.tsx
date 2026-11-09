@@ -1,10 +1,12 @@
 import { DashboardHeader } from '@/features/dashboard/dashboard-header'
 import { loadDashboardSummary, loadRecentNonConformities } from '@/features/dashboard/dashboard-data'
 import { DelayedInspectionsCard } from '@/features/dashboard/delayed-inspections-card'
+import { EmptyOperation } from '@/features/dashboard/empty-operation'
 import { PendingReviewsCard } from '@/features/dashboard/pending-reviews-card'
 import { PipelineCard } from '@/features/dashboard/pipeline-card'
 import { RecentNonConformities } from '@/features/dashboard/recent-non-conformities'
 import { requireRole } from '@/lib/dal'
+import { hasNoInspections } from '@/lib/domain/dashboard'
 import { MANAGER_ROLES } from '@/lib/domain/user'
 
 /**
@@ -25,7 +27,9 @@ export default async function DashboardPage() {
     <div className="flex flex-col gap-6 lg:gap-8">
       <DashboardHeader />
 
-      {summary && (
+      {summary && hasNoInspections(summary.inspectionsByStatus) && <EmptyOperation />}
+
+      {summary && !hasNoInspections(summary.inspectionsByStatus) && (
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,24.5rem)]">
           <PipelineCard counts={summary.inspectionsByStatus} />
 
