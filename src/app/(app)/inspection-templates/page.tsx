@@ -99,7 +99,7 @@ export default async function InspectionTemplatesPage(props: PageProps<'/inspect
               {page.content.map((template) => (
                 <tr key={template.id} className="hover:bg-neutral-50">
                   <Td>
-                    <span className="flex max-w-md flex-col">
+                    <span className="flex max-w-[16rem] min-w-0 flex-col xl:max-w-md">
                       <Link
                         href={`/inspection-templates/${template.id}/edit`}
                         className="font-medium text-neutral-900 hover:text-brand-700 hover:underline"
@@ -107,7 +107,9 @@ export default async function InspectionTemplatesPage(props: PageProps<'/inspect
                         {template.title}
                       </Link>
                       {template.description && (
-                        <span className="truncate text-xs text-neutral-500">{template.description}</span>
+                        <span className="truncate text-xs text-neutral-500" title={template.description}>
+                          {template.description}
+                        </span>
                       )}
                     </span>
                   </Td>
@@ -115,7 +117,7 @@ export default async function InspectionTemplatesPage(props: PageProps<'/inspect
                   <Td>
                     <TemplateStatusBadge template={template} />
                   </Td>
-                  <Td className="whitespace-nowrap">{formatDateTime(template.updatedAt)}</Td>
+                  <Td>{formatDateTime(template.updatedAt)}</Td>
                   <Td className="text-right whitespace-nowrap">
                     {canChangeTemplateStatus(template) && (
                       <TemplateStatusActions id={template.id} title={template.title} status={template.status} />
