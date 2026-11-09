@@ -16,7 +16,7 @@ export function PendingReviewsCard({ count }: { count: number }) {
       href="/inspections?review=1"
       aria-labelledby="pending-reviews-title"
       aria-describedby="pending-reviews-count"
-      className={`${DASHBOARD_CARD} group relative flex flex-col gap-3 overflow-hidden px-6 py-6 transition-colors hover:border-tertiary-300`}
+      className={`${DASHBOARD_CARD} group relative flex flex-col justify-center gap-3 overflow-hidden px-6 py-6 transition-colors hover:border-tertiary-300`}
     >
       <MdOutlineRateReview
         aria-hidden

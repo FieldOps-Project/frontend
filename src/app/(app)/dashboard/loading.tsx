@@ -31,9 +31,9 @@ export default function DashboardLoading() {
           </div>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-1 xl:content-start">
-          <span className={`${BLOCK} h-36 rounded-lg`} />
-          <span className={`${BLOCK} h-36 rounded-lg`} />
+        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-1 xl:grid-rows-2">
+          <span className={`${BLOCK} min-h-36 rounded-lg`} />
+          <span className={`${BLOCK} min-h-36 rounded-lg`} />
         </div>
       </div>
 

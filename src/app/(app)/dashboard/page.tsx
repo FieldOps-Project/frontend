@@ -41,7 +41,7 @@ export default async function DashboardPage() {
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,24.5rem)]">
           <PipelineCard counts={summary.inspectionsByStatus} />
 
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-1 xl:content-start">
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-1 xl:grid-rows-2">
             <PendingReviewsCard count={summary.awaitingReview} />
             <DelayedInspectionsCard summary={summary} />
           </div>

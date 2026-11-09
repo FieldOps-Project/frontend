@@ -21,7 +21,7 @@ export function DelayedInspectionsCard({ summary }: { summary: Pick<DashboardSum
       href="/inspections?overdue=1"
       aria-labelledby="delayed-title"
       aria-describedby="delayed-count"
-      className={`group relative flex flex-col gap-3 overflow-hidden rounded-lg border px-6 py-6 transition-colors ${
+      className={`group relative flex flex-col justify-center gap-3 overflow-hidden rounded-lg border px-6 py-6 transition-colors ${
         late ? 'border-danger/20 bg-danger-soft/30 hover:border-danger/40' : 'border-neutral-300 bg-neutral-0 hover:border-neutral-400'
       }`}
     >
