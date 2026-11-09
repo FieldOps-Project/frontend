@@ -1,5 +1,6 @@
 import { IoLogOutOutline } from 'react-icons/io5'
 
+import { HeaderSearch } from '@/components/shell/header-search'
 import { EnvironmentBadge } from '@/components/shell/environment-badge'
 import { MobileNav } from '@/components/shell/mobile-nav'
 import { signOut } from '@/features/auth/actions'
@@ -39,6 +40,8 @@ export function Header({
   return (
     <header className="flex h-16 shrink-0 items-center gap-3 border-b border-neutral-200 bg-neutral-0 px-3 sm:px-6">
       <MobileNav items={items} />
+
+      <HeaderSearch />
 
       <div className="flex-1" />
 
