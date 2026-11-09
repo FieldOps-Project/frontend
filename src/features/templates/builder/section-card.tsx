@@ -2,16 +2,16 @@
 
 import { useRouter } from 'next/navigation'
 import { useState, useTransition, type FormEvent, type ReactNode } from 'react'
-import { MdAdd, MdDeleteOutline, MdDragIndicator, MdOutlineEdit } from 'react-icons/md'
+import { MdAdd, MdArrowDownward, MdArrowUpward, MdDeleteOutline, MdDragIndicator, MdOutlineEdit } from 'react-icons/md'
 
 import { useConfirm } from '@/components/ui/confirm-dialog'
 import { useToast } from '@/components/ui/toast'
-import { deleteSection, updateSection } from '@/features/templates/builder-actions'
+import { deleteItem, deleteSection, reorderItems, updateSection } from '@/features/templates/builder-actions'
 import { ItemEditor } from '@/features/templates/builder/item-editor'
 import { ItemRow } from '@/features/templates/builder/item-row'
 import { ICON_BUTTON } from '@/features/templates/builder/styles'
 import { validateSection } from '@/features/templates/builder-validation'
-import { BUILDER_LIMITS, itemNumber, type TemplateSection } from '@/lib/domain/template-builder'
+import { BUILDER_LIMITS, itemNumber, moved, type TemplateItem, type TemplateSection } from '@/lib/domain/template-builder'
 
 /** Chave do editor de item novo de uma secao. */
 function newItemKey(sectionId: string): string {
@@ -86,6 +86,31 @@ export function SectionCard({
 
     startTransition(async () => {
       const result = await deleteSection(templateId, section.id)
+      notify(result.message, result.ok ? 'success' : 'error')
+      if (result.ok) router.refresh()
+    })
+  }
+
+  function moveItem(index: number, delta: -1 | 1) {
+    const order = moved(section.items, index, delta).map((item) => item.id)
+    startTransition(async () => {
+      const result = await reorderItems(templateId, section.id, order)
+      notify(result.message, result.ok ? 'success' : 'error')
+      router.refresh()
+    })
+  }
+
+  async function removeItem(item: TemplateItem) {
+    const confirmed = await ask({
+      title: `Excluir o item ${itemNumber(section.displayOrder, item.displayOrder)}?`,
+      description: `“${item.title}” sai do rascunho e os itens seguintes sobem. As versões já publicadas não mudam.`,
+      confirmLabel: 'Excluir item',
+      tone: 'danger',
+    })
+    if (!confirmed) return
+
+    startTransition(async () => {
+      const result = await deleteItem(templateId, item.id)
       notify(result.message, result.ok ? 'success' : 'error')
       if (result.ok) router.refresh()
     })
@@ -175,7 +200,7 @@ export function SectionCard({
 
       {section.items.length > 0 && (
         <ol className="divide-y divide-neutral-200">
-          {section.items.map((item) => (
+          {section.items.map((item, index) => (
             <li key={item.id}>
               {editingItemId === item.id ? (
                 <ItemEditor
@@ -186,7 +211,45 @@ export function SectionCard({
                   onDone={onEditorDone}
                 />
               ) : (
-                <ItemRow item={item} sectionOrder={section.displayOrder} onEdit={() => onEditItem(item.id)} />
+                <ItemRow
+                  item={item}
+                  sectionOrder={section.displayOrder}
+                  onEdit={() => onEditItem(item.id)}
+                  actions={
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => moveItem(index, -1)}
+                        disabled={pending || index === 0}
+                        aria-label={`Mover o item ${itemNumber(section.displayOrder, item.displayOrder)} para cima`}
+                        title="Mover para cima"
+                        className={ICON_BUTTON}
+                      >
+                        <MdArrowUpward aria-hidden className="size-[18px]" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveItem(index, 1)}
+                        disabled={pending || index === section.items.length - 1}
+                        aria-label={`Mover o item ${itemNumber(section.displayOrder, item.displayOrder)} para baixo`}
+                        title="Mover para baixo"
+                        className={ICON_BUTTON}
+                      >
+                        <MdArrowDownward aria-hidden className="size-[18px]" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void removeItem(item)}
+                        disabled={pending}
+                        aria-label={`Excluir o item ${itemNumber(section.displayOrder, item.displayOrder)}`}
+                        title="Excluir"
+                        className={`${ICON_BUTTON} hover:bg-danger-soft hover:text-danger`}
+                      >
+                        <MdDeleteOutline aria-hidden className="size-[18px]" />
+                      </button>
+                    </>
+                  }
+                />
               )}
             </li>
           ))}
