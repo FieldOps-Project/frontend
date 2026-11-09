@@ -6,11 +6,15 @@ import { MdDragIndicator } from 'react-icons/md'
 import { useToast } from '@/components/ui/toast'
 import { createItem, updateItem } from '@/features/templates/builder-actions'
 import { Switch } from '@/features/templates/builder/switch'
+import { AnswerPreview, OptionsEditor } from '@/features/templates/builder/type-settings'
 import { hasErrors, validateItem, type ItemErrors } from '@/features/templates/builder-validation'
 import {
   BUILDER_LIMITS,
+  failureLabel,
   RESPONSE_TYPE_LABELS,
   RESPONSE_TYPES,
+  supportsFailureRules,
+  supportsOptions,
   type ItemInput,
   type ResponseType,
   type TemplateItem,
@@ -157,8 +161,36 @@ export function ItemEditor({
         {errors.description && <p className="text-sm text-danger">{errors.description}</p>}
       </div>
 
+      <div className="rounded-md border border-neutral-200 bg-neutral-100 p-4 sm:ml-14">
+        {supportsOptions(input.responseType) ? (
+          <OptionsEditor
+            idPrefix={prefix}
+            options={input.options}
+            error={errors.options}
+            onChange={(options) => change({ options })}
+          />
+        ) : (
+          <AnswerPreview type={input.responseType} />
+        )}
+      </div>
+
       <div className="flex flex-wrap items-center gap-x-8 gap-y-3 border-t border-neutral-200 pt-4 sm:ml-14">
         <Switch label="Obrigatório" checked={input.required} onChange={(required) => change({ required })} />
+        {supportsFailureRules(input.responseType) && (
+          <>
+            <Switch
+              label={`Exigir Observação (${failureLabel(input.responseType)})`}
+              checked={input.observationRequiredOnFailure}
+              onChange={(observationRequiredOnFailure) => change({ observationRequiredOnFailure })}
+            />
+            <Switch
+              label="Exigir Evidência (Foto)"
+              marker={input.evidenceRequiredOnFailure ? '!' : undefined}
+              checked={input.evidenceRequiredOnFailure}
+              onChange={(evidenceRequiredOnFailure) => change({ evidenceRequiredOnFailure })}
+            />
+          </>
+        )}
       </div>
 
       {message && (
