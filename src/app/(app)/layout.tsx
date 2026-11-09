@@ -33,7 +33,7 @@ export default async function AppLayout({ children }: LayoutProps<'/'>) {
           <div className="flex min-w-0 flex-1 flex-col">
             <Header user={user} environment={process.env.NEXT_PUBLIC_APP_ENV} items={items} />
 
-            <div className="min-w-0 flex-1 overflow-y-auto">
+            <div className="scrollbar-none min-w-0 flex-1 overflow-y-auto">
               <Breadcrumbs />
               <main className="mx-auto min-w-0 max-w-7xl px-4 py-6 sm:px-6">{children}</main>
             </div>
