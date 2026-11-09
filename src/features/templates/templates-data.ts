@@ -4,9 +4,11 @@ import { notFound } from 'next/navigation'
 
 import { paginate } from '@/features/inspections/list-data'
 import { demoTemplateCategories, findDemoTemplate, listDemoTemplates } from '@/features/templates/template-demo-store'
+import { demoDraftSections, demoTemplateVersions } from '@/features/templates/template-draft-demo-store'
 import { load } from '@/lib/dal'
 import type { InspectionTemplate, TemplateFilters } from '@/lib/domain/inspection-template'
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, type Page } from '@/lib/domain/page'
+import type { InspectionTemplateDetail, TemplateVersionSummary } from '@/lib/domain/template-builder'
 import { isId } from '@/lib/ids'
 
 export function usesDemoTemplates(): boolean {
@@ -60,4 +62,30 @@ export async function loadTemplate(templateId: string): Promise<InspectionTempla
   }
 
   return load<InspectionTemplate>(`/inspection-templates/${templateId}`)
+}
+
+/**
+ * Modelo com o rascunho em edicao (secoes e itens em ordem), para o construtor
+ * (issue #14). Mesmo 404 de `loadTemplate` para identificador desconhecido.
+ */
+export async function loadTemplateDetail(templateId: string): Promise<InspectionTemplateDetail> {
+  if (!isId(templateId)) notFound()
+
+  if (usesDemoTemplates()) {
+    const template = findDemoTemplate(templateId) ?? notFound()
+    return { ...template, draftVersionId: null, sections: demoDraftSections(templateId) }
+  }
+
+  return load<InspectionTemplateDetail>(`/inspection-templates/${templateId}`)
+}
+
+/** Versoes publicadas, mais nova primeiro (`GET /inspection-templates/{id}/versions`). */
+export async function loadTemplateVersions(templateId: string): Promise<readonly TemplateVersionSummary[]> {
+  if (!isId(templateId)) notFound()
+
+  if (usesDemoTemplates()) {
+    return demoTemplateVersions(templateId)
+  }
+
+  return load<readonly TemplateVersionSummary[]>(`/inspection-templates/${templateId}/versions`)
 }
