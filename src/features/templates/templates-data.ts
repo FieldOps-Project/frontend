@@ -1,10 +1,13 @@
 import 'server-only'
 
+import { notFound } from 'next/navigation'
+
 import { paginate } from '@/features/inspections/list-data'
-import { demoTemplateCategories, listDemoTemplates } from '@/features/templates/template-demo-store'
+import { demoTemplateCategories, findDemoTemplate, listDemoTemplates } from '@/features/templates/template-demo-store'
 import { load } from '@/lib/dal'
 import type { InspectionTemplate, TemplateFilters } from '@/lib/domain/inspection-template'
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, type Page } from '@/lib/domain/page'
+import { isId } from '@/lib/ids'
 
 export function usesDemoTemplates(): boolean {
   return process.env.NEXT_PUBLIC_APP_ENV === 'development'
@@ -43,4 +46,18 @@ export async function loadTemplateCategories(): Promise<readonly string[]> {
 
   const page = await load<Page<InspectionTemplate>>('/inspection-templates', { size: MAX_PAGE_SIZE, sort: 'category,asc' })
   return [...new Set(page.content.map((template) => template.category))].sort((a, b) => a.localeCompare(b, 'pt-BR'))
+}
+
+/**
+ * Um modelo pelo identificador. Identificador malformado ou desconhecido vira
+ * 404 da rota, como na API (`GET /inspection-templates/{id}`).
+ */
+export async function loadTemplate(templateId: string): Promise<InspectionTemplate> {
+  if (!isId(templateId)) notFound()
+
+  if (usesDemoTemplates()) {
+    return findDemoTemplate(templateId) ?? notFound()
+  }
+
+  return load<InspectionTemplate>(`/inspection-templates/${templateId}`)
 }

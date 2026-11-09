@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 import { EmptyState } from '@/components/ui/empty-state'
 import { FilterBar, FilterSearch, FilterSelect } from '@/components/ui/filter-bar'
 import { FlashNotice, Notice } from '@/components/ui/notice'
@@ -84,7 +86,12 @@ export default async function InspectionTemplatesPage(props: PageProps<'/inspect
                 <tr key={template.id} className="hover:bg-neutral-50">
                   <Td>
                     <span className="flex max-w-md flex-col">
-                      <span className="font-medium text-neutral-900">{template.title}</span>
+                      <Link
+                        href={`/inspection-templates/${template.id}/edit`}
+                        className="font-medium text-neutral-900 hover:text-brand-700 hover:underline"
+                      >
+                        {template.title}
+                      </Link>
                       {template.description && (
                         <span className="truncate text-xs text-neutral-500">{template.description}</span>
                       )}
