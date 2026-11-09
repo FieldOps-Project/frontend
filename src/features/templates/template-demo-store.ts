@@ -98,6 +98,15 @@ export function createDemoTemplate(input: NewTemplateInput, author: string, now:
   return created
 }
 
+/** Como `PUT /inspection-templates/{id}`: titulo, descricao e categoria. */
+export function updateDemoTemplate(templateId: string, input: NewTemplateInput, now: Date = new Date()): InspectionTemplate {
+  const current = store().get(templateId)
+  if (!current) throw new DemoTemplateError('Modelo não encontrado.')
+  const changed: InspectionTemplate = { ...current, ...input, updatedAt: now.toISOString(), version: current.version + 1 }
+  store().set(templateId, changed)
+  return changed
+}
+
 /** Registra uma alteracao no rascunho: o modelo sobe para o topo da lista. */
 export function touchDemoTemplate(templateId: string, now: Date = new Date()): void {
   const current = store().get(templateId)
