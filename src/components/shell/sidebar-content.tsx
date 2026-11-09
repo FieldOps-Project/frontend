@@ -15,15 +15,15 @@ export function SidebarContent({
 }) {
   return (
     <>
-      <div className="flex h-16 items-center gap-2.5 border-b border-neutral-200 px-4">
-        <BrandMark />
-        <span className="flex min-w-0 flex-col leading-tight">
-          <span className="truncate font-semibold">FieldOps</span>
-          <span className="truncate text-xs text-neutral-500">Painel administrativo</span>
+      <div className="flex h-24 shrink-0 items-center gap-4 border-b border-neutral-200 px-5 lg:h-[7.25rem]">
+        <BrandMark variant="solid" className="size-10" />
+        <span className="flex min-w-0 flex-col gap-0.5 leading-tight">
+          <span className="truncate text-2xl font-bold tracking-tight text-brand-700">FieldOps</span>
+          <span className="truncate text-sm font-medium text-neutral-800">Gestão de Campo</span>
         </span>
       </div>
 
-      <nav aria-label="Áreas do painel" className="flex-1 overflow-y-auto p-2">
+      <nav aria-label="Áreas do painel" className="flex-1 overflow-y-auto px-2.5 py-5">
         <NavList items={items} onNavigate={onNavigate} />
       </nav>
     </>
