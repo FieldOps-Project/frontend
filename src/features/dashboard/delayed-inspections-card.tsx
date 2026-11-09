@@ -27,10 +27,10 @@ export function DelayedInspectionsCard({ summary }: { summary: Pick<DashboardSum
     >
       <MdOutlineWarningAmber
         aria-hidden
-        className={`pointer-events-none absolute -top-2 -right-5 size-36 ${late ? 'text-danger/10' : 'text-neutral-100'}`}
+        className={`pointer-events-none absolute -top-3 -right-6 size-32 ${late ? 'text-danger/10' : 'text-neutral-100'}`}
       />
 
-      <span className="relative flex items-center gap-4">
+      <span className="relative flex items-center gap-4 pr-10">
         <span
           className={`grid size-10 shrink-0 place-items-center rounded-md ${
             late ? 'bg-danger-soft text-danger' : 'bg-neutral-100 text-neutral-600'

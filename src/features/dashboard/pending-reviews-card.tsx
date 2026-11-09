@@ -20,10 +20,10 @@ export function PendingReviewsCard({ count }: { count: number }) {
     >
       <MdOutlineRateReview
         aria-hidden
-        className="pointer-events-none absolute -top-3 -right-4 size-36 text-neutral-100 transition-colors group-hover:text-tertiary-50"
+        className="pointer-events-none absolute -top-5 -right-7 size-28 text-neutral-100 transition-colors group-hover:text-tertiary-50"
       />
 
-      <span className="relative flex items-center gap-4">
+      <span className="relative flex items-center gap-4 pr-10">
         <span className="grid size-10 shrink-0 place-items-center rounded-md bg-tertiary-50 text-tertiary-700">
           <MdOutlinePendingActions aria-hidden className="size-6" />
         </span>
