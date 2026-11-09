@@ -27,6 +27,8 @@ const SEGMENT_LABELS: Record<string, string> = {
  */
 const IDENTIFIER = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
+const TEMPLATE_BUILDER = /^\/inspection-templates\/[^/]+\/edit$/
+
 /** Passos com nome proprio dentro de uma area, como a criacao de inspecao. */
 const PATH_LABELS: Record<string, string> = {
   'inspections/new': 'Nova inspeção',
@@ -57,8 +59,9 @@ export function Breadcrumbs() {
   const segments = pathname.split('/').filter(Boolean)
 
   // No dashboard o caminho seria so "Inicio > Dashboard": repete o titulo e o
-  // design do painel nao o mostra.
-  if (segments.length === 0 || pathname === '/dashboard') {
+  // design do painel nao o mostra. O construtor de modelo tem caminho proprio,
+  // com o nome do modelo, no lugar de "Detalhe > Editar".
+  if (segments.length === 0 || pathname === '/dashboard' || TEMPLATE_BUILDER.test(pathname)) {
     return null
   }
 
