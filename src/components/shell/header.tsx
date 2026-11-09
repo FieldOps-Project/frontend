@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { IoLogOutOutline } from 'react-icons/io5'
 import { MdHelpOutline } from 'react-icons/md'
 
 import { HeaderSearch } from '@/components/shell/header-search'
@@ -7,31 +6,21 @@ import { EnvironmentLabel } from '@/components/shell/environment-label'
 import { MobileNav } from '@/components/shell/mobile-nav'
 import { NotificationsButton } from '@/components/shell/notifications-button'
 import { RoleBadge } from '@/components/shell/role-badge'
+import { UserMenu } from '@/components/shell/user-menu'
 import { HEADER_ICON_BUTTON } from '@/components/ui/styles'
-import { signOut } from '@/features/auth/actions'
-import { USER_ROLE_LABELS } from '@/lib/domain/user'
+import { environmentLabel } from '@/lib/environment'
 import type { NavigationItem } from '@/lib/navigation'
 import type { SessionUser } from '@/lib/session'
 
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/)
-  const first = parts.at(0)?.charAt(0) ?? ''
-  const last = parts.length > 1 ? (parts.at(-1)?.charAt(0) ?? '') : ''
-
-  return (first + last).toUpperCase()
-}
-
 /**
- * Cabecalho do painel: quem esta logado, com qual perfil, em qual ambiente, e
- * como sair.
+ * Cabecalho do painel, no desenho do Stitch: busca, notificacoes, ajuda,
+ * ambiente, perfil e o menu da conta (documento 14.4).
  *
- * Componente de servidor. O botao de sair e um formulario que chama uma Server
- * Action, entao funciona sem JavaScript no navegador e nao transforma o
- * cabecalho inteiro em codigo de cliente.
+ * Componente de servidor; so as partes que abrem painel sao de cliente.
  *
- * Em tela estreita nome e perfil dao lugar as iniciais e o rotulo do botao some,
- * ficando so o icone: e a informacao que se pode perder primeiro, porque quem
- * esta logado ja e a propria pessoa.
+ * Em tela estreita o que se pode perder primeiro sai antes: ajuda, perfil e o
+ * rotulo de producao (que continua no menu do avatar). Ambiente que nao e
+ * producao nunca some.
  */
 export function Header({
   user,
@@ -62,29 +51,7 @@ export function Header({
 
       <RoleBadge role={user.role} />
 
-      <div className="flex items-center gap-2.5">
-        <span
-          aria-hidden
-          className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-50 text-xs font-semibold text-brand-700"
-        >
-          {initials(user.name)}
-        </span>
-        <span className="hidden min-w-0 flex-col leading-tight sm:flex">
-          <span className="truncate text-sm font-medium">{user.name}</span>
-          <span className="truncate text-xs text-neutral-500">{USER_ROLE_LABELS[user.role]}</span>
-        </span>
-      </div>
-
-      <form action={signOut}>
-        <button
-          type="submit"
-          className="flex items-center gap-2 rounded-field border border-neutral-200 px-2.5 py-2 text-sm text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 sm:px-3"
-        >
-          <IoLogOutOutline aria-hidden className="size-[18px]" />
-          <span className="hidden sm:inline">Sair</span>
-          <span className="sr-only sm:hidden">Sair</span>
-        </button>
-      </form>
+      <UserMenu user={user} environmentLabel={environmentLabel(environment)} />
     </header>
   )
 }
