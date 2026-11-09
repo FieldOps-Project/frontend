@@ -40,6 +40,12 @@ describe('fieldErrorsFor', () => {
     expect(fieldErrorsFor(error)).toEqual({ title: 'Já existe um modelo com este título.' })
   })
 
+  it('leva a recusa das opcoes da escolha unica para o campo de opcoes', () => {
+    const error = new ApiError({ status: 400, code: 'TEMPLATE_ITEM_OPTIONS_DUPLICATED', message: 'dup' })
+
+    expect(fieldErrorsFor(error)).toEqual({ options: 'As opções da escolha única não podem se repetir.' })
+  })
+
   it('traduz as mensagens de validacao por campo', () => {
     const error = new ApiError({
       status: 400,
