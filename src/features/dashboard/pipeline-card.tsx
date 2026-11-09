@@ -1,10 +1,9 @@
 import { MdOutlineAnalytics } from 'react-icons/md'
 
 import { PipelineTile } from '@/features/dashboard/pipeline-tile'
+import { DASHBOARD_CARD } from '@/features/dashboard/styles'
 import { activeTotal } from '@/lib/domain/dashboard'
 import { INSPECTION_STATUSES, type InspectionStatus } from '@/lib/domain/inspection'
-
-export const DASHBOARD_CARD = 'rounded-lg border border-neutral-300 bg-neutral-0'
 
 const NUMBER = new Intl.NumberFormat('pt-BR')
 
