@@ -13,7 +13,7 @@ export type NewTemplateErrors = Partial<Record<NewTemplateField, string>>
 export type NewTemplateValues = Partial<Record<NewTemplateField, string>>
 
 /** Ordem dos campos na tela, para levar o foco ao primeiro invalido. */
-export const NEW_TEMPLATE_FIELD_ORDER: readonly NewTemplateField[] = ['title', 'description', 'category']
+export const NEW_TEMPLATE_FIELD_ORDER: readonly NewTemplateField[] = ['title', 'category', 'description']
 
 function clean(value: string | undefined): string {
   return value?.trim() ?? ''

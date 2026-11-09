@@ -9,15 +9,15 @@ export default async function NewTemplatePage() {
   const categories = await loadTemplateCategories()
 
   return (
-    <div className="flex max-w-3xl flex-col gap-8">
-      <header className="flex flex-col gap-2 border-b border-neutral-200 pb-6">
-        <h1 className="text-4xl font-semibold tracking-tight text-neutral-950">Novo Modelo</h1>
-        <p className="text-lg text-neutral-700">
+    <div className="flex flex-col gap-6">
+      <header className="flex flex-col gap-1.5">
+        <h1 className="text-3xl font-semibold tracking-tight text-neutral-950">Novo Modelo</h1>
+        <p className="text-base text-neutral-700">
           O modelo nasce como rascunho. Depois de criado, você monta as seções e os itens do checklist.
         </p>
       </header>
 
-      <section className="rounded-card border border-neutral-200 bg-neutral-0 p-6 sm:p-8">
+      <section className="rounded-card border border-neutral-200 bg-neutral-0 p-5 sm:p-6">
         <NewTemplateForm categories={categories} />
       </section>
     </div>

@@ -69,25 +69,40 @@ export function NewTemplateForm({ categories }: { categories: readonly string[] 
   }
 
   return (
-    <form ref={formRef} action={action} onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
+    <form ref={formRef} action={action} onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
       {!clientErrors && <FormAlert state={state} />}
 
-      <TextField
-        name="title"
-        label="Título do modelo"
-        required
-        maxLength={TEMPLATE_LIMITS.title}
-        placeholder="Ex.: Inspeção de Máquinas Pesadas"
-        defaultValue={valueOf(state, 'title', '')}
-        onChange={() => clearError('title')}
-        error={errorFor('title')}
-      />
+      <div className="grid gap-5 lg:grid-cols-2">
+        <TextField
+          name="title"
+          label="Título do modelo"
+          required
+          maxLength={TEMPLATE_LIMITS.title}
+          placeholder="Ex.: Inspeção de Máquinas Pesadas"
+          defaultValue={valueOf(state, 'title', '')}
+          onChange={() => clearError('title')}
+          error={errorFor('title')}
+        />
+        <TextField
+          name="category"
+          label="Categoria"
+          required
+          list="template-categories"
+          autoComplete="off"
+          maxLength={TEMPLATE_LIMITS.category}
+          placeholder="Ex.: Equipamentos"
+          hint={categories.length > 0 ? 'Escolha uma categoria existente ou digite uma nova.' : undefined}
+          defaultValue={valueOf(state, 'category', '')}
+          onChange={() => clearError('category')}
+          error={errorFor('category')}
+        />
+      </div>
 
       <TextAreaField
         name="description"
         label="Descrição"
         labelNote="(opcional)"
-        rows={4}
+        rows={3}
         maxLength={TEMPLATE_LIMITS.description}
         placeholder="Para que serve este checklist e onde ele é aplicado."
         defaultValue={valueOf(state, 'description', '')}
@@ -95,26 +110,13 @@ export function NewTemplateForm({ categories }: { categories: readonly string[] 
         error={errorFor('description')}
       />
 
-      <TextField
-        name="category"
-        label="Categoria"
-        required
-        list="template-categories"
-        autoComplete="off"
-        maxLength={TEMPLATE_LIMITS.category}
-        placeholder="Ex.: Equipamentos"
-        hint={categories.length > 0 ? 'Escolha uma categoria existente ou digite uma nova.' : undefined}
-        defaultValue={valueOf(state, 'category', '')}
-        onChange={() => clearError('category')}
-        error={errorFor('category')}
-      />
       <datalist id="template-categories">
         {categories.map((category) => (
           <option key={category} value={category} />
         ))}
       </datalist>
 
-      <div className="flex flex-wrap items-center justify-end gap-6 border-t border-neutral-200 pt-6">
+      <div className="flex flex-wrap items-center justify-end gap-6 border-t border-neutral-200 pt-5">
         <Link href="/inspection-templates" className="text-sm font-medium text-brand-700 hover:text-brand-800 hover:underline">
           Cancelar
         </Link>
