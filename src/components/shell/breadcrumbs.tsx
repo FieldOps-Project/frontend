@@ -30,6 +30,7 @@ const IDENTIFIER = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 /** Passos com nome proprio dentro de uma area, como a criacao de inspecao. */
 const PATH_LABELS: Record<string, string> = {
   'inspections/new': 'Nova inspeção',
+  'inspection-templates/new': 'Novo modelo',
 }
 
 function labelFor(segment: string, parent?: string): string {
