@@ -1,9 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { resetDemoTemplates } from '@/features/templates/template-demo-store'
-import { loadTemplateCategories, loadTemplatePage } from '@/features/templates/templates-data'
+import { demoTemplateId, resetDemoTemplates } from '@/features/templates/template-demo-store'
+import { resetDemoDrafts } from '@/features/templates/template-draft-demo-store'
+import {
+  loadTemplateCategories,
+  loadTemplateDetail,
+  loadTemplatePage,
+  loadTemplateVersions,
+} from '@/features/templates/templates-data'
 
 vi.mock('server-only', () => ({}))
+vi.mock('next/navigation', () => ({
+  notFound: () => {
+    throw new Error('NOT_FOUND')
+  },
+}))
 
 const load = vi.fn()
 vi.mock('@/lib/dal', () => ({ load: (path: string, query: unknown) => load(path, query) }))
@@ -56,5 +67,38 @@ describe('modelos com a API', () => {
   it('tira as categorias dos modelos cadastrados, sem repetir', async () => {
     load.mockResolvedValueOnce({ content: [{ category: 'B' }, { category: 'A' }, { category: 'B' }] })
     await expect(loadTemplateCategories()).resolves.toEqual(['A', 'B'])
+  })
+})
+
+describe('construtor', () => {
+  const MACHINES = demoTemplateId(4)
+
+  it('em desenvolvimento junta o modelo ao rascunho e lista as versoes', async () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'development')
+    resetDemoTemplates()
+    resetDemoDrafts()
+
+    const detail = await loadTemplateDetail(MACHINES)
+    expect(detail.title).toBe('Inspeção de Máquinas Pesadas')
+    expect(detail.sections).toHaveLength(3)
+    await expect(loadTemplateVersions(MACHINES)).resolves.toHaveLength(2)
+    expect(load).not.toHaveBeenCalled()
+  })
+
+  it('responde 404 para identificador malformado ou desconhecido', async () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'development')
+    await expect(loadTemplateDetail('nao-e-uuid')).rejects.toThrow('NOT_FOUND')
+    await expect(loadTemplateDetail('f0000000-0000-4000-8000-000000000000')).rejects.toThrow('NOT_FOUND')
+  })
+
+  it('com a API le o detalhe e as versoes do modelo', async () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'production')
+    load.mockResolvedValue([])
+
+    await loadTemplateDetail(MACHINES)
+    await loadTemplateVersions(MACHINES)
+
+    expect(load).toHaveBeenCalledWith(`/inspection-templates/${MACHINES}`, undefined)
+    expect(load).toHaveBeenCalledWith(`/inspection-templates/${MACHINES}/versions`, undefined)
   })
 })

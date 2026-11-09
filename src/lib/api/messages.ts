@@ -27,6 +27,15 @@ const CODE_MESSAGES: Record<string, string> = {
   INVALID_SORT: 'Ordenação inválida.',
   TEMPLATE_TITLE_ALREADY_EXISTS: 'Já existe um modelo com este título.',
   TEMPLATE_NOT_PUBLISHED: 'Publique o modelo antes de mudar a situação dele.',
+  TEMPLATE_ITEM_RESPONSE_TYPE_REQUIRED: 'Escolha o tipo de resposta do item.',
+  TEMPLATE_ITEM_FAILURE_RULES_NOT_ALLOWED:
+    'Observação e evidência na falha só valem para itens de conformidade ou sim/não.',
+  TEMPLATE_ITEM_OPTIONS_NOT_ALLOWED: 'Opções só valem para itens de escolha única.',
+  TEMPLATE_ITEM_OPTIONS_REQUIRED: 'Informe ao menos 2 opções, sem deixar opção em branco.',
+  TEMPLATE_ITEM_OPTIONS_DUPLICATED: 'As opções da escolha única não podem se repetir.',
+  TEMPLATE_REORDER_MISMATCH: 'A ordem mudou em outra tela. Recarregue a página e tente de novo.',
+  TEMPLATE_VERSION_PUBLISHED: 'Esta versão já foi publicada e não pode ser alterada.',
+  DATA_CONFLICT: 'Outra alteração foi salva ao mesmo tempo. Recarregue a página e tente de novo.',
   [NETWORK_ERROR_CODE]: 'Não foi possível falar com a API. Verifique se ela está no ar e tente de novo.',
   INTERNAL_ERROR: 'A API encontrou um erro inesperado. Tente novamente em instantes.',
 }
@@ -45,6 +54,10 @@ const CODE_FIELDS: Record<string, string> = {
   INVALID_CLIENT_DOCUMENT: 'document',
   INVALID_COORDINATES: 'latitude',
   TEMPLATE_TITLE_ALREADY_EXISTS: 'title',
+  TEMPLATE_ITEM_RESPONSE_TYPE_REQUIRED: 'responseType',
+  TEMPLATE_ITEM_OPTIONS_REQUIRED: 'options',
+  TEMPLATE_ITEM_OPTIONS_DUPLICATED: 'options',
+  TEMPLATE_ITEM_OPTIONS_NOT_ALLOWED: 'options',
 }
 
 /** Mensagens do Bean Validation, que a API devolve em ingles. */

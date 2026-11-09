@@ -94,14 +94,21 @@ O `/inspection-templates` segue a issue #13 e o documento 14.8: busca, filtros p
 por categoria, e a situação de cada modelo com a versão vigente ("Publicado · versão 2").
 
 - **Novo modelo** (`/inspection-templates/new`): título e categoria obrigatórios (RN-015), com
-  as categorias já usadas como sugestão. Ao criar, abre o construtor
-  (`/inspection-templates/{id}/edit`), que por enquanto é provisório e chega com a issue #14.
+  as categorias já usadas como sugestão. Ao criar, abre o construtor.
+- **Construtor** (`/inspection-templates/{id}/edit`, issue #14), no desenho do Stitch: painel com
+  título, descrição, categoria e histórico de versões; seções numeradas com os itens. Cada item
+  tem pergunta, tipo de resposta (os 7 do MVP), instrução, obrigatoriedade e, em conformidade e
+  sim/não, exigência de observação e evidência na falha; escolha única edita as opções. Seções e
+  itens são criados, editados, excluídos e reordenados (botões ou arrastando pela alça), e a
+  reordenação envia a lista completa numa chamada só. O construtor sempre edita o rascunho;
+  publicar é a issue #15.
 - **Inativar e reativar** só para modelos já publicados, como a API exige. A confirmação avisa
   que as inspeções existentes não são afetadas (RN-022).
-- **Contrato** em `lib/domain/inspection-template.ts`, igual ao `InspectionTemplateResponse`
-  da API (`GET/POST /inspection-templates` e `PATCH /inspection-templates/{id}/status`).
+- **Contrato** em `lib/domain/inspection-template.ts` e `lib/domain/template-builder.ts`, igual
+  às respostas da API (`/inspection-templates`, `/sections`, `/items`, `/versions`).
 - **Demonstração com memória** em `NEXT_PUBLIC_APP_ENV=development`
-  (`features/templates/template-demo-store.ts`): o que for criado ou alterado fica guardado até
+  (`features/templates/template-demo-store.ts` e `template-draft-demo-store.ts`, com o modelo
+  "Inspeção de Máquinas Pesadas" igual ao do Stitch): o que for criado ou alterado fica guardado até
   o servidor de desenvolvimento reiniciar. O único ponto de troca para a API é
   `features/templates/templates-data.ts`.
 
