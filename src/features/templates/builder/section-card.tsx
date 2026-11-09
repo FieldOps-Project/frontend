@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useState, useTransition, type FormEvent, type ReactNode } from 'react'
-import { MdDeleteOutline, MdDragIndicator, MdOutlineEdit } from 'react-icons/md'
+import { MdAdd, MdDeleteOutline, MdDragIndicator, MdOutlineEdit } from 'react-icons/md'
 
 import { useConfirm } from '@/components/ui/confirm-dialog'
 import { useToast } from '@/components/ui/toast'
@@ -12,6 +12,11 @@ import { ItemRow } from '@/features/templates/builder/item-row'
 import { ICON_BUTTON } from '@/features/templates/builder/styles'
 import { validateSection } from '@/features/templates/builder-validation'
 import { BUILDER_LIMITS, itemNumber, type TemplateSection } from '@/lib/domain/template-builder'
+
+/** Chave do editor de item novo de uma secao. */
+function newItemKey(sectionId: string): string {
+  return `new:${sectionId}`
+}
 
 /**
  * Secao do checklist: numero, titulo, acoes e os itens em ordem.
@@ -32,7 +37,7 @@ export function SectionCard({
   section: TemplateSection
   /** Acoes extras do cabecalho, como mover a secao. */
   actions?: ReactNode
-  /** Item aberto para edicao; um por vez no construtor inteiro. */
+  /** Item aberto para edicao, ou `new:<secao>` para item novo; um por vez no construtor inteiro. */
   editingItemId: string | null
   onEditItem: (itemId: string) => void
   onEditorDone: (saved: boolean) => void
@@ -164,9 +169,11 @@ export function SectionCard({
         )}
       </header>
 
-      {section.items.length === 0 ? (
+      {section.items.length === 0 && editingItemId !== newItemKey(section.id) && (
         <p className="px-6 py-6 text-sm text-neutral-500">Nenhum item nesta seção ainda.</p>
-      ) : (
+      )}
+
+      {section.items.length > 0 && (
         <ol className="divide-y divide-neutral-200">
           {section.items.map((item) => (
             <li key={item.id}>
@@ -184,6 +191,29 @@ export function SectionCard({
             </li>
           ))}
         </ol>
+      )}
+
+      {editingItemId === newItemKey(section.id) ? (
+        <div className="border-t border-neutral-200">
+          <ItemEditor
+            templateId={templateId}
+            sectionId={section.id}
+            number={itemNumber(section.displayOrder, section.items.length + 1)}
+            onDone={onEditorDone}
+          />
+        </div>
+      ) : (
+        <div className="flex justify-center border-t border-neutral-200 px-4 py-4">
+          <button
+            type="button"
+            onClick={() => onEditItem(newItemKey(section.id))}
+            aria-label={`Adicionar item à seção ${section.displayOrder}`}
+            className="inline-flex items-center gap-2 rounded-lg border border-dashed border-brand-400 px-6 py-2 text-[15px] font-medium text-brand-700 transition-colors hover:bg-brand-50"
+          >
+            <MdAdd aria-hidden className="size-5" />
+            Adicionar Item
+          </button>
+        </div>
       )}
     </section>
   )
