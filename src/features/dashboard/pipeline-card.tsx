@@ -21,7 +21,7 @@ export function PipelineCard({ counts }: { counts: Readonly<Record<InspectionSta
 
       <ul className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-5">
         {INSPECTION_STATUSES.map((status) => (
-          <li key={status}>
+          <li key={status} className="min-w-0">
             <PipelineTile status={status} count={counts[status] ?? 0} />
           </li>
         ))}

@@ -28,9 +28,9 @@ export function PipelineTile({ status, count }: { status: InspectionStatus; coun
     <Link
       href={`/inspections?status=${status}`}
       aria-label={`${label}: ${NUMBER.format(count)} ${count === 1 ? 'inspeção' : 'inspeções'}`}
-      className={`flex min-h-[5.75rem] flex-col justify-between gap-2 rounded-md border px-4 py-3.5 transition-colors ${tone.box}`}
+      className={`flex h-full min-h-[5.75rem] flex-col justify-between gap-2 rounded-md border px-4 py-3.5 transition-colors ${tone.box}`}
     >
-      <span className={`text-[13px] font-medium tracking-wide uppercase ${tone.text}`}>{label}</span>
+      <span className={`text-[13px] leading-snug font-medium tracking-wide uppercase ${tone.text}`}>{label}</span>
       <span className={`text-[26px] leading-none font-semibold tabular-nums ${tone.text}`}>{NUMBER.format(count)}</span>
     </Link>
   )
