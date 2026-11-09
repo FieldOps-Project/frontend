@@ -1,8 +1,10 @@
 import 'server-only'
 
-import { demoTemplateId } from '@/features/templates/template-demo-store'
+import { DemoTemplateError, demoTemplateId, touchDemoTemplate } from '@/features/templates/template-demo-store'
 import type {
+  ItemInput,
   ResponseType,
+  SectionInput,
   TemplateItem,
   TemplateSection,
   TemplateVersionSummary,
@@ -221,4 +223,127 @@ export function demoDraftSections(templateId: string): readonly TemplateSection[
 /** Versoes publicadas, mais nova primeiro (como `GET /inspection-templates/{id}/versions`). */
 export function demoTemplateVersions(templateId: string): readonly TemplateVersionSummary[] {
   return (draftState().versions.get(templateId) ?? []).toSorted((a, b) => b.versionNumber - a.versionNumber)
+}
+
+/*
+ * Operacoes do rascunho, com as regras de ordem da API (RN-017): posicao
+ * informada insere e empurra os seguintes, sem posicao vai para o fim, excluir
+ * renumera de 1 a n e reordenar exige a lista completa.
+ */
+
+function sectionsOf(templateId: string): TemplateSection[] {
+  return [...(draftState().drafts.get(templateId) ?? [])].sort((a, b) => a.displayOrder - b.displayOrder)
+}
+
+function save(templateId: string, sections: readonly TemplateSection[]): void {
+  draftState().drafts.set(
+    templateId,
+    sections.map((section, index) => ({
+      ...section,
+      displayOrder: index + 1,
+      items: section.items.map((item, itemIndex) => ({ ...item, sectionId: section.id, displayOrder: itemIndex + 1 })),
+    })),
+  )
+  touchDemoTemplate(templateId)
+}
+
+function insertAt<T>(list: readonly T[], value: T, displayOrder: number | undefined): T[] {
+  const index = displayOrder === undefined ? list.length : Math.min(Math.max(displayOrder - 1, 0), list.length)
+  return [...list.slice(0, index), value, ...list.slice(index)]
+}
+
+function sameMembers(ids: readonly string[], expected: readonly string[]): boolean {
+  return ids.length === expected.length && new Set(ids).size === ids.length && expected.every((id) => ids.includes(id))
+}
+
+function findSection(sections: readonly TemplateSection[], id: string): TemplateSection {
+  const section = sections.find((candidate) => candidate.id === id)
+  if (!section) throw new DemoTemplateError('Seção não encontrada. Ela pode ter sido removida.')
+  return section
+}
+
+export function createDemoSection(templateId: string, input: SectionInput, displayOrder?: number): TemplateSection {
+  const created: TemplateSection = { id: crypto.randomUUID(), ...input, displayOrder: 0, items: [] }
+  save(templateId, insertAt(sectionsOf(templateId), created, displayOrder))
+  return findSection(demoDraftSections(templateId), created.id)
+}
+
+export function updateDemoSection(templateId: string, id: string, input: SectionInput): TemplateSection {
+  const sections = sectionsOf(templateId)
+  findSection(sections, id)
+  save(templateId, sections.map((section) => (section.id === id ? { ...section, ...input } : section)))
+  return findSection(demoDraftSections(templateId), id)
+}
+
+export function deleteDemoSection(templateId: string, id: string): void {
+  const sections = sectionsOf(templateId)
+  findSection(sections, id)
+  save(templateId, sections.filter((section) => section.id !== id))
+}
+
+export function reorderDemoSections(templateId: string, ids: readonly string[]): readonly TemplateSection[] {
+  const sections = sectionsOf(templateId)
+  if (!sameMembers(ids, sections.map((section) => section.id))) {
+    throw new DemoTemplateError('A nova ordem precisa conter todas as seções, sem repetir.')
+  }
+  save(templateId, ids.map((id) => findSection(sections, id)))
+  return demoDraftSections(templateId)
+}
+
+function itemLocation(sections: readonly TemplateSection[], itemId: string): TemplateSection {
+  const section = sections.find((candidate) => candidate.items.some((item) => item.id === itemId))
+  if (!section) throw new DemoTemplateError('Item não encontrado. Ele pode ter sido removido.')
+  return section
+}
+
+function findItem(templateId: string, itemId: string): TemplateItem {
+  const section = itemLocation(demoDraftSections(templateId), itemId)
+  return section.items.find((item) => item.id === itemId) as TemplateItem
+}
+
+export function createDemoItem(templateId: string, sectionId: string, input: ItemInput, displayOrder?: number): TemplateItem {
+  const sections = sectionsOf(templateId)
+  const section = findSection(sections, sectionId)
+  const created: TemplateItem = { id: crypto.randomUUID(), sectionId, code: null, ...input, displayOrder: 0 }
+  const items = insertAt([...section.items].sort((a, b) => a.displayOrder - b.displayOrder), created, displayOrder)
+  save(templateId, sections.map((candidate) => (candidate.id === sectionId ? { ...candidate, items } : candidate)))
+  return findItem(templateId, created.id)
+}
+
+export function updateDemoItem(templateId: string, itemId: string, input: ItemInput): TemplateItem {
+  const sections = sectionsOf(templateId)
+  const owner = itemLocation(sections, itemId)
+  save(
+    templateId,
+    sections.map((section) =>
+      section.id === owner.id
+        ? { ...section, items: section.items.map((item) => (item.id === itemId ? { ...item, ...input } : item)) }
+        : section,
+    ),
+  )
+  return findItem(templateId, itemId)
+}
+
+export function deleteDemoItem(templateId: string, itemId: string): void {
+  const sections = sectionsOf(templateId)
+  const owner = itemLocation(sections, itemId)
+  save(
+    templateId,
+    sections.map((section) =>
+      section.id === owner.id
+        ? { ...section, items: [...section.items].sort((a, b) => a.displayOrder - b.displayOrder).filter((item) => item.id !== itemId) }
+        : section,
+    ),
+  )
+}
+
+export function reorderDemoItems(templateId: string, sectionId: string, ids: readonly string[]): TemplateSection {
+  const sections = sectionsOf(templateId)
+  const section = findSection(sections, sectionId)
+  if (!sameMembers(ids, section.items.map((item) => item.id))) {
+    throw new DemoTemplateError('A nova ordem precisa conter todos os itens da seção, sem repetir.')
+  }
+  const items = ids.map((id) => section.items.find((item) => item.id === id) as TemplateItem)
+  save(templateId, sections.map((candidate) => (candidate.id === sectionId ? { ...candidate, items } : candidate)))
+  return findSection(demoDraftSections(templateId), sectionId)
 }
