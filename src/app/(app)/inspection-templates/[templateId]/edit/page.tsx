@@ -46,7 +46,7 @@ export default async function TemplateBuilderPage(props: PageProps<'/inspection-
 
         <div className="flex min-w-0 flex-col gap-6">
           {template.sections.map((section) => (
-            <SectionCard key={section.id} section={section} />
+            <SectionCard key={section.id} templateId={template.id} section={section} />
           ))}
           {template.sections.length === 0 && (
             <p className="rounded-lg border border-neutral-300 bg-neutral-0 px-6 py-8 text-center text-sm text-neutral-600">
