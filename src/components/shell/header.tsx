@@ -1,9 +1,12 @@
+import Link from 'next/link'
 import { IoLogOutOutline } from 'react-icons/io5'
+import { MdHelpOutline } from 'react-icons/md'
 
 import { HeaderSearch } from '@/components/shell/header-search'
 import { EnvironmentBadge } from '@/components/shell/environment-badge'
 import { MobileNav } from '@/components/shell/mobile-nav'
 import { NotificationsButton } from '@/components/shell/notifications-button'
+import { HEADER_ICON_BUTTON } from '@/components/ui/styles'
 import { signOut } from '@/features/auth/actions'
 import { USER_ROLE_LABELS } from '@/lib/domain/user'
 import type { NavigationItem } from '@/lib/navigation'
@@ -47,6 +50,12 @@ export function Header({
       <div className="flex-1" />
 
       <NotificationsButton />
+
+      <Link href="/support" aria-label="Ajuda" title="Ajuda" className={`${HEADER_ICON_BUTTON} hidden sm:grid`}>
+        <MdHelpOutline aria-hidden className="size-6" />
+      </Link>
+
+      <span aria-hidden className="mx-2 hidden h-8 w-px bg-neutral-200 md:block" />
 
       <EnvironmentBadge environment={environment} />
 
