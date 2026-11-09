@@ -28,3 +28,7 @@ export const INPUT_BARE =
   'min-w-0 flex-1 bg-transparent py-2 text-neutral-900 outline-none placeholder:text-neutral-400 focus-visible:outline-none disabled:text-neutral-500'
 
 export const CARD = 'rounded-card border border-neutral-200 bg-neutral-0'
+
+/** Botao so de icone do cabecalho (notificacoes, ajuda). */
+export const HEADER_ICON_BUTTON =
+  'grid size-10 place-items-center rounded-full text-neutral-800 transition-colors hover:bg-neutral-100 hover:text-neutral-950'

@@ -3,6 +3,7 @@ import { IoLogOutOutline } from 'react-icons/io5'
 import { HeaderSearch } from '@/components/shell/header-search'
 import { EnvironmentBadge } from '@/components/shell/environment-badge'
 import { MobileNav } from '@/components/shell/mobile-nav'
+import { NotificationsButton } from '@/components/shell/notifications-button'
 import { signOut } from '@/features/auth/actions'
 import { USER_ROLE_LABELS } from '@/lib/domain/user'
 import type { NavigationItem } from '@/lib/navigation'
@@ -44,6 +45,8 @@ export function Header({
       <HeaderSearch />
 
       <div className="flex-1" />
+
+      <NotificationsButton />
 
       <EnvironmentBadge environment={environment} />
 
