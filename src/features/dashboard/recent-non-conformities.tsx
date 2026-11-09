@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { MdArrowForward, MdErrorOutline } from 'react-icons/md'
+import { MdArrowForward, MdChevronRight, MdErrorOutline, MdOutlineLocationOn } from 'react-icons/md'
 
 import { SeverityBadge } from '@/features/dashboard/severity-badge'
 import { DASHBOARD_CARD } from '@/features/dashboard/styles'
@@ -20,6 +20,9 @@ function openLabel(item: RecentNonConformity): string {
  * Nao conformidades mais recentes, com a criticidade a frente (documento 14.5).
  * A seta abre a revisao da inspecao em que a nao conformidade foi registrada,
  * onde estao o item, a resposta e as evidencias.
+ *
+ * Abaixo de 768px a tabela vira lista de cartoes: cinco colunas em 360px so
+ * caberiam com rolagem lateral, e a linha inteira vira o alvo do toque.
  */
 export function RecentNonConformities({ items }: { items: readonly RecentNonConformity[] }) {
   return (
@@ -37,7 +40,32 @@ export function RecentNonConformities({ items }: { items: readonly RecentNonConf
         </Link>
       </header>
 
-      <table className="w-full table-fixed">
+      <ul className="divide-y divide-neutral-200 md:hidden">
+        {items.map((item) => (
+          <li key={item.id}>
+            <Link
+              href={reviewHref(item)}
+              aria-label={openLabel(item)}
+              className="flex items-center gap-3 px-4 py-4 transition-colors hover:bg-neutral-50 sm:px-6"
+            >
+              <span className="flex min-w-0 flex-1 flex-col gap-2">
+                <span className="flex flex-wrap items-center justify-between gap-2">
+                  <SeverityBadge severity={item.severity} />
+                  <span className="text-sm text-neutral-600">{formatRecentDate(item.reportedAt)}</span>
+                </span>
+                <span className="text-[15px] text-neutral-950">{item.description}</span>
+                <span className="flex items-center gap-1 text-sm text-neutral-600">
+                  <MdOutlineLocationOn aria-hidden className="size-4 shrink-0" />
+                  <span className="truncate">{item.siteName}</span>
+                </span>
+              </span>
+              <MdChevronRight aria-hidden className="size-6 shrink-0 text-neutral-400" />
+            </Link>
+          </li>
+        ))}
+      </ul>
+
+      <table className="hidden w-full table-fixed md:table">
         <thead className="border-b border-neutral-300">
           <tr>
             <th scope="col" className={`${HEAD} w-[11rem]`}>
