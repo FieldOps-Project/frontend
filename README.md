@@ -88,6 +88,23 @@ recentes e os atalhos **Revisar Pendências** e **Criar Inspeção**.
 - Em outros ambientes, enquanto a API não publica esses endpoints, só o bloco afetado avisa
   que está indisponível; o restante da tela continua funcionando.
 
+## Modelos de inspeção
+
+O `/inspection-templates` segue a issue #13 e o documento 14.8: busca, filtros por situação e
+por categoria, e a situação de cada modelo com a versão vigente ("Publicado · versão 2").
+
+- **Novo modelo** (`/inspection-templates/new`): título e categoria obrigatórios (RN-015), com
+  as categorias já usadas como sugestão. Ao criar, abre o construtor
+  (`/inspection-templates/{id}/edit`), que por enquanto é provisório e chega com a issue #14.
+- **Inativar e reativar** só para modelos já publicados, como a API exige. A confirmação avisa
+  que as inspeções existentes não são afetadas (RN-022).
+- **Contrato** em `lib/domain/inspection-template.ts`, igual ao `InspectionTemplateResponse`
+  da API (`GET/POST /inspection-templates` e `PATCH /inspection-templates/{id}/status`).
+- **Demonstração com memória** em `NEXT_PUBLIC_APP_ENV=development`
+  (`features/templates/template-demo-store.ts`): o que for criado ou alterado fica guardado até
+  o servidor de desenvolvimento reiniciar. O único ponto de troca para a API é
+  `features/templates/templates-data.ts`.
+
 O cabeçalho do painel tem a busca em todas as áreas (`/search`), notificações, ajuda
 (`/support`), o ambiente, o perfil e o menu da conta (configurações e sair).
 
