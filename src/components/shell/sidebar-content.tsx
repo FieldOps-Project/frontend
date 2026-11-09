@@ -1,9 +1,10 @@
 import { NavList } from '@/components/shell/nav-list'
+import { SidebarFooter } from '@/components/shell/sidebar-footer'
 import { BrandMark } from '@/components/ui/brand-mark'
 import type { NavigationItem } from '@/lib/navigation'
 
 /**
- * Conteudo do menu: marca e areas do painel. E o mesmo no menu fixo e na gaveta
+ * Conteudo do menu: marca, areas do painel e rodape. E o mesmo no menu fixo e na gaveta
  * do celular, para que a navegacao nao mude de cara conforme a largura.
  */
 export function SidebarContent({
@@ -26,6 +27,8 @@ export function SidebarContent({
       <nav aria-label="Áreas do painel" className="flex-1 overflow-y-auto px-2.5 py-5">
         <NavList items={items} onNavigate={onNavigate} />
       </nav>
+
+      <SidebarFooter items={items} onNavigate={onNavigate} />
     </>
   )
 }
