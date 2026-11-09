@@ -1,8 +1,8 @@
 import { FlashNotice } from '@/components/ui/notice'
 import { BuilderToolbar } from '@/features/templates/builder/builder-toolbar'
 import { SectionCard } from '@/features/templates/builder/section-card'
-import { TemplateStatusBadge } from '@/features/templates/template-status-badge'
-import { loadTemplateDetail } from '@/features/templates/templates-data'
+import { TemplateConfigPanel } from '@/features/templates/builder/template-config-panel'
+import { loadTemplateCategories, loadTemplateDetail } from '@/features/templates/templates-data'
 import { requireRole } from '@/lib/dal'
 import { MANAGER_ROLES } from '@/lib/domain/user'
 import { param } from '@/lib/search-params'
@@ -17,7 +17,7 @@ import { param } from '@/lib/search-params'
 export default async function TemplateBuilderPage(props: PageProps<'/inspection-templates/[templateId]/edit'>) {
   await requireRole(MANAGER_ROLES)
   const { templateId } = await props.params
-  const template = await loadTemplateDetail(templateId)
+  const [template, categories] = await Promise.all([loadTemplateDetail(templateId), loadTemplateCategories()])
 
   return (
     <div className="flex flex-col gap-6">
@@ -30,21 +30,8 @@ export default async function TemplateBuilderPage(props: PageProps<'/inspection-
           aria-label="Configuração do modelo"
           className="flex flex-col overflow-hidden rounded-lg border border-neutral-300 bg-neutral-0 lg:sticky lg:top-6"
         >
-          <div className="flex flex-col gap-4 p-5 sm:p-6">
-            <div className="flex flex-wrap items-center gap-3">
-              <h2 className="text-lg font-semibold text-neutral-950">Configuração do Modelo</h2>
-              <TemplateStatusBadge template={template} />
-            </div>
-            <dl className="flex flex-col gap-3 text-sm">
-              <div>
-                <dt className="font-medium text-neutral-700">Título do Modelo</dt>
-                <dd className="text-neutral-950">{template.title}</dd>
-              </div>
-              <div>
-                <dt className="font-medium text-neutral-700">Categoria</dt>
-                <dd className="text-neutral-950">{template.category}</dd>
-              </div>
-            </dl>
+          <div className="p-5 sm:p-6">
+            <TemplateConfigPanel template={template} categories={categories} />
           </div>
         </aside>
 
