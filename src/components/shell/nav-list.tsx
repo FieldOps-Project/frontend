@@ -51,7 +51,7 @@ export function NavList({
   const pathname = usePathname()
 
   return (
-    <ul className="flex flex-col gap-0.5">
+    <ul className="flex flex-col gap-1">
       {items.map((item) => {
         const active = isActive(pathname, item.href)
         const Icon = ICONS[item.href]
@@ -63,18 +63,18 @@ export function NavList({
               onClick={onNavigate}
               aria-current={active ? 'page' : undefined}
               title={collapsed ? item.label : undefined}
-              className={`group flex items-center gap-3 rounded-field px-3 py-2.5 text-sm transition-colors ${
-                collapsed ? 'justify-center' : ''
+              className={`group flex items-center gap-4 border-l-[3px] px-5 py-3.5 text-[15px] transition-colors ${
+                collapsed ? 'justify-center px-0' : ''
               } ${
                 active
-                  ? 'bg-brand-50 font-medium text-brand-700'
-                  : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+                  ? 'rounded-r-md border-brand-700 bg-neutral-100 font-medium text-brand-700'
+                  : 'border-transparent text-neutral-800 hover:bg-neutral-50 hover:text-neutral-950'
               }`}
             >
               {Icon && (
                 <Icon
                   aria-hidden
-                  className={`size-[18px] shrink-0 ${active ? 'text-brand-600' : 'text-neutral-400 group-hover:text-neutral-600'}`}
+                  className={`size-[22px] shrink-0 ${active ? 'text-brand-700' : 'text-neutral-800 group-hover:text-neutral-950'}`}
                 />
               )}
               {!collapsed && <span className="truncate">{item.label}</span>}
