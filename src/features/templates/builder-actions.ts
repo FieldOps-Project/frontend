@@ -9,6 +9,8 @@ import {
   createDemoSection,
   deleteDemoItem,
   deleteDemoSection,
+  reorderDemoItems,
+  reorderDemoSections,
   updateDemoItem,
   updateDemoSection,
 } from '@/features/templates/template-draft-demo-store'
@@ -207,6 +209,48 @@ export async function deleteItem(id: string, itemId: string): Promise<BuilderRes
     if (usesDemoTemplates()) deleteDemoItem(templateId, item)
     else await send(`/inspection-templates/${templateId}/items/${item}`, { method: 'DELETE' })
     return { ok: true, message: 'Item excluído.', data: undefined }
+  } catch (error) {
+    return rejected(error)
+  }
+}
+
+/*
+ * Reordenacao em lote: a lista completa na nova ordem, numa chamada so (issue
+ * #14). Uma chamada por item deixaria a ordem pela metade se a rede caisse no
+ * meio.
+ */
+
+/** Nova ordem das secoes (`PUT /inspection-templates/{id}/sections/order`). */
+export async function reorderSections(id: string, sectionIds: readonly string[]): Promise<BuilderResult> {
+  await requireRole(MANAGER_ROLES)
+  const templateId = assertId(id)
+  const ids = sectionIds.map(assertId)
+
+  try {
+    if (usesDemoTemplates()) reorderDemoSections(templateId, ids)
+    else await send(`/inspection-templates/${templateId}/sections/order`, { method: 'PUT', body: { sectionIds: ids } })
+    return { ok: true, message: 'Ordem das seções salva.', data: undefined }
+  } catch (error) {
+    return rejected(error)
+  }
+}
+
+/** Nova ordem dos itens da secao (`PUT /inspection-templates/{id}/sections/{sectionId}/items/order`). */
+export async function reorderItems(id: string, sectionId: string, itemIds: readonly string[]): Promise<BuilderResult> {
+  await requireRole(MANAGER_ROLES)
+  const templateId = assertId(id)
+  const section = assertId(sectionId)
+  const ids = itemIds.map(assertId)
+
+  try {
+    if (usesDemoTemplates()) reorderDemoItems(templateId, section, ids)
+    else {
+      await send(`/inspection-templates/${templateId}/sections/${section}/items/order`, {
+        method: 'PUT',
+        body: { itemIds: ids },
+      })
+    }
+    return { ok: true, message: 'Ordem dos itens salva.', data: undefined }
   } catch (error) {
     return rejected(error)
   }
