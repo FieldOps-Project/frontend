@@ -25,6 +25,8 @@ const CODE_MESSAGES: Record<string, string> = {
   INVALID_COORDINATES:
     'Coordenadas inválidas: informe latitude e longitude juntas, dentro dos limites permitidos.',
   INVALID_SORT: 'Ordenação inválida.',
+  TEMPLATE_TITLE_ALREADY_EXISTS: 'Já existe um modelo com este título.',
+  TEMPLATE_NOT_PUBLISHED: 'Publique o modelo antes de mudar a situação dele.',
   [NETWORK_ERROR_CODE]: 'Não foi possível falar com a API. Verifique se ela está no ar e tente de novo.',
   INTERNAL_ERROR: 'A API encontrou um erro inesperado. Tente novamente em instantes.',
 }
@@ -42,6 +44,7 @@ const CODE_FIELDS: Record<string, string> = {
   INSPECTION_SITE_INACTIVE: 'siteId',
   INVALID_CLIENT_DOCUMENT: 'document',
   INVALID_COORDINATES: 'latitude',
+  TEMPLATE_TITLE_ALREADY_EXISTS: 'title',
 }
 
 /** Mensagens do Bean Validation, que a API devolve em ingles. */

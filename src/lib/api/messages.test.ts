@@ -34,6 +34,12 @@ describe('fieldErrorsFor', () => {
     expect(fieldErrorsFor(error)).toEqual({ email: 'Este e-mail já está cadastrado.' })
   })
 
+  it('leva o 409 de titulo de modelo repetido para o campo de titulo', () => {
+    const error = new ApiError({ status: 409, code: 'TEMPLATE_TITLE_ALREADY_EXISTS', message: 'exists' })
+
+    expect(fieldErrorsFor(error)).toEqual({ title: 'Já existe um modelo com este título.' })
+  })
+
   it('traduz as mensagens de validacao por campo', () => {
     const error = new ApiError({
       status: 400,
