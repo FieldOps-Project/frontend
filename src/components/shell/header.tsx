@@ -3,7 +3,7 @@ import { IoLogOutOutline } from 'react-icons/io5'
 import { MdHelpOutline } from 'react-icons/md'
 
 import { HeaderSearch } from '@/components/shell/header-search'
-import { EnvironmentBadge } from '@/components/shell/environment-badge'
+import { EnvironmentLabel } from '@/components/shell/environment-label'
 import { MobileNav } from '@/components/shell/mobile-nav'
 import { NotificationsButton } from '@/components/shell/notifications-button'
 import { HEADER_ICON_BUTTON } from '@/components/ui/styles'
@@ -57,7 +57,7 @@ export function Header({
 
       <span aria-hidden className="mx-2 hidden h-8 w-px bg-neutral-200 md:block" />
 
-      <EnvironmentBadge environment={environment} />
+      <EnvironmentLabel environment={environment} />
 
       <div className="flex items-center gap-2.5">
         <span
