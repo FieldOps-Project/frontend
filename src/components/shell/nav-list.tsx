@@ -39,15 +39,7 @@ const ICONS: Record<string, IconType> = {
   '/audit': MdOutlineVerifiedUser,
 }
 
-export function NavList({
-  items,
-  collapsed = false,
-  onNavigate,
-}: {
-  items: readonly NavigationItem[]
-  collapsed?: boolean
-  onNavigate?: () => void
-}) {
+export function NavList({ items, onNavigate }: { items: readonly NavigationItem[]; onNavigate?: () => void }) {
   const pathname = usePathname()
 
   return (
@@ -62,10 +54,7 @@ export function NavList({
               href={item.href}
               onClick={onNavigate}
               aria-current={active ? 'page' : undefined}
-              title={collapsed ? item.label : undefined}
               className={`group flex items-center gap-4 border-l-[3px] px-5 py-3.5 text-[15px] transition-colors ${
-                collapsed ? 'justify-center px-0' : ''
-              } ${
                 active
                   ? 'rounded-r-md border-brand-700 bg-neutral-100 font-medium text-brand-700'
                   : 'border-transparent text-neutral-800 hover:bg-neutral-50 hover:text-neutral-950'
@@ -77,7 +66,7 @@ export function NavList({
                   className={`size-[22px] shrink-0 ${active ? 'text-brand-700' : 'text-neutral-800 group-hover:text-neutral-950'}`}
                 />
               )}
-              {!collapsed && <span className="truncate">{item.label}</span>}
+              <span className="truncate">{item.label}</span>
             </Link>
           </li>
         )
