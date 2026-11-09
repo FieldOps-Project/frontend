@@ -17,7 +17,8 @@ import type { InspectionTemplate, NewTemplateInput, TemplateFilters, TemplateSta
  */
 const DEMO_AUTHOR = 'a0000000-0000-4000-8000-000000000090'
 
-function id(n: number): string {
+/** Identificador do modelo de demonstracao numero `n` (1 a 6). */
+export function demoTemplateId(n: number): string {
   return `e0000000-0000-4000-8000-${String(n).padStart(12, '0')}`
 }
 
@@ -38,8 +39,8 @@ const SEEDS: readonly Seed[] = [
 function seed(): Map<string, InspectionTemplate> {
   return new Map(
     SEEDS.map(({ n, updatedAt, ...fields }) => [
-      id(n),
-      { id: id(n), ...fields, createdBy: DEMO_AUTHOR, createdAt: '2026-09-01T12:00:00Z', updatedAt, version: 0 },
+      demoTemplateId(n),
+      { id: demoTemplateId(n), ...fields, createdBy: DEMO_AUTHOR, createdAt: '2026-09-01T12:00:00Z', updatedAt, version: 0 },
     ]),
   )
 }
@@ -95,6 +96,12 @@ export function createDemoTemplate(input: NewTemplateInput, author: string, now:
   }
   store().set(created.id, created)
   return created
+}
+
+/** Registra uma alteracao no rascunho: o modelo sobe para o topo da lista. */
+export function touchDemoTemplate(templateId: string, now: Date = new Date()): void {
+  const current = store().get(templateId)
+  if (current) store().set(templateId, { ...current, updatedAt: now.toISOString(), version: current.version + 1 })
 }
 
 export class DemoTemplateError extends Error {}
