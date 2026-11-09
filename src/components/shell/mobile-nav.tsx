@@ -3,8 +3,7 @@
 import { IoCloseOutline, IoMenuOutline } from 'react-icons/io5'
 import { useEffect, useState } from 'react'
 
-import { NavList } from '@/components/shell/nav-list'
-import { BrandMark } from '@/components/ui/brand-mark'
+import { SidebarContent } from '@/components/shell/sidebar-content'
 import type { NavigationItem } from '@/lib/navigation'
 
 /**
@@ -59,25 +58,16 @@ export function MobileNav({ items }: { items: readonly NavigationItem[] }) {
           />
 
           <div className="relative flex h-full w-72 max-w-[85%] flex-col border-r border-neutral-200 bg-neutral-0">
-            <div className="flex h-16 items-center justify-between border-b border-neutral-200 px-4">
-              <span className="flex items-center gap-2.5">
-                <BrandMark />
-                <span className="font-semibold">FieldOps</span>
-              </span>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              aria-label="Fechar menu"
+              className="absolute top-3 right-3 z-10 grid size-10 place-items-center rounded-field text-neutral-500 hover:bg-neutral-100"
+            >
+              <IoCloseOutline aria-hidden className="size-5" />
+            </button>
 
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                aria-label="Fechar menu"
-                className="grid size-10 place-items-center rounded-field text-neutral-500 hover:bg-neutral-100"
-              >
-                <IoCloseOutline aria-hidden className="size-5" />
-              </button>
-            </div>
-
-            <nav aria-label="Áreas do painel" className="flex-1 overflow-y-auto p-2">
-              <NavList items={items} onNavigate={() => setOpen(false)} />
-            </nav>
+            <SidebarContent items={items} onNavigate={() => setOpen(false)} />
           </div>
         </div>
       )}

@@ -1,5 +1,4 @@
-import { BrandMark } from '@/components/ui/brand-mark'
-import { NavList } from '@/components/shell/nav-list'
+import { SidebarContent } from '@/components/shell/sidebar-content'
 import type { NavigationItem } from '@/lib/navigation'
 
 /**
@@ -15,17 +14,7 @@ import type { NavigationItem } from '@/lib/navigation'
 export function Sidebar({ items }: { items: readonly NavigationItem[] }) {
   return (
     <aside className="hidden w-60 shrink-0 flex-col border-r border-neutral-200 bg-neutral-0 md:flex">
-      <div className="flex h-16 items-center gap-2.5 border-b border-neutral-200 px-4">
-        <BrandMark />
-        <span className="flex min-w-0 flex-col leading-tight">
-          <span className="truncate font-semibold">FieldOps</span>
-          <span className="truncate text-xs text-neutral-500">Painel administrativo</span>
-        </span>
-      </div>
-
-      <nav aria-label="Áreas do painel" className="flex-1 overflow-y-auto p-2">
-        <NavList items={items} />
-      </nav>
+      <SidebarContent items={items} />
     </aside>
   )
 }
