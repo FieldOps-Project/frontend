@@ -27,7 +27,7 @@ export function DelayedInspectionsCard({ summary }: { summary: Pick<DashboardSum
     >
       <MdOutlineWarningAmber
         aria-hidden
-        className={`pointer-events-none absolute -top-3 -right-6 size-32 ${late ? 'text-danger/10' : 'text-neutral-100'}`}
+        className={`pointer-events-none absolute top-1/2 right-5 size-24 -translate-y-1/2 ${late ? 'text-danger/10' : 'text-neutral-100'}`}
       />
 
       <span className="relative flex items-center gap-4 pr-10">

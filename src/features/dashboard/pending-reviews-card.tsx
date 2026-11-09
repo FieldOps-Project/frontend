@@ -20,7 +20,7 @@ export function PendingReviewsCard({ count }: { count: number }) {
     >
       <MdOutlineRateReview
         aria-hidden
-        className="pointer-events-none absolute -top-5 -right-7 size-28 text-neutral-100 transition-colors group-hover:text-tertiary-50"
+        className="pointer-events-none absolute top-1/2 right-5 size-24 -translate-y-1/2 text-neutral-100 transition-colors group-hover:text-tertiary-50"
       />
 
       <span className="relative flex items-center gap-4 pr-10">
