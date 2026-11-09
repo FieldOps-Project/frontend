@@ -32,7 +32,7 @@ export function Header({
   items: readonly NavigationItem[]
 }) {
   return (
-    <header className="flex h-16 shrink-0 items-center gap-3 border-b border-neutral-200 bg-neutral-0 px-3 sm:px-6">
+    <header className="flex h-[4.5rem] shrink-0 items-center gap-2 border-b border-neutral-200 bg-neutral-0 px-3 sm:gap-3 sm:px-6 lg:px-10">
       <MobileNav items={items} />
 
       <HeaderSearch />
