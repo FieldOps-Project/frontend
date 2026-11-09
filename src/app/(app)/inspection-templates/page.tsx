@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { IoAddOutline } from 'react-icons/io5'
 
 import { EmptyState } from '@/components/ui/empty-state'
 import { FilterBar, FilterSearch, FilterSelect } from '@/components/ui/filter-bar'
@@ -40,6 +41,13 @@ export default async function InspectionTemplatesPage(props: PageProps<'/inspect
           <h1 className="text-4xl font-semibold tracking-tight text-neutral-950">Modelos de Inspeção</h1>
           <p className="text-lg text-neutral-700">Crie e mantenha os checklists que os técnicos usam em campo.</p>
         </div>
+        <Link
+          href="/inspection-templates/new"
+          className="inline-flex h-12 items-center gap-2 rounded-field bg-brand-700 px-5 text-base font-semibold text-neutral-0 transition-colors hover:bg-brand-800"
+        >
+          <IoAddOutline aria-hidden className="size-6" />
+          Novo Modelo
+        </Link>
       </header>
 
       <FlashNotice code={param(searchParams, 'notice')} />

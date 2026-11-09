@@ -43,3 +43,7 @@ export function validateNewTemplate(values: NewTemplateValues): NewTemplateError
 export function hasNewTemplateErrors(errors: NewTemplateErrors): boolean {
   return Object.keys(errors).length > 0
 }
+
+export function firstInvalidNewTemplateField(errors: NewTemplateErrors): NewTemplateField | null {
+  return NEW_TEMPLATE_FIELD_ORDER.find((field) => errors[field]) ?? null
+}
