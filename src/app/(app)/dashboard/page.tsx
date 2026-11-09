@@ -5,6 +5,7 @@ import { EmptyOperation } from '@/features/dashboard/empty-operation'
 import { PendingReviewsCard } from '@/features/dashboard/pending-reviews-card'
 import { PipelineCard } from '@/features/dashboard/pipeline-card'
 import { RecentNonConformities } from '@/features/dashboard/recent-non-conformities'
+import { UnavailableBlock } from '@/features/dashboard/unavailable-block'
 import { requireRole } from '@/lib/dal'
 import { hasNoInspections } from '@/lib/domain/dashboard'
 import { MANAGER_ROLES } from '@/lib/domain/user'
@@ -27,6 +28,13 @@ export default async function DashboardPage() {
     <div className="flex flex-col gap-6 lg:gap-8">
       <DashboardHeader />
 
+      {!summary && (
+        <UnavailableBlock
+          title="Indicadores indisponíveis"
+          description="A API ainda não publica os indicadores do painel. Os totais por estado, as revisões pendentes e as atrasadas aparecem aqui assim que estiverem disponíveis."
+        />
+      )}
+
       {summary && hasNoInspections(summary.inspectionsByStatus) && <EmptyOperation />}
 
       {summary && !hasNoInspections(summary.inspectionsByStatus) && (
@@ -40,7 +48,14 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {recent && <RecentNonConformities items={recent} />}
+      {recent ? (
+        <RecentNonConformities items={recent} />
+      ) : (
+        <UnavailableBlock
+          title="Não conformidades indisponíveis"
+          description="A API ainda não publica a listagem de não conformidades. As mais recentes aparecem aqui assim que ela estiver disponível."
+        />
+      )}
     </div>
   )
 }
