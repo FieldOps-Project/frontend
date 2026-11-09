@@ -55,7 +55,9 @@ export function Breadcrumbs() {
   const pathname = usePathname()
   const segments = pathname.split('/').filter(Boolean)
 
-  if (segments.length === 0) {
+  // No dashboard o caminho seria so "Inicio > Dashboard": repete o titulo e o
+  // design do painel nao o mostra.
+  if (segments.length === 0 || pathname === '/dashboard') {
     return null
   }
 
