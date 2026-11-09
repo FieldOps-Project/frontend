@@ -1,7 +1,8 @@
 import 'server-only'
 
 import { demoInspections } from '@/features/inspections/list-fixture'
-import { emptyStatusCounts, type DashboardSummary } from '@/lib/domain/dashboard'
+import { DEMO_REVIEW, DEMO_REVIEW_ID } from '@/features/inspections/review-fixture'
+import { emptyStatusCounts, type DashboardSummary, type RecentNonConformity } from '@/lib/domain/dashboard'
 import { dayInSaoPaulo, isAwaitingReview, isOverdue } from '@/lib/domain/inspection-list'
 
 /**
@@ -28,4 +29,37 @@ export function demoDashboardSummary(now: Date = new Date()): DashboardSummary {
     overdue: inspections.filter((inspection) => isOverdue(inspection, today)).length,
     overdueYesterday: inspections.filter((inspection) => isOverdue(inspection, yesterday)).length,
   }
+}
+
+/** Dias atras de cada registro, para cobrir "Hoje", "Ontem" e data por extenso. */
+const REPORTED = [
+  { daysAgo: 0, time: '09:45' },
+  { daysAgo: 1, time: '16:20' },
+  { daysAgo: 16, time: '10:05' },
+] as const
+
+function at(now: Date, daysAgo: number, time: string): string {
+  const base = new Date(`${dayInSaoPaulo(now)}T${time}:00-03:00`)
+  return new Date(base.getTime() - daysAgo * 86_400_000).toISOString()
+}
+
+/**
+ * Nao conformidades recentes: as da inspecao de demonstracao da revisao, a
+ * unica que abre em desenvolvimento -- assim a seta de cada linha leva a uma
+ * tela que existe.
+ */
+export function demoRecentNonConformities(now: Date = new Date()): readonly RecentNonConformity[] {
+  return DEMO_REVIEW.nonConformities.map((nonConformity, index) => {
+    const reported = REPORTED[index % REPORTED.length] ?? REPORTED[0]
+    return {
+      id: nonConformity.id,
+      inspectionId: DEMO_REVIEW_ID,
+      inspectionCode: DEMO_REVIEW.code,
+      title: nonConformity.title,
+      description: nonConformity.description,
+      severity: nonConformity.severity,
+      siteName: DEMO_REVIEW.siteName,
+      reportedAt: at(now, reported.daysAgo, reported.time),
+    }
+  })
 }
