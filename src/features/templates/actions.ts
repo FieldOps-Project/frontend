@@ -3,13 +3,14 @@
 import { redirect } from 'next/navigation'
 
 import { hasNewTemplateErrors, validateNewTemplate, type NewTemplateErrors } from '@/features/templates/new-template-validation'
-import { createDemoTemplate } from '@/features/templates/template-demo-store'
+import { changeDemoTemplateStatus, createDemoTemplate, DemoTemplateError } from '@/features/templates/template-demo-store'
 import { usesDemoTemplates } from '@/features/templates/templates-data'
-import { formError, requireRole, send } from '@/lib/dal'
+import { actionError, formError, requireRole, send } from '@/lib/dal'
 import type { NewTemplateInput } from '@/lib/domain/inspection-template'
 import { MANAGER_ROLES } from '@/lib/domain/user'
 import { submittedValues, text } from '@/lib/form-data'
-import type { FormState } from '@/lib/form-state'
+import type { ActionResult, FormState } from '@/lib/form-state'
+import { assertId } from '@/lib/ids'
 
 function invalid(fieldErrors: NewTemplateErrors, formData: FormData): FormState {
   return {
@@ -60,4 +61,41 @@ export async function createTemplate(_previous: FormState, formData: FormData): 
   }
 
   redirect(`/inspection-templates/${templateId}/edit?notice=created`)
+}
+
+const STATUS_MESSAGES = {
+  ACTIVE: 'Modelo reativado: as versões disponíveis voltam a aceitar novos agendamentos.',
+  INACTIVE: 'Modelo inativado. As inspeções existentes não foram afetadas.',
+} as const
+
+/**
+ * Inativa ou reativa um modelo ja publicado (`PATCH /inspection-templates/{id}/status`).
+ * Inativar nao afeta inspecoes existentes (RN-022); a API recusa rascunho
+ * nunca publicado (`422 TEMPLATE_NOT_PUBLISHED`).
+ */
+export async function changeTemplateStatus(id: string, status: 'ACTIVE' | 'INACTIVE'): Promise<ActionResult> {
+  await requireRole(MANAGER_ROLES)
+  const templateId = assertId(id)
+
+  if (status !== 'ACTIVE' && status !== 'INACTIVE') {
+    return { ok: false, message: 'Situação inválida.' }
+  }
+
+  if (usesDemoTemplates()) {
+    try {
+      changeDemoTemplateStatus(templateId, status)
+    } catch (error) {
+      if (error instanceof DemoTemplateError) return { ok: false, message: error.message }
+      throw error
+    }
+    return { ok: true, message: STATUS_MESSAGES[status] }
+  }
+
+  try {
+    await send(`/inspection-templates/${templateId}/status`, { method: 'PATCH', body: { status } })
+  } catch (error) {
+    return actionError(error)
+  }
+
+  return { ok: true, message: STATUS_MESSAGES[status] }
 }

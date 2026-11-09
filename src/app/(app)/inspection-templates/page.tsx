@@ -7,10 +7,16 @@ import { FlashNotice, Notice } from '@/components/ui/notice'
 import { NumberedPagination } from '@/components/ui/numbered-pagination'
 import { CARD } from '@/components/ui/styles'
 import { Table, Td } from '@/components/ui/table'
+import { TemplateStatusActions } from '@/features/templates/template-status-actions'
 import { TemplateStatusBadge } from '@/features/templates/template-status-badge'
 import { loadTemplateCategories, loadTemplatePage, usesDemoTemplates } from '@/features/templates/templates-data'
 import { requireRole } from '@/lib/dal'
-import { TEMPLATE_STATUS_LABELS, TEMPLATE_STATUSES, type TemplateFilters } from '@/lib/domain/inspection-template'
+import {
+  canChangeTemplateStatus,
+  TEMPLATE_STATUS_LABELS,
+  TEMPLATE_STATUSES,
+  type TemplateFilters,
+} from '@/lib/domain/inspection-template'
 import { MANAGER_ROLES } from '@/lib/domain/user'
 import { formatDateTime } from '@/lib/format'
 import { oneOf, pageParam, param } from '@/lib/search-params'
@@ -89,7 +95,7 @@ export default async function InspectionTemplatesPage(props: PageProps<'/inspect
           />
         ) : (
           <>
-            <Table caption="Modelos de inspeção" head={['Modelo', 'Categoria', 'Situação', 'Atualizado em']}>
+            <Table caption="Modelos de inspeção" head={['Modelo', 'Categoria', 'Situação', 'Atualizado em', '']}>
               {page.content.map((template) => (
                 <tr key={template.id} className="hover:bg-neutral-50">
                   <Td>
@@ -110,6 +116,11 @@ export default async function InspectionTemplatesPage(props: PageProps<'/inspect
                     <TemplateStatusBadge template={template} />
                   </Td>
                   <Td className="whitespace-nowrap">{formatDateTime(template.updatedAt)}</Td>
+                  <Td className="text-right whitespace-nowrap">
+                    {canChangeTemplateStatus(template) && (
+                      <TemplateStatusActions id={template.id} title={template.title} status={template.status} />
+                    )}
+                  </Td>
                 </tr>
               ))}
             </Table>
