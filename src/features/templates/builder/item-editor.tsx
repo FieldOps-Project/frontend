@@ -3,6 +3,7 @@
 import { useState, useTransition, type FormEvent } from 'react'
 import { MdDragIndicator } from 'react-icons/md'
 
+import { useConfirm } from '@/components/ui/confirm-dialog'
 import { useToast } from '@/components/ui/toast'
 import { createItem, updateItem } from '@/features/templates/builder-actions'
 import { Switch } from '@/features/templates/builder/switch'
@@ -13,6 +14,7 @@ import {
   failureLabel,
   RESPONSE_TYPE_LABELS,
   RESPONSE_TYPES,
+  settingsLostOnTypeChange,
   supportsFailureRules,
   supportsOptions,
   type ItemInput,
@@ -62,6 +64,7 @@ export function ItemEditor({
   const [message, setMessage] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
   const notify = useToast()
+  const ask = useConfirm()
   const prefix = `item-${item?.id ?? `new-${sectionId}`}`
 
   function change(patch: Partial<ItemInput>) {
@@ -73,6 +76,29 @@ export function ItemEditor({
       return next
     })
     setMessage(null)
+  }
+
+  /**
+   * Trocar para um tipo que nao aceita a configuracao ja feita avisa antes o
+   * que sera descartado (issue #14), e so entao limpa.
+   */
+  async function changeType(next: ResponseType) {
+    const lost = settingsLostOnTypeChange(input, next)
+    if (lost.length > 0) {
+      const confirmed = await ask({
+        title: 'Trocar o tipo de resposta?',
+        description: `Ao trocar para ${RESPONSE_TYPE_LABELS[next]}, ${lost.join(' e ')} serão descartadas.`,
+        confirmLabel: 'Trocar tipo',
+      })
+      if (!confirmed) return
+    }
+
+    change({
+      responseType: next,
+      options: supportsOptions(next) ? input.options : [],
+      observationRequiredOnFailure: supportsFailureRules(next) && input.observationRequiredOnFailure,
+      evidenceRequiredOnFailure: supportsFailureRules(next) && input.evidenceRequiredOnFailure,
+    })
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -133,7 +159,7 @@ export function ItemEditor({
           id={`${prefix}-type`}
           value={input.responseType}
           aria-invalid={errors.responseType ? true : undefined}
-          onChange={(event) => change({ responseType: event.target.value as ResponseType })}
+          onChange={(event) => void changeType(event.target.value as ResponseType)}
           className={`${FIELD} sm:w-60`}
         >
           {RESPONSE_TYPES.map((type) => (
