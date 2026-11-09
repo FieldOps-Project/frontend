@@ -8,6 +8,7 @@ import { useToast } from '@/components/ui/toast'
 import { reorderSections } from '@/features/templates/builder-actions'
 import { SectionCard } from '@/features/templates/builder/section-card'
 import { ICON_BUTTON } from '@/features/templates/builder/styles'
+import { useDragReorder } from '@/features/templates/builder/use-drag-reorder'
 import { moved, type TemplateSection } from '@/lib/domain/template-builder'
 
 /**
@@ -26,8 +27,7 @@ export function SectionsEditor({ templateId, sections }: { templateId: string; s
     if (saved) router.refresh()
   }
 
-  function move(index: number, delta: -1 | 1) {
-    const order = moved(sections, index, delta).map((section) => section.id)
+  function saveOrder(order: readonly string[]) {
     startTransition(async () => {
       const result = await reorderSections(templateId, order)
       notify(result.message, result.ok ? 'success' : 'error')
@@ -35,41 +35,56 @@ export function SectionsEditor({ templateId, sections }: { templateId: string; s
     })
   }
 
+  function move(index: number, delta: -1 | 1) {
+    saveOrder(moved(sections, index, delta).map((section) => section.id))
+  }
+
+  const drag = useDragReorder(
+    sections.map((section) => section.id),
+    saveOrder,
+  )
+
   return (
     <>
       {sections.map((section, index) => (
-        <SectionCard
+        <div
           key={section.id}
-          templateId={templateId}
-          section={section}
-          editingItemId={editingItemId}
-          onEditItem={setEditingItemId}
-          onEditorDone={editorDone}
-          actions={
-            <>
-              <button
-                type="button"
-                onClick={() => move(index, -1)}
-                disabled={pending || index === 0}
-                aria-label={`Mover a seção ${section.displayOrder} para cima`}
-                title="Mover para cima"
-                className={ICON_BUTTON}
-              >
-                <MdArrowUpward aria-hidden className="size-5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => move(index, 1)}
-                disabled={pending || index === sections.length - 1}
-                aria-label={`Mover a seção ${section.displayOrder} para baixo`}
-                title="Mover para baixo"
-                className={ICON_BUTTON}
-              >
-                <MdArrowDownward aria-hidden className="size-5" />
-              </button>
-            </>
-          }
-        />
+          {...(editingItemId === null ? drag.itemProps(section.id) : {})}
+          className="rounded-lg data-[drop-target]:ring-2 data-[drop-target]:ring-brand-600 data-[drop-target]:ring-offset-2"
+        >
+          <SectionCard
+            templateId={templateId}
+            section={section}
+            handleProps={editingItemId === null ? drag.handleProps() : undefined}
+            editingItemId={editingItemId}
+            onEditItem={setEditingItemId}
+            onEditorDone={editorDone}
+            actions={
+              <>
+                <button
+                  type="button"
+                  onClick={() => move(index, -1)}
+                  disabled={pending || index === 0}
+                  aria-label={`Mover a seção ${section.displayOrder} para cima`}
+                  title="Mover para cima"
+                  className={ICON_BUTTON}
+                >
+                  <MdArrowUpward aria-hidden className="size-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => move(index, 1)}
+                  disabled={pending || index === sections.length - 1}
+                  aria-label={`Mover a seção ${section.displayOrder} para baixo`}
+                  title="Mover para baixo"
+                  className={ICON_BUTTON}
+                >
+                  <MdArrowDownward aria-hidden className="size-5" />
+                </button>
+              </>
+            }
+          />
+        </div>
       ))}
     </>
   )

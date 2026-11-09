@@ -10,6 +10,7 @@ import { deleteItem, deleteSection, reorderItems, updateSection } from '@/featur
 import { ItemEditor } from '@/features/templates/builder/item-editor'
 import { ItemRow } from '@/features/templates/builder/item-row'
 import { ICON_BUTTON } from '@/features/templates/builder/styles'
+import { useDragReorder } from '@/features/templates/builder/use-drag-reorder'
 import { validateSection } from '@/features/templates/builder-validation'
 import { BUILDER_LIMITS, itemNumber, moved, type TemplateItem, type TemplateSection } from '@/lib/domain/template-builder'
 
@@ -29,6 +30,7 @@ export function SectionCard({
   templateId,
   section,
   actions,
+  handleProps,
   editingItemId,
   onEditItem,
   onEditorDone,
@@ -37,6 +39,8 @@ export function SectionCard({
   section: TemplateSection
   /** Acoes extras do cabecalho, como mover a secao. */
   actions?: ReactNode
+  /** Props da alca de arrastar a secao. */
+  handleProps?: { onPointerDown: () => void; onPointerUp: () => void; className: string }
   /** Item aberto para edicao, ou `new:<secao>` para item novo; um por vez no construtor inteiro. */
   editingItemId: string | null
   onEditItem: (itemId: string) => void
@@ -91,14 +95,22 @@ export function SectionCard({
     })
   }
 
-  function moveItem(index: number, delta: -1 | 1) {
-    const order = moved(section.items, index, delta).map((item) => item.id)
+  function saveItemOrder(order: readonly string[]) {
     startTransition(async () => {
       const result = await reorderItems(templateId, section.id, order)
       notify(result.message, result.ok ? 'success' : 'error')
       router.refresh()
     })
   }
+
+  function moveItem(index: number, delta: -1 | 1) {
+    saveItemOrder(moved(section.items, index, delta).map((item) => item.id))
+  }
+
+  const itemDrag = useDragReorder(
+    section.items.map((item) => item.id),
+    saveItemOrder,
+  )
 
   async function removeItem(item: TemplateItem) {
     const confirmed = await ask({
@@ -119,7 +131,13 @@ export function SectionCard({
   return (
     <section aria-labelledby={headingId} className="overflow-hidden rounded-lg border border-neutral-300 bg-neutral-0">
       <header className="flex items-center gap-3 border-b border-neutral-200 px-4 py-4 sm:gap-4 sm:px-6 sm:py-5">
-        <MdDragIndicator aria-hidden className="size-6 shrink-0 text-neutral-500" />
+        {handleProps ? (
+          <span {...handleProps} title="Arraste para reordenar" className={`flex shrink-0 ${handleProps.className}`}>
+            <MdDragIndicator aria-hidden className="size-6 text-neutral-500" />
+          </span>
+        ) : (
+          <MdDragIndicator aria-hidden className="size-6 shrink-0 text-neutral-500" />
+        )}
         <span className="grid size-10 shrink-0 place-items-center rounded-md bg-brand-50 text-base font-semibold text-brand-700">
           {section.displayOrder}
         </span>
@@ -201,7 +219,11 @@ export function SectionCard({
       {section.items.length > 0 && (
         <ol className="divide-y divide-neutral-200">
           {section.items.map((item, index) => (
-            <li key={item.id}>
+            <li
+              key={item.id}
+              {...(editingItemId === null ? itemDrag.itemProps(item.id) : {})}
+              className="data-[drop-target]:bg-brand-50 data-[drop-target]:shadow-[inset_0_2px_0_var(--color-brand-600)]"
+            >
               {editingItemId === item.id ? (
                 <ItemEditor
                   templateId={templateId}
@@ -215,6 +237,11 @@ export function SectionCard({
                   item={item}
                   sectionOrder={section.displayOrder}
                   onEdit={() => onEditItem(item.id)}
+                  handle={
+                    <span {...itemDrag.handleProps()} title="Arraste para reordenar" className={`flex ${itemDrag.handleProps().className}`}>
+                      <MdDragIndicator aria-hidden className="size-5 text-neutral-400" />
+                    </span>
+                  }
                   actions={
                     <>
                       <button
