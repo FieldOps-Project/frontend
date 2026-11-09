@@ -15,6 +15,9 @@ const SEGMENT_LABELS: Record<string, string> = {
   sites: 'Locais',
   equipment: 'Equipamentos',
   label: 'Etiqueta',
+  settings: 'Configurações',
+  support: 'Suporte',
+  search: 'Busca',
 }
 
 /**
