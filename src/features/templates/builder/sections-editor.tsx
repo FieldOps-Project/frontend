@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { MdArrowDownward, MdArrowUpward } from 'react-icons/md'
 
 import { useToast } from '@/components/ui/toast'
@@ -17,8 +17,14 @@ import { moved, type TemplateSection } from '@/lib/domain/template-builder'
  */
 export function SectionsEditor({ templateId, sections }: { templateId: string; sections: readonly TemplateSection[] }) {
   const [pending, startTransition] = useTransition()
+  const [editingItemId, setEditingItemId] = useState<string | null>(null)
   const notify = useToast()
   const router = useRouter()
+
+  function editorDone(saved: boolean) {
+    setEditingItemId(null)
+    if (saved) router.refresh()
+  }
 
   function move(index: number, delta: -1 | 1) {
     const order = moved(sections, index, delta).map((section) => section.id)
@@ -36,6 +42,9 @@ export function SectionsEditor({ templateId, sections }: { templateId: string; s
           key={section.id}
           templateId={templateId}
           section={section}
+          editingItemId={editingItemId}
+          onEditItem={setEditingItemId}
+          onEditorDone={editorDone}
           actions={
             <>
               <button

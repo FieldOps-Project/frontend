@@ -7,10 +7,11 @@ import { MdDeleteOutline, MdDragIndicator, MdOutlineEdit } from 'react-icons/md'
 import { useConfirm } from '@/components/ui/confirm-dialog'
 import { useToast } from '@/components/ui/toast'
 import { deleteSection, updateSection } from '@/features/templates/builder-actions'
+import { ItemEditor } from '@/features/templates/builder/item-editor'
 import { ItemRow } from '@/features/templates/builder/item-row'
 import { ICON_BUTTON } from '@/features/templates/builder/styles'
 import { validateSection } from '@/features/templates/builder-validation'
-import { BUILDER_LIMITS, type TemplateSection } from '@/lib/domain/template-builder'
+import { BUILDER_LIMITS, itemNumber, type TemplateSection } from '@/lib/domain/template-builder'
 
 /**
  * Secao do checklist: numero, titulo, acoes e os itens em ordem.
@@ -23,11 +24,18 @@ export function SectionCard({
   templateId,
   section,
   actions,
+  editingItemId,
+  onEditItem,
+  onEditorDone,
 }: {
   templateId: string
   section: TemplateSection
   /** Acoes extras do cabecalho, como mover a secao. */
   actions?: ReactNode
+  /** Item aberto para edicao; um por vez no construtor inteiro. */
+  editingItemId: string | null
+  onEditItem: (itemId: string) => void
+  onEditorDone: (saved: boolean) => void
 }) {
   const [renaming, setRenaming] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -162,7 +170,17 @@ export function SectionCard({
         <ol className="divide-y divide-neutral-200">
           {section.items.map((item) => (
             <li key={item.id}>
-              <ItemRow item={item} sectionOrder={section.displayOrder} />
+              {editingItemId === item.id ? (
+                <ItemEditor
+                  templateId={templateId}
+                  sectionId={section.id}
+                  number={itemNumber(section.displayOrder, item.displayOrder)}
+                  item={item}
+                  onDone={onEditorDone}
+                />
+              ) : (
+                <ItemRow item={item} sectionOrder={section.displayOrder} onEdit={() => onEditItem(item.id)} />
+              )}
             </li>
           ))}
         </ol>

@@ -4,11 +4,25 @@ import { itemNumber, RESPONSE_TYPE_LABELS, type TemplateItem } from '@/lib/domai
 
 /**
  * Item em modo leitura: numero, pergunta, tipo de resposta e o ponto de
- * obrigatorio (com texto para leitor de tela, nao so a cor).
+ * obrigatorio (com texto para leitor de tela, nao so a cor). A linha inteira
+ * abre a edicao.
  */
-export function ItemRow({ item, sectionOrder }: { item: TemplateItem; sectionOrder: number }) {
+export function ItemRow({
+  item,
+  sectionOrder,
+  onEdit,
+}: {
+  item: TemplateItem
+  sectionOrder: number
+  onEdit: () => void
+}) {
   return (
-    <div className="flex items-center gap-3 px-4 py-4 sm:gap-4 sm:px-6 sm:py-5">
+    <button
+      type="button"
+      onClick={onEdit}
+      aria-label={`Editar o item ${itemNumber(sectionOrder, item.displayOrder)}: ${item.title}`}
+      className="flex w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-neutral-50 sm:gap-4 sm:px-6 sm:py-5"
+    >
       <MdDragIndicator aria-hidden className="size-5 shrink-0 text-neutral-300" />
       <span className="shrink-0 text-[15px] text-neutral-700 tabular-nums">{itemNumber(sectionOrder, item.displayOrder)}</span>
       <span className="min-w-0 flex-1 text-[15px] font-medium break-words text-neutral-950">{item.title}</span>
@@ -22,6 +36,6 @@ export function ItemRow({ item, sectionOrder }: { item: TemplateItem; sectionOrd
       ) : (
         <span aria-hidden className="size-2 shrink-0" />
       )}
-    </div>
+    </button>
   )
 }
