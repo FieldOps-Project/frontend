@@ -6,6 +6,10 @@ import type { NavigationItem } from '@/lib/navigation'
 /**
  * Conteudo do menu: marca, areas do painel e rodape. E o mesmo no menu fixo e na gaveta
  * do celular, para que a navegacao nao mude de cara conforme a largura.
+ *
+ * Quem rola e a coluna inteira, nao so a lista: em tela baixa (notebook com
+ * zoom), uma lista com rolagem propria entre marca e rodape fixos sobra com
+ * tres ou quatro areas visiveis. Com sobra de altura, o rodape desce ao pe.
  */
 export function SidebarContent({
   items,
@@ -24,7 +28,7 @@ export function SidebarContent({
         </span>
       </div>
 
-      <nav aria-label="Áreas do painel" className="flex-1 overflow-y-auto px-2.5 py-5">
+      <nav aria-label="Áreas do painel" className="flex-1 px-2.5 py-5">
         <NavList items={items} onNavigate={onNavigate} />
       </nav>
 

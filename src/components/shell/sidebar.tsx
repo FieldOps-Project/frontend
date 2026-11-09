@@ -13,7 +13,7 @@ import type { NavigationItem } from '@/lib/navigation'
  */
 export function Sidebar({ items }: { items: readonly NavigationItem[] }) {
   return (
-    <aside className="hidden w-72 shrink-0 flex-col border-r border-neutral-200 bg-neutral-0 lg:flex">
+    <aside className="hidden w-72 shrink-0 flex-col overflow-y-auto border-r border-neutral-200 bg-neutral-0 lg:flex">
       <SidebarContent items={items} />
     </aside>
   )
