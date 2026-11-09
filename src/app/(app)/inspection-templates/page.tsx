@@ -99,7 +99,7 @@ export default async function InspectionTemplatesPage(props: PageProps<'/inspect
               {page.content.map((template) => (
                 <tr key={template.id} className="hover:bg-neutral-50">
                   <Td>
-                    <span className="flex max-w-[16rem] min-w-0 flex-col xl:max-w-md">
+                    <span className="flex max-w-[16rem] min-w-0 flex-col 2xl:max-w-md">
                       <Link
                         href={`/inspection-templates/${template.id}/edit`}
                         className="font-medium text-neutral-900 hover:text-brand-700 hover:underline"
