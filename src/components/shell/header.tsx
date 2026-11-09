@@ -6,6 +6,7 @@ import { HeaderSearch } from '@/components/shell/header-search'
 import { EnvironmentLabel } from '@/components/shell/environment-label'
 import { MobileNav } from '@/components/shell/mobile-nav'
 import { NotificationsButton } from '@/components/shell/notifications-button'
+import { RoleBadge } from '@/components/shell/role-badge'
 import { HEADER_ICON_BUTTON } from '@/components/ui/styles'
 import { signOut } from '@/features/auth/actions'
 import { USER_ROLE_LABELS } from '@/lib/domain/user'
@@ -58,6 +59,8 @@ export function Header({
       <span aria-hidden className="mx-2 hidden h-8 w-px bg-neutral-200 md:block" />
 
       <EnvironmentLabel environment={environment} />
+
+      <RoleBadge role={user.role} />
 
       <div className="flex items-center gap-2.5">
         <span
