@@ -1,7 +1,7 @@
 import { FlashNotice } from '@/components/ui/notice'
 import { AddSection } from '@/features/templates/builder/add-section'
 import { BuilderToolbar } from '@/features/templates/builder/builder-toolbar'
-import { SectionCard } from '@/features/templates/builder/section-card'
+import { SectionsEditor } from '@/features/templates/builder/sections-editor'
 import { TemplateConfigPanel } from '@/features/templates/builder/template-config-panel'
 import { VersionHistory } from '@/features/templates/builder/version-history'
 import { loadTemplateCategories, loadTemplateDetail, loadTemplateVersions } from '@/features/templates/templates-data'
@@ -45,9 +45,7 @@ export default async function TemplateBuilderPage(props: PageProps<'/inspection-
         </aside>
 
         <div className="flex min-w-0 flex-col gap-6">
-          {template.sections.map((section) => (
-            <SectionCard key={section.id} templateId={template.id} section={section} />
-          ))}
+          <SectionsEditor templateId={template.id} sections={template.sections} />
           {template.sections.length === 0 && (
             <p className="rounded-lg border border-neutral-300 bg-neutral-0 px-6 py-8 text-center text-sm text-neutral-600">
               Este modelo ainda não tem seções. Comece pela primeira: um modelo só pode ser publicado com ao menos uma

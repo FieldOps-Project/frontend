@@ -169,3 +169,12 @@ export function itemNumber(sectionOrder: number, itemOrder: number): string {
 export function draftVersionNumber(template: Pick<InspectionTemplate, 'currentVersion'>): number {
   return (template.currentVersion ?? 0) + 1
 }
+
+/** Troca o elemento com o vizinho de cima (-1) ou de baixo (1); nos limites, devolve a mesma lista. */
+export function moved<T>(list: readonly T[], index: number, delta: -1 | 1): readonly T[] {
+  const target = index + delta
+  if (index < 0 || index >= list.length || target < 0 || target >= list.length) return list
+  const next = [...list]
+  ;[next[index], next[target]] = [next[target] as T, next[index] as T]
+  return next
+}

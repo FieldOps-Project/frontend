@@ -8,11 +8,9 @@ import { useConfirm } from '@/components/ui/confirm-dialog'
 import { useToast } from '@/components/ui/toast'
 import { deleteSection, updateSection } from '@/features/templates/builder-actions'
 import { ItemRow } from '@/features/templates/builder/item-row'
+import { ICON_BUTTON } from '@/features/templates/builder/styles'
 import { validateSection } from '@/features/templates/builder-validation'
 import { BUILDER_LIMITS, type TemplateSection } from '@/lib/domain/template-builder'
-
-export const ICON_BUTTON =
-  'grid size-9 shrink-0 place-items-center rounded-md text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent'
 
 /**
  * Secao do checklist: numero, titulo, acoes e os itens em ordem.

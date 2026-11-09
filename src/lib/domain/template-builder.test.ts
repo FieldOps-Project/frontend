@@ -4,6 +4,7 @@ import {
   draftVersionNumber,
   failureLabel,
   itemNumber,
+  moved,
   normalizeItemForType,
   RESPONSE_TYPES,
   settingsLostOnTypeChange,
@@ -72,5 +73,14 @@ describe('numeracao', () => {
   it('o rascunho e a versao seguinte a vigente', () => {
     expect(draftVersionNumber({ currentVersion: null })).toBe(1)
     expect(draftVersionNumber({ currentVersion: 2 })).toBe(3)
+  })
+})
+
+describe('mover', () => {
+  it('troca com o vizinho e ignora os limites', () => {
+    expect(moved(['a', 'b', 'c'], 1, -1)).toEqual(['b', 'a', 'c'])
+    expect(moved(['a', 'b', 'c'], 1, 1)).toEqual(['a', 'c', 'b'])
+    expect(moved(['a', 'b'], 0, -1)).toEqual(['a', 'b'])
+    expect(moved(['a', 'b'], 1, 1)).toEqual(['a', 'b'])
   })
 })
