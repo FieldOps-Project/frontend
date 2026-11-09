@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { MdArrowForward, MdChevronRight, MdErrorOutline, MdOutlineLocationOn } from 'react-icons/md'
+import { MdArrowForward, MdCheckCircleOutline, MdChevronRight, MdErrorOutline, MdOutlineLocationOn } from 'react-icons/md'
 
 import { SeverityBadge } from '@/features/dashboard/severity-badge'
 import { DASHBOARD_CARD } from '@/features/dashboard/styles'
@@ -14,6 +14,89 @@ function reviewHref(item: RecentNonConformity): string {
 
 function openLabel(item: RecentNonConformity): string {
   return `Abrir a inspeção ${item.inspectionCode}: ${item.title}`
+}
+
+/** Celular: a linha inteira e o alvo do toque. */
+function CardList({ items }: { items: readonly RecentNonConformity[] }) {
+  return (
+    <ul className="divide-y divide-neutral-200 md:hidden">
+      {items.map((item) => (
+        <li key={item.id}>
+          <Link
+            href={reviewHref(item)}
+            aria-label={openLabel(item)}
+            className="flex items-center gap-3 px-4 py-4 transition-colors hover:bg-neutral-50 sm:px-6"
+          >
+            <span className="flex min-w-0 flex-1 flex-col gap-2">
+              <span className="flex flex-wrap items-center justify-between gap-2">
+                <SeverityBadge severity={item.severity} />
+                <span className="text-sm text-neutral-600">{formatRecentDate(item.reportedAt)}</span>
+              </span>
+              <span className="text-[15px] text-neutral-950">{item.description}</span>
+              <span className="flex items-center gap-1 text-sm text-neutral-600">
+                <MdOutlineLocationOn aria-hidden className="size-4 shrink-0" />
+                <span className="truncate">{item.siteName}</span>
+              </span>
+            </span>
+            <MdChevronRight aria-hidden className="size-6 shrink-0 text-neutral-400" />
+          </Link>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function Table({ items }: { items: readonly RecentNonConformity[] }) {
+  return (
+    <table className="hidden w-full table-fixed md:table">
+      <thead className="border-b border-neutral-300">
+        <tr>
+          <th scope="col" className={`${HEAD} w-[11rem]`}>
+            Criticidade
+          </th>
+          <th scope="col" className={HEAD}>
+            Descrição
+          </th>
+          <th scope="col" className={`${HEAD} w-[22%]`}>
+            Local
+          </th>
+          <th scope="col" className={`${HEAD} w-[17%]`}>
+            Data do Registro
+          </th>
+          <th scope="col" className={`${HEAD} w-[6.5rem] text-right`}>
+            Ação
+          </th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-neutral-200">
+        {items.map((item) => (
+          <tr key={item.id} className="transition-colors hover:bg-neutral-50">
+            <td className="px-6 py-5 align-middle">
+              <SeverityBadge severity={item.severity} />
+            </td>
+            <td className="px-6 py-5 align-middle text-[15px] text-neutral-950">
+              <span className="line-clamp-2" title={item.title}>
+                {item.description}
+              </span>
+            </td>
+            <td className="truncate px-6 py-5 align-middle text-[15px] text-neutral-800">{item.siteName}</td>
+            <td className="px-6 py-5 align-middle text-[15px] whitespace-nowrap text-neutral-800">
+              {formatRecentDate(item.reportedAt)}
+            </td>
+            <td className="px-6 py-5 text-right align-middle">
+              <Link
+                href={reviewHref(item)}
+                aria-label={openLabel(item)}
+                className="inline-grid size-9 place-items-center rounded-full text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-brand-700"
+              >
+                <MdArrowForward aria-hidden className="size-5" />
+              </Link>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )
 }
 
 /**
@@ -40,79 +123,20 @@ export function RecentNonConformities({ items }: { items: readonly RecentNonConf
         </Link>
       </header>
 
-      <ul className="divide-y divide-neutral-200 md:hidden">
-        {items.map((item) => (
-          <li key={item.id}>
-            <Link
-              href={reviewHref(item)}
-              aria-label={openLabel(item)}
-              className="flex items-center gap-3 px-4 py-4 transition-colors hover:bg-neutral-50 sm:px-6"
-            >
-              <span className="flex min-w-0 flex-1 flex-col gap-2">
-                <span className="flex flex-wrap items-center justify-between gap-2">
-                  <SeverityBadge severity={item.severity} />
-                  <span className="text-sm text-neutral-600">{formatRecentDate(item.reportedAt)}</span>
-                </span>
-                <span className="text-[15px] text-neutral-950">{item.description}</span>
-                <span className="flex items-center gap-1 text-sm text-neutral-600">
-                  <MdOutlineLocationOn aria-hidden className="size-4 shrink-0" />
-                  <span className="truncate">{item.siteName}</span>
-                </span>
-              </span>
-              <MdChevronRight aria-hidden className="size-6 shrink-0 text-neutral-400" />
-            </Link>
-          </li>
-        ))}
-      </ul>
-
-      <table className="hidden w-full table-fixed md:table">
-        <thead className="border-b border-neutral-300">
-          <tr>
-            <th scope="col" className={`${HEAD} w-[11rem]`}>
-              Criticidade
-            </th>
-            <th scope="col" className={HEAD}>
-              Descrição
-            </th>
-            <th scope="col" className={`${HEAD} w-[22%]`}>
-              Local
-            </th>
-            <th scope="col" className={`${HEAD} w-[17%]`}>
-              Data do Registro
-            </th>
-            <th scope="col" className={`${HEAD} w-[6.5rem] text-right`}>
-              Ação
-            </th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-neutral-200">
-          {items.map((item) => (
-            <tr key={item.id} className="transition-colors hover:bg-neutral-50">
-              <td className="px-6 py-5 align-middle">
-                <SeverityBadge severity={item.severity} />
-              </td>
-              <td className="px-6 py-5 align-middle text-[15px] text-neutral-950">
-                <span className="line-clamp-2" title={item.title}>
-                  {item.description}
-                </span>
-              </td>
-              <td className="truncate px-6 py-5 align-middle text-[15px] text-neutral-800">{item.siteName}</td>
-              <td className="px-6 py-5 align-middle text-[15px] whitespace-nowrap text-neutral-800">
-                {formatRecentDate(item.reportedAt)}
-              </td>
-              <td className="px-6 py-5 text-right align-middle">
-                <Link
-                  href={reviewHref(item)}
-                  aria-label={openLabel(item)}
-                  className="inline-grid size-9 place-items-center rounded-full text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-brand-700"
-                >
-                  <MdArrowForward aria-hidden className="size-5" />
-                </Link>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {items.length === 0 ? (
+        <div className="flex flex-col items-center gap-2 px-6 py-12 text-center">
+          <MdCheckCircleOutline aria-hidden className="size-8 text-success" />
+          <p className="text-sm font-medium text-neutral-700">Nenhuma não conformidade registrada</p>
+          <p className="max-w-sm text-sm text-neutral-500">
+            As registradas pelos técnicos em campo aparecem aqui, as mais novas primeiro.
+          </p>
+        </div>
+      ) : (
+        <>
+          <CardList items={items} />
+          <Table items={items} />
+        </>
+      )}
     </section>
   )
 }

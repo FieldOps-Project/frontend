@@ -40,7 +40,7 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {recent && recent.length > 0 && <RecentNonConformities items={recent} />}
+      {recent && <RecentNonConformities items={recent} />}
     </div>
   )
 }
