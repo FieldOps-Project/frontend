@@ -20,7 +20,8 @@ export function EnvironmentLabel({ environment }: { environment: string | undefi
   return (
     <span className="inline-flex items-center gap-1.5 rounded-md bg-warning-soft px-2 py-1 text-xs font-semibold whitespace-nowrap text-warning md:text-sm">
       <span aria-hidden className="size-1.5 rounded-full bg-current" />
-      <span className="hidden md:inline">Ambiente:</span> {label}
+      <span className="hidden md:inline">Ambiente:</span>
+      {label}
     </span>
   )
 }
