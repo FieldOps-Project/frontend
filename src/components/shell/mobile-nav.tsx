@@ -57,7 +57,7 @@ export function MobileNav({ items }: { items: readonly NavigationItem[] }) {
             className="absolute inset-0 bg-neutral-900/50"
           />
 
-          <div className="relative flex h-full w-72 max-w-[85%] overflow-y-auto flex-col border-r border-neutral-200 bg-neutral-0">
+          <div className="relative flex h-full scrollbar-none w-72 max-w-[85%] overflow-y-auto flex-col border-r border-neutral-200 bg-neutral-0">
             <button
               type="button"
               onClick={() => setOpen(false)}
