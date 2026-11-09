@@ -2,7 +2,8 @@ import { FlashNotice } from '@/components/ui/notice'
 import { BuilderToolbar } from '@/features/templates/builder/builder-toolbar'
 import { SectionCard } from '@/features/templates/builder/section-card'
 import { TemplateConfigPanel } from '@/features/templates/builder/template-config-panel'
-import { loadTemplateCategories, loadTemplateDetail } from '@/features/templates/templates-data'
+import { VersionHistory } from '@/features/templates/builder/version-history'
+import { loadTemplateCategories, loadTemplateDetail, loadTemplateVersions } from '@/features/templates/templates-data'
 import { requireRole } from '@/lib/dal'
 import { MANAGER_ROLES } from '@/lib/domain/user'
 import { param } from '@/lib/search-params'
@@ -17,7 +18,11 @@ import { param } from '@/lib/search-params'
 export default async function TemplateBuilderPage(props: PageProps<'/inspection-templates/[templateId]/edit'>) {
   await requireRole(MANAGER_ROLES)
   const { templateId } = await props.params
-  const [template, categories] = await Promise.all([loadTemplateDetail(templateId), loadTemplateCategories()])
+  const [template, categories, versions] = await Promise.all([
+    loadTemplateDetail(templateId),
+    loadTemplateCategories(),
+    loadTemplateVersions(templateId),
+  ])
 
   return (
     <div className="flex flex-col gap-6">
@@ -32,6 +37,9 @@ export default async function TemplateBuilderPage(props: PageProps<'/inspection-
         >
           <div className="p-5 sm:p-6">
             <TemplateConfigPanel template={template} categories={categories} />
+          </div>
+          <div className="border-t border-neutral-200 bg-neutral-50 p-5 sm:p-6">
+            <VersionHistory currentVersion={template.currentVersion} versions={versions} />
           </div>
         </aside>
 
