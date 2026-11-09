@@ -4,39 +4,39 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { IconType } from 'react-icons'
 import {
-  IoAlertCircleOutline,
-  IoBusinessOutline,
-  IoClipboardOutline,
-  IoConstructOutline,
-  IoDocumentTextOutline,
-  IoHomeOutline,
-  IoLocationOutline,
-  IoPeopleOutline,
-  IoTimeOutline,
-} from 'react-icons/io5'
+  MdAssignmentAdd,
+  MdOutlineDashboard,
+  MdOutlineDomain,
+  MdOutlineFactCheck,
+  MdOutlineGroup,
+  MdOutlineHandyman,
+  MdOutlineLocationOn,
+  MdOutlineVerifiedUser,
+  MdOutlineWarningAmber,
+} from 'react-icons/md'
 
 import { isActive, type NavigationItem } from '@/lib/navigation'
 
 /**
- * Icone por area, na mesma familia e no mesmo estilo do aplicativo de campo
- * (Ionicons outline): tecnico e supervisor usam pontas do mesmo produto, e
- * simbolo diferente para a mesma coisa faz parecerem dois sistemas. Inspecoes e
- * nao conformidades usam literalmente os mesmos simbolos das abas do app.
+ * Icone por area, da familia Material (contorno) usada no design do painel no
+ * Stitch -- a mesma do braco robotico da marca. Um simbolo por area, sempre o
+ * mesmo em menu, gaveta e atalhos, para que a pessoa reconheca a area pelo
+ * desenho antes de ler o nome.
  *
  * O mapa fica aqui, e nao no modulo de navegacao, porque aquele carrega as
  * regras de perfil e roda no servidor: importar componente de React nele
  * obrigaria a marca-lo como codigo de cliente.
  */
 const ICONS: Record<string, IconType> = {
-  '/dashboard': IoHomeOutline,
-  '/users': IoPeopleOutline,
-  '/clients': IoBusinessOutline,
-  '/sites': IoLocationOutline,
-  '/equipment': IoConstructOutline,
-  '/inspection-templates': IoDocumentTextOutline,
-  '/inspections': IoClipboardOutline,
-  '/non-conformities': IoAlertCircleOutline,
-  '/audit': IoTimeOutline,
+  '/dashboard': MdOutlineDashboard,
+  '/users': MdOutlineGroup,
+  '/clients': MdOutlineDomain,
+  '/sites': MdOutlineLocationOn,
+  '/equipment': MdOutlineHandyman,
+  '/inspection-templates': MdAssignmentAdd,
+  '/inspections': MdOutlineFactCheck,
+  '/non-conformities': MdOutlineWarningAmber,
+  '/audit': MdOutlineVerifiedUser,
 }
 
 export function NavList({
