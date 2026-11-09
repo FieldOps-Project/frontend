@@ -19,6 +19,14 @@ export const USER_ROLE_LABELS: Record<UserRole, string> = {
   CLIENT_VIEWER: 'Cliente (somente leitura)',
 }
 
+/** Rotulo curto do perfil, para o selo do cabecalho. */
+export const USER_ROLE_SHORT_LABELS: Record<UserRole, string> = {
+  ADMIN: 'Admin',
+  SUPERVISOR: 'Supervisor',
+  TECHNICIAN: 'Técnico',
+  CLIENT_VIEWER: 'Cliente',
+}
+
 /**
  * Perfis oferecidos no cadastro de usuario. O `CLIENT_VIEWER` existe no
  * contrato e precisa ser aceito quando a API o devolver, mas o documento 5.1 o

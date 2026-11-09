@@ -1,31 +1,26 @@
-import { IoLogOutOutline } from 'react-icons/io5'
+import Link from 'next/link'
+import { MdHelpOutline } from 'react-icons/md'
 
-import { EnvironmentBadge } from '@/components/shell/environment-badge'
+import { HeaderSearch } from '@/components/shell/header-search'
+import { EnvironmentLabel } from '@/components/shell/environment-label'
 import { MobileNav } from '@/components/shell/mobile-nav'
-import { signOut } from '@/features/auth/actions'
-import { USER_ROLE_LABELS } from '@/lib/domain/user'
+import { NotificationsButton } from '@/components/shell/notifications-button'
+import { RoleBadge } from '@/components/shell/role-badge'
+import { UserMenu } from '@/components/shell/user-menu'
+import { HEADER_ICON_BUTTON } from '@/components/ui/styles'
+import { environmentLabel } from '@/lib/environment'
 import type { NavigationItem } from '@/lib/navigation'
 import type { SessionUser } from '@/lib/session'
 
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/)
-  const first = parts.at(0)?.charAt(0) ?? ''
-  const last = parts.length > 1 ? (parts.at(-1)?.charAt(0) ?? '') : ''
-
-  return (first + last).toUpperCase()
-}
-
 /**
- * Cabecalho do painel: quem esta logado, com qual perfil, em qual ambiente, e
- * como sair.
+ * Cabecalho do painel, no desenho do Stitch: busca, notificacoes, ajuda,
+ * ambiente, perfil e o menu da conta (documento 14.4).
  *
- * Componente de servidor. O botao de sair e um formulario que chama uma Server
- * Action, entao funciona sem JavaScript no navegador e nao transforma o
- * cabecalho inteiro em codigo de cliente.
+ * Componente de servidor; so as partes que abrem painel sao de cliente.
  *
- * Em tela estreita nome e perfil dao lugar as iniciais e o rotulo do botao some,
- * ficando so o icone: e a informacao que se pode perder primeiro, porque quem
- * esta logado ja e a propria pessoa.
+ * Em tela estreita o que se pode perder primeiro sai antes: ajuda, perfil e o
+ * rotulo de producao (que continua no menu do avatar). Ambiente que nao e
+ * producao nunca some.
  */
 export function Header({
   user,
@@ -37,36 +32,26 @@ export function Header({
   items: readonly NavigationItem[]
 }) {
   return (
-    <header className="flex h-16 shrink-0 items-center gap-3 border-b border-neutral-200 bg-neutral-0 px-3 sm:px-6">
+    <header className="flex h-[4.5rem] shrink-0 items-center gap-2 border-b border-neutral-200 bg-neutral-0 px-3 sm:gap-3 sm:px-6 lg:px-10">
       <MobileNav items={items} />
+
+      <HeaderSearch />
 
       <div className="flex-1" />
 
-      <EnvironmentBadge environment={environment} />
+      <NotificationsButton />
 
-      <div className="flex items-center gap-2.5">
-        <span
-          aria-hidden
-          className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-50 text-xs font-semibold text-brand-700"
-        >
-          {initials(user.name)}
-        </span>
-        <span className="hidden min-w-0 flex-col leading-tight sm:flex">
-          <span className="truncate text-sm font-medium">{user.name}</span>
-          <span className="truncate text-xs text-neutral-500">{USER_ROLE_LABELS[user.role]}</span>
-        </span>
-      </div>
+      <Link href="/support" aria-label="Ajuda" title="Ajuda" className={`${HEADER_ICON_BUTTON} hidden sm:grid`}>
+        <MdHelpOutline aria-hidden className="size-6" />
+      </Link>
 
-      <form action={signOut}>
-        <button
-          type="submit"
-          className="flex items-center gap-2 rounded-field border border-neutral-200 px-2.5 py-2 text-sm text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 sm:px-3"
-        >
-          <IoLogOutOutline aria-hidden className="size-[18px]" />
-          <span className="hidden sm:inline">Sair</span>
-          <span className="sr-only sm:hidden">Sair</span>
-        </button>
-      </form>
+      <span aria-hidden className="mx-2 hidden h-8 w-px bg-neutral-200 md:block" />
+
+      <EnvironmentLabel environment={environment} />
+
+      <RoleBadge role={user.role} />
+
+      <UserMenu user={user} environmentLabel={environmentLabel(environment)} />
     </header>
   )
 }

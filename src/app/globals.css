@@ -88,6 +88,19 @@ body {
 }
 
 /*
+ * Rolagem sem barra visivel: a area continua rolando por roda do mouse, toque e
+ * teclado; so o trilho some. Usada no menu e no miolo do painel, onde a barra
+ * cinza do sistema competia com o desenho.
+ */
+@utility scrollbar-none {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/*
  * Impressao da etiqueta de equipamento: so a etiqueta sai no papel. A moldura
  * do painel trava a altura em uma tela, o que cortaria a impressao.
  */

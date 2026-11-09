@@ -22,9 +22,9 @@ export const NAVIGATION: readonly NavigationItem[] = [
   { label: 'Clientes', href: '/clients', roles: ADMINISTRATIVE },
   { label: 'Locais', href: '/sites', roles: ADMINISTRATIVE },
   { label: 'Equipamentos', href: '/equipment', roles: ADMINISTRATIVE },
-  { label: 'Modelos de inspeção', href: '/inspection-templates', roles: ADMINISTRATIVE },
+  { label: 'Modelos de Inspeção', href: '/inspection-templates', roles: ADMINISTRATIVE },
   { label: 'Inspeções', href: '/inspections', roles: ADMINISTRATIVE },
-  { label: 'Não conformidades', href: '/non-conformities', roles: ADMINISTRATIVE },
+  { label: 'Não Conformidades', href: '/non-conformities', roles: ADMINISTRATIVE },
   { label: 'Auditoria', href: '/audit', roles: ADMINISTRATIVE },
 ]
 

@@ -56,6 +56,26 @@ export async function load<T>(path: string, query?: Readonly<Record<string, Quer
 }
 
 /**
+ * Leitura de endpoint que a API ainda pode nao publicar: 404 e 501 viram
+ * `null`, para a tela mostrar "indisponivel" naquele bloco em vez de trocar a
+ * pagina inteira pelo `not-found`. Os demais erros seguem como em `load`.
+ */
+export async function loadOptional<T>(path: string, query?: Readonly<Record<string, QueryValue>>): Promise<T | null> {
+  const token = await getAccessToken()
+
+  try {
+    return await apiFetch<T>(path, { token, query })
+  } catch (error) {
+    if (isApiError(error)) {
+      if (error.status === 404 || error.status === 501) return null
+      if (error.status === 401) return handleExpiredSession()
+      if (error.status === 403) redirect('/forbidden')
+    }
+    throw error
+  }
+}
+
+/**
  * Chamada de escrita para Server Actions. Se o access token expirou, renova a
  * sessao e repete a operacao **uma unica vez** -- sem esse limite, um 401
  * persistente vira laco infinito.

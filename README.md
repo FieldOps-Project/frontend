@@ -55,6 +55,7 @@ src/
 │   │   ├── dashboard/  users/  clients/  sites/  equipment/
 │   │   ├── inspection-templates/  inspections/
 │   │   ├── non-conformities/  audit/  forbidden/
+│   │   ├── search/  settings/  support/
 │   │   └── layout.tsx
 │   └── page.tsx                 redireciona para /dashboard
 ├── components/ui/               componentes compartilhados
@@ -66,6 +67,29 @@ src/
 
 As rotas de esqueleto cobrem o mapa de navegação do documento 14.3 e existem desde o
 bootstrap para que a navegação seja verificável antes das telas ficarem prontas.
+
+## Dashboard
+
+O `/dashboard` segue o documento 14.5 e a issue #28: total de inspeções por estado,
+revisões pendentes, inspeções atrasadas (com a variação desde ontem), não conformidades
+recentes e os atalhos **Revisar Pendências** e **Criar Inspeção**.
+
+- **Cada número é um link** para `/inspections` com o filtro correspondente
+  (`?status=`, `?review=1`, `?overdue=1`). Atraso e "aguardando revisão" usam as mesmas
+  regras da listagem (`lib/domain/inspection-list.ts`), e um teste garante que os números
+  batem.
+- **Contrato esperado da API** (`lib/domain/dashboard.ts`): `GET /dashboard/summary`
+  devolve `inspectionsByStatus`, `awaitingReview`, `overdue` e `overdueYesterday`
+  (backend#36); as recentes vêm de `GET /non-conformities?size=3&sort=reportedAt,desc`
+  (backend#23).
+- **Dados de demonstração** só com `NEXT_PUBLIC_APP_ENV=development`
+  (`features/dashboard/dashboard-fixture.ts`), derivados das mesmas inspeções de demonstração
+  da listagem. O único ponto de troca para a API é `features/dashboard/dashboard-data.ts`.
+- Em outros ambientes, enquanto a API não publica esses endpoints, só o bloco afetado avisa
+  que está indisponível; o restante da tela continua funcionando.
+
+O cabeçalho do painel tem a busca em todas as áreas (`/search`), notificações, ajuda
+(`/support`), o ambiente, o perfil e o menu da conta (configurações e sair).
 
 ## Proteção de rota
 
