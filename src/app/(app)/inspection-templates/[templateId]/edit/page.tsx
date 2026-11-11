@@ -45,7 +45,7 @@ export default async function TemplateBuilderPage(props: PageProps<'/inspection-
             <TemplateConfigPanel template={template} categories={categories} />
           </div>
           <div className="border-t border-neutral-200 bg-neutral-50 p-5 sm:p-6">
-            <VersionHistory currentVersion={template.currentVersion} versions={versions} />
+            <VersionHistory templateId={template.id} currentVersion={template.currentVersion} versions={versions} />
           </div>
         </aside>
 
