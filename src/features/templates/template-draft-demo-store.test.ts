@@ -117,3 +117,38 @@ describe('itens', () => {
     expect(() => createDemoItem(MACHINES, 'x', ITEM)).toThrow('Seção não encontrada. Ela pode ter sido removida.')
   })
 })
+
+describe('publicacao de demonstracao', () => {
+  it('congela o rascunho como a proxima versao e mantem o rascunho editavel', async () => {
+    const { publishDemoTemplate, demoTemplateVersion } = await import('@/features/templates/template-draft-demo-store')
+    const { findDemoTemplate } = await import('@/features/templates/template-demo-store')
+
+    const published = publishDemoTemplate(MACHINES, 'Inspeção de Máquinas Pesadas', 'user-1')
+    expect(published.versionNumber).toBe(3)
+    expect(findDemoTemplate(MACHINES)?.currentVersion).toBe(3)
+
+    const [first] = demoDraftSections(MACHINES)
+    updateDemoSection(MACHINES, first!.id, { title: 'Alterada depois', description: null })
+
+    expect(demoTemplateVersion(published.id)?.sections[0]?.title).toBe('Identificação do Equipamento')
+    expect(demoTemplateVersions(MACHINES).map((version) => version.versionNumber)).toEqual([3, 2, 1])
+  })
+
+  it('a primeira publicacao ativa o modelo em rascunho', async () => {
+    const { publishDemoTemplate } = await import('@/features/templates/template-draft-demo-store')
+    const { findDemoTemplate } = await import('@/features/templates/template-demo-store')
+    const draft = demoTemplateId(5)
+
+    publishDemoTemplate(draft, 'Checklist NR-12 para prensas', 'user-1')
+
+    expect(findDemoTemplate(draft)).toMatchObject({ status: 'ACTIVE', currentVersion: 1 })
+  })
+
+  it('as versoes de exemplo tem conteudo e autor com nome', async () => {
+    const { demoTemplateVersion, demoPublisherName } = await import('@/features/templates/template-draft-demo-store')
+    const [latest] = demoTemplateVersions(MACHINES)
+
+    expect(demoTemplateVersion(latest!.id)?.sections).toHaveLength(3)
+    expect(demoPublisherName(latest!.publishedBy!)).toBe('Mariana Ribeiro')
+  })
+})
