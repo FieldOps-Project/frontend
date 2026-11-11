@@ -4,6 +4,7 @@ import {
   createItem,
   createSection,
   deleteItem,
+  publishTemplate,
   reorderItems,
   reorderSections,
   updateTemplateInfo,
@@ -17,10 +18,11 @@ vi.mock('server-only', () => ({}))
 vi.mock('next/navigation', () => ({ redirect: vi.fn(), notFound: vi.fn() }))
 
 const send = vi.fn()
+const load = vi.fn()
 
 vi.mock('@/lib/dal', () => ({
   requireRole: async () => ({ id: 'user-1', role: 'SUPERVISOR' }),
-  load: vi.fn(),
+  load: (path: string, query: unknown) => load(path, query),
   send: (path: string, request: unknown) => send(path, request),
   formError: (error: Error) => ({ status: 'error', message: error.message, fieldErrors: {}, values: {} }),
 }))
@@ -45,6 +47,7 @@ function form(values: Record<string, string>) {
 
 afterEach(() => {
   send.mockReset()
+  load.mockReset()
   vi.unstubAllEnvs()
 })
 
@@ -151,6 +154,62 @@ describe('com a API', () => {
       ok: false,
       message: 'As opções da escolha única não podem se repetir.',
       fieldErrors: { options: 'As opções da escolha única não podem se repetir.' },
+    })
+  })
+})
+
+describe('publishTemplate', () => {
+  it('em desenvolvimento publica o rascunho pronto e informa o numero', async () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'development')
+    resetDemoTemplates()
+    resetDemoDrafts()
+
+    await expect(publishTemplate(MACHINES)).resolves.toEqual({ ok: true, message: 'Versão 3 publicada.', versionNumber: 3 })
+    expect(findDemoTemplate(MACHINES)?.currentVersion).toBe(3)
+  })
+
+  it('devolve as pendencias locais sem publicar', async () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'development')
+    resetDemoTemplates()
+    resetDemoDrafts()
+    await createSection(MACHINES, { title: 'Vazia' })
+
+    const result = await publishTemplate(MACHINES)
+
+    expect(result).toMatchObject({ ok: false, issues: [{ message: 'A seção 4 “Vazia” não tem itens.' }] })
+    expect(findDemoTemplate(MACHINES)?.currentVersion).toBe(2)
+  })
+
+  it('com a API mostra as pendencias que ela devolver', async () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'production')
+    load.mockResolvedValueOnce({
+      id: MACHINES,
+      title: 'Máquinas',
+      category: 'Frota',
+      currentVersion: 1,
+      sections: [{ id: 's1', title: 'Freios', description: null, displayOrder: 1, items: [{ id: 'i1', sectionId: 's1', code: null, title: 'Pastilhas', description: null, responseType: 'CONFORMITY', required: true, observationRequiredOnFailure: false, evidenceRequiredOnFailure: false, options: [], displayOrder: 1 }] }],
+    })
+    send.mockRejectedValueOnce(
+      new ApiError({
+        status: 422,
+        code: 'TEMPLATE_PUBLISH_INVALID',
+        message: 'pending',
+        fieldErrors: [{ field: 'sections[0].items[0].responseType', message: 'not supported' }],
+      }),
+    )
+
+    const result = await publishTemplate(MACHINES)
+
+    expect(send).toHaveBeenCalledWith(`/inspection-templates/${MACHINES}/publish`, { method: 'POST' })
+    expect(result).toEqual({
+      ok: false,
+      message: 'O modelo tem pendências que impedem a publicação.',
+      issues: [
+        {
+          message: 'Item 1.1 “Pastilhas”: o tipo de resposta não é suportado pelo aplicativo (RN-023).',
+          target: { kind: 'item', id: 'i1' },
+        },
+      ],
     })
   })
 })
