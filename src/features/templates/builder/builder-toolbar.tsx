@@ -8,7 +8,9 @@ import { draftVersionNumber, type InspectionTemplateDetail } from '@/lib/domain/
  * Caminho das paginas do modelo, como no desenho do Stitch: "Modelos de
  * Inspeção › Inspeção de Máquinas Pesadas – Versão 3 (rascunho)", com o passo
  * atual ("Prévia", "Versões") quando nao e o construtor. Substitui o breadcrumb
- * generico, que so diria "Detalhe › Editar". As acoes ficam a direita.
+ * generico, que so diria "Detalhe › Editar". As acoes ficam a direita so em
+ * tela bem larga; abaixo disso vao para a linha de baixo, para o nome do
+ * modelo e a versao do rascunho nao serem cortados.
  *
  * O numero e o da versao que o rascunho vai gerar ao publicar (a API numera
  * versoes com inteiros, ADR-001).
@@ -27,7 +29,7 @@ export function BuilderToolbar({
   const label = `${template.title} – Versão ${draftVersionNumber(template)} (rascunho)`
 
   return (
-    <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+    <div className="flex flex-col gap-4 2xl:flex-row 2xl:items-center 2xl:justify-between">
       <nav aria-label="Você está em" className="flex min-w-0 items-center gap-2.5 text-sm sm:text-[15px]">
         <MdAssignmentAdd aria-hidden className="size-5 shrink-0 text-neutral-500" />
         <Link href="/inspection-templates" className="shrink-0 text-neutral-600 hover:text-neutral-900 hover:underline">
