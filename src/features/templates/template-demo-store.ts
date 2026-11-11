@@ -107,6 +107,19 @@ export function updateDemoTemplate(templateId: string, input: NewTemplateInput, 
   return changed
 }
 
+/** Depois de publicar: versao vigente nova e, na primeira publicacao, o modelo ativo. */
+export function markDemoTemplatePublished(templateId: string, versionNumber: number, now: Date = new Date()): void {
+  const current = store().get(templateId)
+  if (!current) return
+  store().set(templateId, {
+    ...current,
+    status: current.status === 'DRAFT' ? 'ACTIVE' : current.status,
+    currentVersion: versionNumber,
+    updatedAt: now.toISOString(),
+    version: current.version + 1,
+  })
+}
+
 /** Registra uma alteracao no rascunho: o modelo sobe para o topo da lista. */
 export function touchDemoTemplate(templateId: string, now: Date = new Date()): void {
   const current = store().get(templateId)

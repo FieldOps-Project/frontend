@@ -100,8 +100,14 @@ por categoria, e a situação de cada modelo com a versão vigente ("Publicado �
   tem pergunta, tipo de resposta (os 7 do MVP), instrução, obrigatoriedade e, em conformidade e
   sim/não, exigência de observação e evidência na falha; escolha única edita as opções. Seções e
   itens são criados, editados, excluídos e reordenados (botões ou arrastando pela alça), e a
-  reordenação envia a lista completa numa chamada só. O construtor sempre edita o rascunho;
-  publicar é a issue #15.
+  reordenação envia a lista completa numa chamada só. O construtor sempre edita o rascunho.
+- **Publicação** (issue #15), pelos botões do topo do construtor: **Pré-visualizar**
+  (`/preview`, o checklist como o técnico vê, só leitura), **Validar pendências** (lista completa
+  do que impede publicar, cada item levando ao ponto exato) e **Publicar versão** (confirmação de
+  que a versão fica imutável e o número gerado). A conferência local repete as regras do backend;
+  se a API recusar com `422 TEMPLATE_PUBLISH_INVALID`, valem as pendências dela. As versões
+  publicadas ficam em `/versions` (número, autor, data e se aceitam novos agendamentos) e o
+  conteúdo de cada uma em `/versions/{versionId}`.
 - **Inativar e reativar** só para modelos já publicados, como a API exige. A confirmação avisa
   que as inspeções existentes não são afetadas (RN-022).
 - **Contrato** em `lib/domain/inspection-template.ts` e `lib/domain/template-builder.ts`, igual

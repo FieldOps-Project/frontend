@@ -35,6 +35,7 @@ const CODE_MESSAGES: Record<string, string> = {
   TEMPLATE_ITEM_OPTIONS_DUPLICATED: 'As opções da escolha única não podem se repetir.',
   TEMPLATE_REORDER_MISMATCH: 'A ordem mudou em outra tela. Recarregue a página e tente de novo.',
   TEMPLATE_VERSION_PUBLISHED: 'Esta versão já foi publicada e não pode ser alterada.',
+  TEMPLATE_PUBLISH_INVALID: 'O modelo tem pendências que impedem a publicação.',
   DATA_CONFLICT: 'Outra alteração foi salva ao mesmo tempo. Recarregue a página e tente de novo.',
   [NETWORK_ERROR_CODE]: 'Não foi possível falar com a API. Verifique se ela está no ar e tente de novo.',
   INTERNAL_ERROR: 'A API encontrou um erro inesperado. Tente novamente em instantes.',

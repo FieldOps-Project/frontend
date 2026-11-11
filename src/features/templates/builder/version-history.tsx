@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { MdHistory, MdOutlineInfo } from 'react-icons/md'
 
 import { draftVersionNumber, type TemplateVersionSummary } from '@/lib/domain/template-builder'
@@ -16,9 +17,11 @@ function publishedLabel(publishedAt: string): string {
  * agendadas continuam com a que receberam (RN-021).
  */
 export function VersionHistory({
+  templateId,
   currentVersion,
   versions,
 }: {
+  templateId: string
   currentVersion: number | null
   versions: readonly TemplateVersionSummary[]
 }) {
@@ -46,7 +49,12 @@ export function VersionHistory({
             )}
             <span aria-hidden className="relative mt-1.5 size-3 shrink-0 rounded-full bg-neutral-300" />
             <span className="flex flex-col">
-              <span className="font-semibold text-neutral-950">Versão {version.versionNumber}</span>
+              <Link
+                href={`/inspection-templates/${templateId}/versions/${version.id}`}
+                className="w-fit font-semibold text-neutral-950 hover:text-brand-700 hover:underline"
+              >
+                Versão {version.versionNumber}
+              </Link>
               <span className="text-sm text-neutral-600">{publishedLabel(version.publishedAt)}</span>
               {!version.activeForNewInspections && (
                 <span className="text-xs text-neutral-500">Não aceita novos agendamentos</span>
@@ -56,7 +64,16 @@ export function VersionHistory({
         ))}
       </ol>
 
-      {versions.length === 0 && <p className="-mt-2 text-sm text-neutral-500">Nenhuma versão publicada ainda.</p>}
+      {versions.length === 0 ? (
+        <p className="-mt-2 text-sm text-neutral-500">Nenhuma versão publicada ainda.</p>
+      ) : (
+        <Link
+          href={`/inspection-templates/${templateId}/versions`}
+          className="-mt-2 w-fit text-sm font-medium text-brand-700 hover:text-brand-800 hover:underline"
+        >
+          Ver todas as versões
+        </Link>
+      )}
 
       <p className="flex gap-3 rounded-md border border-brand-100 bg-brand-50 px-4 py-3 text-sm text-brand-800">
         <MdOutlineInfo aria-hidden className="mt-0.5 size-5 shrink-0" />

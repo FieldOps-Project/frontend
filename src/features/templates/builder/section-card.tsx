@@ -9,7 +9,7 @@ import { useToast } from '@/components/ui/toast'
 import { deleteItem, deleteSection, reorderItems, updateSection } from '@/features/templates/builder-actions'
 import { ItemEditor } from '@/features/templates/builder/item-editor'
 import { ItemRow } from '@/features/templates/builder/item-row'
-import { ICON_BUTTON } from '@/features/templates/builder/styles'
+import { HIGHLIGHT, ICON_BUTTON } from '@/features/templates/builder/styles'
 import { useDragReorder } from '@/features/templates/builder/use-drag-reorder'
 import { validateSection } from '@/features/templates/builder-validation'
 import { BUILDER_LIMITS, itemNumber, moved, type TemplateItem, type TemplateSection } from '@/lib/domain/template-builder'
@@ -129,7 +129,7 @@ export function SectionCard({
   }
 
   return (
-    <section aria-labelledby={headingId} className="overflow-hidden rounded-lg border border-neutral-300 bg-neutral-0">
+    <section aria-labelledby={headingId} className={`overflow-hidden rounded-lg border border-neutral-300 bg-neutral-0 ${HIGHLIGHT}`}>
       <header className="flex items-center gap-3 border-b border-neutral-200 px-4 py-4 sm:gap-4 sm:px-6 sm:py-5">
         {handleProps ? (
           <span {...handleProps} title="Arraste para reordenar" className={`flex shrink-0 ${handleProps.className}`}>
@@ -221,8 +221,9 @@ export function SectionCard({
           {section.items.map((item, index) => (
             <li
               key={item.id}
+              id={`item-${item.id}`}
               {...(editingItemId === null ? itemDrag.itemProps(item.id) : {})}
-              className="data-[drop-target]:bg-brand-50 data-[drop-target]:shadow-[inset_0_2px_0_var(--color-brand-600)]"
+              className={`data-[drop-target]:bg-brand-50 data-[drop-target]:shadow-[inset_0_2px_0_var(--color-brand-600)] ${HIGHLIGHT}`}
             >
               {editingItemId === item.id ? (
                 <ItemEditor
