@@ -1,7 +1,9 @@
 import { FlashNotice } from '@/components/ui/notice'
 import { AddSection } from '@/features/templates/builder/add-section'
+import { BuilderActionsBar } from '@/features/templates/builder/builder-actions-bar'
 import { BuilderToolbar } from '@/features/templates/builder/builder-toolbar'
 import { SectionsEditor } from '@/features/templates/builder/sections-editor'
+import { HIGHLIGHT } from '@/features/templates/builder/styles'
 import { TemplateConfigPanel } from '@/features/templates/builder/template-config-panel'
 import { VersionHistory } from '@/features/templates/builder/version-history'
 import { loadTemplateCategories, loadTemplateDetail, loadTemplateVersions } from '@/features/templates/templates-data'
@@ -27,14 +29,17 @@ export default async function TemplateBuilderPage(props: PageProps<'/inspection-
 
   return (
     <div className="flex flex-col gap-6">
-      <BuilderToolbar template={template} />
+      <BuilderToolbar template={template}>
+        <BuilderActionsBar template={template} />
+      </BuilderToolbar>
 
       <FlashNotice code={param(await props.searchParams, 'notice')} />
 
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] xl:grid-cols-[24rem_minmax(0,1fr)]">
         <aside
+          id="template-config"
           aria-label="Configuração do modelo"
-          className="flex flex-col overflow-hidden rounded-lg border border-neutral-300 bg-neutral-0 lg:sticky lg:top-6"
+          className={`flex flex-col overflow-hidden rounded-lg border border-neutral-300 bg-neutral-0 lg:sticky lg:top-6 ${HIGHLIGHT}`}
         >
           <div className="p-5 sm:p-6">
             <TemplateConfigPanel template={template} categories={categories} />
