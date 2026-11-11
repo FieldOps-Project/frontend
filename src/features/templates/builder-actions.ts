@@ -1,20 +1,22 @@
 'use server'
 
 import { hasErrors, validateItem, validateSection } from '@/features/templates/builder-validation'
-import type { BuilderResult } from '@/features/templates/builder-result'
+import type { BuilderResult, PublishResult } from '@/features/templates/builder-result'
 import { hasNewTemplateErrors, validateNewTemplate } from '@/features/templates/new-template-validation'
+import { publicationIssues } from '@/features/templates/publication-check'
 import { DemoTemplateError, updateDemoTemplate } from '@/features/templates/template-demo-store'
 import {
   createDemoItem,
   createDemoSection,
   deleteDemoItem,
   deleteDemoSection,
+  publishDemoTemplate,
   reorderDemoItems,
   reorderDemoSections,
   updateDemoItem,
   updateDemoSection,
 } from '@/features/templates/template-draft-demo-store'
-import { usesDemoTemplates } from '@/features/templates/templates-data'
+import { loadTemplateDetail, usesDemoTemplates } from '@/features/templates/templates-data'
 import { isApiError } from '@/lib/api/errors'
 import { fieldErrorsFor, messageFor } from '@/lib/api/messages'
 import { formError, requireRole, send } from '@/lib/dal'
@@ -25,7 +27,9 @@ import {
   type SectionInput,
   type TemplateItem,
   type TemplateSection,
+  type TemplateVersionSummary,
 } from '@/lib/domain/template-builder'
+import { issuesFromApi } from '@/lib/domain/template-publication'
 import { MANAGER_ROLES } from '@/lib/domain/user'
 import { submittedValues, text } from '@/lib/form-data'
 import type { FormState } from '@/lib/form-state'
@@ -253,5 +257,37 @@ export async function reorderItems(id: string, sectionId: string, itemIds: reado
     return { ok: true, message: 'Ordem dos itens salva.', data: undefined }
   } catch (error) {
     return rejected(error)
+  }
+}
+
+/**
+ * Publica o rascunho como nova versao imutavel
+ * (`POST /inspection-templates/{id}/publish`, UC-05).
+ *
+ * Confere as pendencias antes, com as regras do backend, para devolver a lista
+ * completa sem ida a API; se a API ainda assim recusar
+ * (`422 TEMPLATE_PUBLISH_INVALID`), valem as pendencias que ela devolveu.
+ */
+export async function publishTemplate(id: string): Promise<PublishResult> {
+  const user = await requireRole(MANAGER_ROLES)
+  const templateId = assertId(id)
+  const template = await loadTemplateDetail(templateId)
+
+  const local = publicationIssues(template)
+  if (local.length > 0) {
+    return { ok: false, message: 'O modelo tem pendências que impedem a publicação.', issues: local }
+  }
+
+  try {
+    const version = usesDemoTemplates()
+      ? publishDemoTemplate(templateId, template.title, user.id)
+      : await send<TemplateVersionSummary>(`/inspection-templates/${templateId}/publish`, { method: 'POST' })
+    return { ok: true, message: `Versão ${version.versionNumber} publicada.`, versionNumber: version.versionNumber }
+  } catch (error) {
+    if (isApiError(error)) {
+      const issues = error.code === 'TEMPLATE_PUBLISH_INVALID' ? issuesFromApi(error.fieldErrors, template) : []
+      return { ok: false, message: messageFor(error), issues }
+    }
+    throw error
   }
 }
