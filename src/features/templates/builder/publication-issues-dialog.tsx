@@ -36,15 +36,21 @@ export function PublicationIssuesDialog({
   onClose: () => void
 }) {
   const closeRef = useRef<HTMLButtonElement>(null)
+  const onCloseRef = useRef(onClose)
 
+  useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
+
+  // Foco no fechar so ao abrir: refazer a cada renderizacao roubaria o foco.
   useEffect(() => {
     closeRef.current?.focus()
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
+      if (event.key === 'Escape') onCloseRef.current()
     }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
-  }, [onClose])
+  }, [])
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
