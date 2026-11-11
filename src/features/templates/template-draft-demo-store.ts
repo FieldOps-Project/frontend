@@ -1,6 +1,11 @@
 import 'server-only'
 
-import { DemoTemplateError, demoTemplateId, touchDemoTemplate } from '@/features/templates/template-demo-store'
+import {
+  DemoTemplateError,
+  demoTemplateId,
+  markDemoTemplatePublished,
+  touchDemoTemplate,
+} from '@/features/templates/template-demo-store'
 import type {
   ItemInput,
   ResponseType,
@@ -9,6 +14,7 @@ import type {
   TemplateSection,
   TemplateVersionSummary,
 } from '@/lib/domain/template-builder'
+import type { TemplateVersionDetail } from '@/lib/domain/template-publication'
 
 /**
  * Rascunhos e versoes dos modelos de demonstracao, com a mesma memoria da
@@ -211,6 +217,75 @@ export function draftState(): DraftState {
 /** Volta ao estado inicial. Usado pelos testes. */
 export function resetDemoDrafts(): void {
   globalStore.__fieldopsDemoTemplateDrafts = seed()
+  contentStore.__fieldopsDemoVersionContents = seedContents()
+}
+
+/*
+ * Conteudo congelado de cada versao publicada. Fica numa memoria propria para
+ * que um `next dev` ja rodando com o estado antigo nao quebre ao recarregar.
+ * As versoes de exemplo recebem o conteudo do rascunho inicial do modelo.
+ */
+const contentStore = globalThis as typeof globalThis & {
+  __fieldopsDemoVersionContents?: Map<string, readonly TemplateSection[]>
+}
+
+function seedContents(): Map<string, readonly TemplateSection[]> {
+  const contents = new Map<string, readonly TemplateSection[]>()
+  for (const n of [1, 2, 3, 4, 5, 6]) {
+    for (const [versionNumber] of VERSION_SEEDS[n] ?? []) {
+      contents.set(`e3000000-0000-4000-8000-${String(n).padStart(6, '0')}${String(versionNumber).padStart(6, '0')}`, seedSections(n))
+    }
+  }
+  return contents
+}
+
+function contents(): Map<string, readonly TemplateSection[]> {
+  contentStore.__fieldopsDemoVersionContents ??= seedContents()
+  return contentStore.__fieldopsDemoVersionContents
+}
+
+/** Nome de quem publicou as versoes de exemplo. */
+export function demoPublisherName(userId: string): string | null {
+  return userId === DEMO_PUBLISHER ? 'Mariana Ribeiro' : null
+}
+
+/** Versao publicada com o conteudo (como `GET /inspection-template-versions/{versionId}`). */
+export function demoTemplateVersion(versionId: string): TemplateVersionDetail | undefined {
+  for (const versions of draftState().versions.values()) {
+    const summary = versions.find((version) => version.id === versionId)
+    if (summary) return { ...summary, description: null, sections: contents().get(versionId) ?? [] }
+  }
+  return undefined
+}
+
+/**
+ * Como `POST /inspection-templates/{id}/publish`: congela uma copia do
+ * rascunho como a proxima versao numerada (`max + 1`); o rascunho continua
+ * editavel para a versao seguinte e o modelo passa a publicado. Quem chama
+ * confere as pendencias antes.
+ */
+export function publishDemoTemplate(
+  templateId: string,
+  title: string,
+  author: string,
+  now: Date = new Date(),
+): TemplateVersionSummary {
+  const versions = draftState().versions.get(templateId) ?? []
+  const versionNumber = Math.max(0, ...versions.map((version) => version.versionNumber)) + 1
+  const published: TemplateVersionSummary = {
+    id: crypto.randomUUID(),
+    templateId,
+    versionNumber,
+    title,
+    publishedBy: author,
+    publishedAt: now.toISOString(),
+    activeForNewInspections: true,
+  }
+
+  draftState().versions.set(templateId, [...versions, published])
+  contents().set(published.id, structuredClone(demoDraftSections(templateId)))
+  markDemoTemplatePublished(templateId, versionNumber, now)
+  return published
 }
 
 /** Secoes do rascunho, em ordem, com os itens em ordem. */
