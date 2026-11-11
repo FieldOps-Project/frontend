@@ -4,11 +4,18 @@ import { notFound } from 'next/navigation'
 
 import { paginate } from '@/features/inspections/list-data'
 import { demoTemplateCategories, findDemoTemplate, listDemoTemplates } from '@/features/templates/template-demo-store'
-import { demoDraftSections, demoTemplateVersions } from '@/features/templates/template-draft-demo-store'
-import { load } from '@/lib/dal'
+import {
+  demoDraftSections,
+  demoPublisherName,
+  demoTemplateVersion,
+  demoTemplateVersions,
+} from '@/features/templates/template-draft-demo-store'
+import { load, loadOptional } from '@/lib/dal'
 import type { InspectionTemplate, TemplateFilters } from '@/lib/domain/inspection-template'
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, type Page } from '@/lib/domain/page'
 import type { InspectionTemplateDetail, TemplateVersionSummary } from '@/lib/domain/template-builder'
+import type { TemplateVersionDetail } from '@/lib/domain/template-publication'
+import type { User } from '@/lib/domain/user'
 import { isId } from '@/lib/ids'
 
 export function usesDemoTemplates(): boolean {
@@ -88,4 +95,54 @@ export async function loadTemplateVersions(templateId: string): Promise<readonly
   }
 
   return load<readonly TemplateVersionSummary[]>(`/inspection-templates/${templateId}/versions`)
+}
+
+/**
+ * Versao publicada com o conteudo congelado
+ * (`GET /inspection-template-versions/{versionId}`). Versao de outro modelo
+ * responde 404, como identificador desconhecido.
+ */
+export async function loadTemplateVersion(templateId: string, versionId: string): Promise<TemplateVersionDetail> {
+  if (!isId(templateId) || !isId(versionId)) notFound()
+
+  const version = usesDemoTemplates()
+    ? demoTemplateVersion(versionId)
+    : await load<TemplateVersionDetail>(`/inspection-template-versions/${versionId}`)
+
+  if (!version || version.templateId !== templateId) notFound()
+  return version
+}
+
+/**
+ * Nome de quem publicou cada versao. A API devolve so o identificador
+ * (`publishedBy`); o nome vem de `GET /users/{id}`. Usuario que nao se consegue
+ * ler fica sem nome, sem derrubar a tela.
+ */
+export async function loadPublisherNames(
+  userIds: readonly (string | null)[],
+  currentUser: { readonly id: string; readonly name: string },
+): Promise<ReadonlyMap<string, string>> {
+  const ids = [...new Set(userIds.filter((id): id is string => id !== null))]
+  const names = new Map<string, string>()
+
+  for (const id of ids) {
+    if (id === currentUser.id) {
+      names.set(id, currentUser.name)
+      continue
+    }
+    if (usesDemoTemplates()) {
+      const name = demoPublisherName(id)
+      if (name) names.set(id, name)
+    }
+  }
+
+  if (!usesDemoTemplates()) {
+    const pending = ids.filter((id) => !names.has(id) && isId(id))
+    const users = await Promise.all(pending.map((id) => loadOptional<User>(`/users/${id}`)))
+    users.forEach((user) => {
+      if (user) names.set(user.id, user.name)
+    })
+  }
+
+  return names
 }
