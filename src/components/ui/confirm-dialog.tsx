@@ -22,7 +22,8 @@ const ConfirmContext = createContext<((request: ConfirmRequest) => Promise<boole
  * critica pergunta do mesmo jeito, e a mensagem especifica -- o que exatamente
  * vai acontecer -- fica com quem chama. O `<dialog>` nativo cuida do foco preso
  * dentro da caixa e do fechamento por Esc, que seriam trabalhosos de refazer a
- * mao e faceis de fazer errado.
+ * mao e faceis de fazer errado. O `m-auto` devolve a centralizacao que o reset
+ * do Tailwind tira de todo elemento (margem zero), inclusive do `<dialog>`.
  */
 export function ConfirmProvider({ children }: { children: ReactNode }) {
   const [pending, setPending] = useState<PendingRequest | null>(null)
@@ -67,7 +68,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
           event.preventDefault()
           settle(false)
         }}
-        className="max-w-md rounded-card border border-neutral-200 p-0 backdrop:bg-neutral-900/40"
+        className="m-auto w-[calc(100%-2rem)] max-w-md rounded-card border border-neutral-200 p-0 backdrop:bg-neutral-900/40"
       >
         {pending && (
           <div className="flex flex-col gap-4 p-6">
