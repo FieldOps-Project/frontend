@@ -17,6 +17,7 @@ import { requireRole } from '@/lib/dal'
 import { reviewItems } from '@/lib/domain/inspection-review'
 import { MANAGER_ROLES } from '@/lib/domain/user'
 import { isId } from '@/lib/ids'
+import { param } from '@/lib/search-params'
 
 export const metadata: Metadata = {
   title: 'Revisão da inspeção — FieldOps',
@@ -31,7 +32,7 @@ export const metadata: Metadata = {
  */
 export default async function InspectionReviewPage(props: PageProps<'/inspections/[inspectionId]/review'>) {
   const user = await requireRole(MANAGER_ROLES)
-  const { inspectionId } = await props.params
+  const [{ inspectionId }, searchParams] = await Promise.all([props.params, props.searchParams])
 
   if (!isId(inspectionId)) {
     notFound()
@@ -45,6 +46,11 @@ export default async function InspectionReviewPage(props: PageProps<'/inspection
     <div className="flex flex-col gap-8">
       <ReviewHeader
         review={review}
+        back={
+          param(searchParams, 'from') === 'queue'
+            ? { href: '/inspections/review-queue', label: 'Fila de revisão' }
+            : { href: `/inspections/${review.id}`, label: review.code }
+        }
         actions={
           decides ? (
             <ReviewDecision

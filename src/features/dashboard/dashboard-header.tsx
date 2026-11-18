@@ -24,7 +24,7 @@ export function DashboardHeader() {
       </div>
 
       <div className="grid shrink-0 grid-cols-1 gap-3 min-[420px]:grid-cols-2 md:flex">
-        <Link href="/inspections?review=1" className={OUTLINE}>
+        <Link href="/inspections/review-queue" className={OUTLINE}>
           <MdOutlineChecklistRtl aria-hidden className="size-5" />
           Revisar Pendências
         </Link>

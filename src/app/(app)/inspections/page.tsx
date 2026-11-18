@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { IoAddOutline, IoDownloadOutline } from 'react-icons/io5'
+import { IoAddOutline, IoDownloadOutline, IoListOutline } from 'react-icons/io5'
 
 import { EmptyState } from '@/components/ui/empty-state'
 import { FlashNotice, Notice } from '@/components/ui/notice'
@@ -8,6 +8,7 @@ import { CARD } from '@/components/ui/styles'
 import { InspectionFilters } from '@/features/inspections/inspection-filters'
 import { InspectionTable } from '@/features/inspections/inspection-table'
 import { loadInspectionFilterOptions, loadInspectionPage } from '@/features/inspections/list-data'
+import { countReviewQueue } from '@/features/inspections/review-queue-data'
 import { filterParams, hasActiveFilters, parseInspectionFilters } from '@/features/inspections/list-filters'
 import { requireRole } from '@/lib/dal'
 import { dayInSaoPaulo } from '@/lib/domain/inspection-list'
@@ -31,9 +32,10 @@ export default async function InspectionsPage(props: PageProps<'/inspections'>) 
   const searchParams = await props.searchParams
   const filters = parseInspectionFilters(searchParams)
 
-  const [page, options] = await Promise.all([
+  const [page, options, awaitingReview] = await Promise.all([
     loadInspectionPage(filters, pageParam(searchParams)),
     loadInspectionFilterOptions(),
+    countReviewQueue(),
   ])
   const filtered = hasActiveFilters(filters)
 
@@ -45,6 +47,16 @@ export default async function InspectionsPage(props: PageProps<'/inspections'>) 
           <p className="text-lg text-neutral-700">Gerencie e acompanhe todas as inspeções de campo.</p>
         </div>
         <div className="flex flex-wrap gap-3">
+          <Link href="/inspections/review-queue" className={OUTLINE}>
+            <IoListOutline aria-hidden className="size-5" />
+            Fila de revisão
+            {awaitingReview !== null && awaitingReview > 0 && (
+              <span className="rounded-full bg-warning-soft px-2 py-0.5 text-sm font-semibold text-warning">
+                {awaitingReview}
+                <span className="sr-only"> aguardando</span>
+              </span>
+            )}
+          </Link>
           <a href={withParams('/inspections/export', filterParams(filters))} download className={OUTLINE}>
             <IoDownloadOutline aria-hidden className="size-5" />
             Exportar

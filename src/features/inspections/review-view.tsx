@@ -1,5 +1,7 @@
+import Link from 'next/link'
 import type { ReactNode } from 'react'
 import {
+  IoArrowBack,
   IoAlertCircleOutline,
   IoCheckbox,
   IoCheckmark,
@@ -74,9 +76,23 @@ function SeverityBadge({ severity, size = 'md' }: { severity: Severity; size?: '
 }
 
 /** Cabecalho: codigo, situacao, tecnico e equipamento; as acoes ficam a direita. */
-export function ReviewHeader({ review, actions }: { review: InspectionReview; actions: ReactNode }) {
+export function ReviewHeader({
+  review,
+  actions,
+  back,
+}: {
+  review: InspectionReview
+  actions: ReactNode
+  /** Caminho de volta: a fila, quando a revisao foi aberta por ela, ou o detalhe da inspecao. */
+  back: { readonly href: string; readonly label: string }
+}) {
   return (
-    <header className="-mx-4 -mt-6 flex flex-col gap-4 border-b border-neutral-200 bg-neutral-0 px-4 py-5 sm:-mx-6 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+    <header className="-mx-4 -mt-6 flex flex-col gap-4 border-b border-neutral-200 bg-neutral-0 px-4 py-5 sm:-mx-6 sm:px-6">
+      <Link href={back.href} className="inline-flex w-fit items-center gap-1.5 text-sm font-medium text-brand-700 hover:underline">
+        <IoArrowBack aria-hidden className="size-4" />
+        {back.label}
+      </Link>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div className="flex min-w-0 flex-col gap-2">
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-3xl font-bold tracking-tight text-neutral-950">{review.code}</h1>
@@ -99,6 +115,7 @@ export function ReviewHeader({ review, actions }: { review: InspectionReview; ac
         </div>
       </div>
       {actions}
+      </div>
     </header>
   )
 }

@@ -32,6 +32,7 @@ const TEMPLATE_PAGES = /^\/inspection-templates\/[^/]+\/(edit|preview|versions)(
 /** Passos com nome proprio dentro de uma area, como a criacao de inspecao. */
 const PATH_LABELS: Record<string, string> = {
   'inspections/new': 'Nova inspeção',
+  'inspections/review-queue': 'Fila de revisão',
   'inspection-templates/new': 'Novo modelo',
 }
 
