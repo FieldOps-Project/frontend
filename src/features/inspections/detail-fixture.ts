@@ -70,12 +70,15 @@ type Execution = Pick<
   'startedAtDevice' | 'startedAtServer' | 'completedAtDevice' | 'submittedAtServer' | 'startLocation'
 >
 
-function executionOf(seed: InspectionListItem, index: number): Execution {
+function executionOf(seed: InspectionListItem, index: number, now: Date): Execution {
   if (!STARTED.includes(seed.status)) {
     return { startedAtDevice: null, startedAtServer: null, completedAtDevice: null, submittedAtServer: null, startLocation: null }
   }
 
-  const startedAtDevice = minutesAfter(seed.scheduledFor, 10)
+  /** Inspecao prevista para mais tarde hoje, mas ja iniciada: o inicio nunca fica no futuro. */
+  const planned = minutesAfter(seed.scheduledFor, 10)
+  const latest = new Date(now.getTime() - 60 * 60_000).toISOString()
+  const startedAtDevice = planned < latest ? planned : latest
   const completedAtDevice = SENT.includes(seed.status) ? minutesAfter(startedAtDevice, 165) : null
   /** A inspecao em revisao foi feita sem internet: o servidor so recebeu seis horas depois. */
   const offline = seed.id === DEMO_REVIEW_ID
@@ -203,7 +206,7 @@ function build(id: string, now: Date): DemoInspection | null {
   const supervisor = index % 2 === 0 ? DEMO_SUPERVISORS.marianaCosta : DEMO_SUPERVISORS.robertoLima
   const createdAt = minutesAfter(seed.scheduledFor, -5 * 24 * 60)
   const canceledAt = seed.status === 'CANCELED' ? minutesAfter(seed.scheduledFor, -26 * 60) : null
-  const execution = executionOf(seed, index)
+  const execution = executionOf(seed, index, now)
   const base: Base = { ...execution, supervisorName: supervisor.supervisorName, technicianName: seed.technicianName, createdAt, canceledAt }
   const changes = demoInspectionChanges(id)
   const patch = changes?.patch ?? {}

@@ -26,7 +26,7 @@ describe('RecentNonConformities', () => {
     expect(cells.getByText(ITEM.description)).toBeInTheDocument()
     expect(cells.getByText('Roof Level')).toBeInTheDocument()
     expect(cells.getByText('24 de out. de 2023')).toBeInTheDocument()
-    expect(cells.getByRole('link', { name: /INSP-2023-0892/ })).toHaveAttribute('href', '/inspections/insp-1/review')
+    expect(cells.getByRole('link', { name: /INSP-2023-0892/ })).toHaveAttribute('href', '/non-conformities/nc-1')
   })
 
   it('leva a todas as nao conformidades', () => {
