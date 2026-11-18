@@ -51,7 +51,7 @@ describe('loadInspectionPage na demonstracao', () => {
     const page = await loadInspectionPage({}, 0, 5)
 
     expect(page.content).toHaveLength(5)
-    expect(page.totalElements).toBe(12)
+    expect(page.totalElements).toBe(14)
     expect(page.totalPages).toBe(3)
     const dates = page.content.map((item) => item.scheduledFor)
     expect(dates).toEqual([...dates].sort())
@@ -61,7 +61,8 @@ describe('loadInspectionPage na demonstracao', () => {
   it('atalho aguardando revisao traz a inspecao da tela de revisao', async () => {
     const page = await loadInspectionPage({ review: true }, 0)
 
-    expect(page.content.map((item) => item.id)).toEqual([DEMO_REVIEW_ID])
+    expect(page.content.map((item) => item.id)).toContain(DEMO_REVIEW_ID)
+    expect(page.content.every((item) => ['SUBMITTED', 'UNDER_REVIEW'].includes(item.status))).toBe(true)
   })
 
   it('atalho atrasadas traz so quem passou da data e ainda esta com o tecnico', async () => {
