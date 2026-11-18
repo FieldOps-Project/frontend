@@ -12,6 +12,19 @@ const DATE_TIME = new Intl.DateTimeFormat('pt-BR', {
 
 const DATE = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeZone: 'UTC' })
 
+const DATE_TIME_SECONDS = new Intl.DateTimeFormat('pt-BR', {
+  dateStyle: 'short',
+  timeStyle: 'medium',
+  timeZone: TIME_ZONE,
+})
+
+/** Data e hora com segundos, como `24/10/2023, 14:32:01`, para a auditoria. */
+export function formatDateTimeSeconds(value: string | null | undefined): string {
+  if (!value) return '—'
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? '—' : DATE_TIME_SECONDS.format(date)
+}
+
 export function formatDateTime(value: string | null | undefined): string {
   if (!value) return '—'
   const date = new Date(value)

@@ -38,10 +38,13 @@ export function NumberedPagination({
   page,
   pathname,
   params,
+  noun = ['resultado', 'resultados'],
 }: {
   page: Page<unknown>
   pathname: string
   params: Record<string, string | undefined>
+  /** Singular e plural do que se conta, como `['registro', 'registros']`. */
+  noun?: readonly [string, string]
 }) {
   if (page.totalElements === 0) return null
 
@@ -58,7 +61,7 @@ export function NumberedPagination({
         Mostrando <strong className="font-semibold text-neutral-900">{from}</strong> a{' '}
         <strong className="font-semibold text-neutral-900">{to}</strong> de{' '}
         <strong className="font-semibold text-neutral-900">{page.totalElements}</strong>{' '}
-        {page.totalElements === 1 ? 'resultado' : 'resultados'}
+        {page.totalElements === 1 ? noun[0] : noun[1]}
       </p>
       <ul className="flex items-center gap-2">
         <li>

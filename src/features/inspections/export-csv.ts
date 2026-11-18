@@ -24,7 +24,7 @@ const HEADER = [
  * `+`, `-` ou `@` ganha um apostrofo, para que a planilha nao o execute como
  * formula (injecao de formula em CSV).
  */
-function cell(value: string | number | null): string {
+export function csvCell(value: string | number | null): string {
   if (value === null) return ''
   let text = String(value)
   if (typeof value === 'string' && /^[=+\-@\t\r]/.test(text)) text = `'${text}`
@@ -52,5 +52,10 @@ export function inspectionsToCsv(items: readonly InspectionListItem[], today: st
     formatDateTime(item.updatedAt),
   ])
 
-  return `﻿${[HEADER, ...rows].map((row) => row.map(cell).join(';')).join('\r\n')}\r\n`
+  return toCsv(HEADER, rows)
+}
+
+/** Planilha com cabecalho, separador `;` e BOM UTF-8. */
+export function toCsv(header: readonly string[], rows: readonly (readonly (string | number | null)[])[]): string {
+  return `﻿${[header, ...rows].map((row) => row.map(csvCell).join(';')).join('\r\n')}\r\n`
 }

@@ -68,6 +68,11 @@ export const HISTORY_ACTION_LABELS: Record<string, string> = {
   INSPECTION_REJECTED: 'Supervisor solicitou correção',
   INSPECTION_REOPENED: 'Reaberta para correção',
   INSPECTION_CANCELED: 'Inspeção cancelada',
+  RESPONSE_CREATED: 'Resposta registrada',
+  RESPONSE_UPDATED: 'Resposta alterada',
+  EVIDENCE_ADDED: 'Fotografia capturada',
+  EVIDENCE_REMOVED: 'Fotografia removida',
+  NON_CONFORMITY_CREATED: 'Não conformidade criada',
 }
 
 /** Evento do historico, vindo da auditoria (`GET /inspections/{id}/history`). */

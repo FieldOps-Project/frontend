@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { demoInspectionDetail } from '@/features/inspections/detail-fixture'
 import { DEMO_REVIEW, DEMO_REVIEW_ID } from '@/features/inspections/review-fixture'
 import { demoNonConformities, demoNonConformityId } from '@/features/non-conformities/non-conformity-fixture'
 import type { Evidence, EvidenceVariant } from '@/lib/domain/evidence'
@@ -19,18 +20,32 @@ function reviewNonConformityId(itemId: string): string | null {
   return index === -1 ? null : demoNonConformityId(index + 1)
 }
 
-function reviewEvidences(): Evidence[] {
+/**
+ * As fotos da revisao tem horarios fixos do prototipo; na galeria e na linha do
+ * tempo elas acompanham a execucao de demonstracao, que e relativa a hoje.
+ */
+function shiftToExecution(value: string | null, now: Date): string | null {
+  const started = demoInspectionDetail(DEMO_REVIEW_ID, now)?.startedAtDevice
+  if (!value || !started || !DEMO_REVIEW.startedAtDevice) return value
+  const offset = Date.parse(value) - Date.parse(DEMO_REVIEW.startedAtDevice)
+  return new Date(Date.parse(started) + offset).toISOString()
+}
+
+function reviewEvidences(now: Date): Evidence[] {
+  const submitted = demoInspectionDetail(DEMO_REVIEW_ID, now)?.submittedAtServer ?? null
   return DEMO_REVIEW.sections.flatMap((section) =>
     section.items.flatMap((item) =>
       item.photos.map((photo) => ({
         ...photo,
+        capturedAtDevice: shiftToExecution(photo.capturedAtDevice, now) ?? photo.capturedAtDevice,
+        uploadedAt: photo.uploadedAt === null ? null : submitted,
         inspectionId: DEMO_REVIEW_ID,
         responseId: null,
         nonConformityId: reviewNonConformityId(item.id),
         itemId: item.id,
         itemCode: item.code,
         itemTitle: item.title,
-        serverReceivedAt: DEMO_REVIEW.submittedAtServer,
+        serverReceivedAt: submitted,
       })),
     ),
   )
@@ -54,7 +69,7 @@ function nonConformityEvidences(now: Date): Evidence[] {
 }
 
 export function demoEvidences(now: Date = new Date()): readonly Evidence[] {
-  return [...reviewEvidences(), ...nonConformityEvidences(now)]
+  return [...reviewEvidences(now), ...nonConformityEvidences(now)]
 }
 
 export function demoEvidence(id: string, now: Date = new Date()): Evidence | undefined {
