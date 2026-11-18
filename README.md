@@ -182,6 +182,23 @@ há mais tempo para a mais recente.
   (`GET /inspections?review=1&sort=submittedAtServer,asc`); em `development` a fila usa as
   inspeções de demonstração.
 
+## Auditoria
+
+O `/audit` segue o desenho do Stitch "Auditoria de Sistema" e a issue #24: o registro de atividades
+do sistema, do evento mais recente para o mais antigo, somente leitura (RN-088).
+
+- **Filtros** de período (últimos 7 dias por padrão), usuário, entidade e tipo de ação, na URL e
+  com paginação no servidor. O filtro de entidade não está no Stitch; entra porque a issue exige.
+- **Tabela**: código do evento, data e hora com segundos (e o horário do dispositivo quando a ação
+  veio do aplicativo), usuário ou "Sistema (Auto)", ação em linguagem de negócio, entidade com link
+  e descrição. Abaixo de 1280px cada evento vira um cartão.
+- **Exportar Relatório** baixa o CSV de todos os eventos filtrados (`/audit/export`), avisando no
+  fim se o relatório foi limitado.
+- **Linha do tempo** no detalhe da inspeção: mudanças de estado, fotografias e não conformidades,
+  com o link "Ver na auditoria" filtrado pela inspeção.
+- O único ponto de troca é `features/audit/audit-data.ts` (`GET /audit-events`); em `development`
+  os eventos saem das inspeções, fotos e não conformidades de demonstração.
+
 ## Evidências
 
 As fotografias seguem a issue #19 e não têm URL pública.
