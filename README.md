@@ -118,6 +118,32 @@ por categoria, e a situação de cada modelo com a versão vigente ("Publicado �
   o servidor de desenvolvimento reiniciar. O único ponto de troca para a API é
   `features/templates/templates-data.ts`.
 
+## Detalhe da inspeção
+
+O `/inspections/{id}` segue a issue #18 e o documento 14.9. Clicar no código da inspeção na
+listagem abre o detalhe; o link **Revisar** continua indo direto para a revisão.
+
+- **Planejamento**: cliente, local, equipamento, técnico, supervisor, prioridade, prazo (com
+  atraso), modelo e instruções.
+- **Execução**: horários do dispositivo e do servidor lado a lado (RN-074), com "Aguardando
+  sincronização" quando o servidor ainda não recebeu; localização registrada com precisão e
+  horário; progresso dos itens.
+- **Histórico de estados** como linha do tempo (autor, ação, horário do servidor e, quando houver,
+  do dispositivo), a partir de `GET /inspections/{id}/history`. Se a API não responder, só esse
+  bloco aparece como indisponível.
+- **Ações conforme o estado** (documento 7.6): **Cancelar** em atribuída, em execução e
+  reprovada, com motivo obrigatório e botão desativado enquanto ele estiver vazio (RN-029);
+  aprovada nunca oferece cancelar (RN-030). **Revisar** só em enviada e em revisão. **Editar
+  planejamento** (`/inspections/{id}/edit`) só em rascunho e atribuída: técnico, supervisor, data,
+  prioridade e instruções; modelo, cliente, local e equipamento ficam bloqueados.
+- **Contrato** em `lib/domain/inspection-detail.ts`. O cancelamento usa o endpoint que já existe
+  (`POST /inspections/{id}/cancel`, `{ reason }`); detalhe, histórico e `PUT /inspections/{id}`
+  ainda não existem na API.
+- **Demonstração com memória** em `NEXT_PUBLIC_APP_ENV=development`
+  (`features/inspections/inspection-demo-store.ts`): as inspeções da listagem abrem com detalhe e
+  histórico, e cancelar ou replanejar aparece também na listagem e no dashboard até o servidor
+  reiniciar. O único ponto de troca para a API é `features/inspections/detail-data.ts`.
+
 O cabeçalho do painel tem a busca em todas as áreas (`/search`), notificações, ajuda
 (`/support`), o ambiente, o perfil e o menu da conta (configurações e sair).
 

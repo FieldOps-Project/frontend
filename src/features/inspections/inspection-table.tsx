@@ -32,6 +32,10 @@ function avatarTone(name: string): string {
   return AVATAR_TONES[sum % AVATAR_TONES.length] as string
 }
 
+function detailHref(item: InspectionListItem): string {
+  return `/inspections/${item.id}`
+}
+
 function reviewHref(item: InspectionListItem): string {
   return `/inspections/${item.id}/review`
 }
@@ -141,13 +145,9 @@ export function InspectionTable({ items, today }: { items: readonly InspectionLi
             <tr key={item.id} className="hover:bg-neutral-50">
               <td className={CELL}>
                 <div className="flex flex-col gap-1">
-                  {isAwaitingReview(item) ? (
-                    <Link href={reviewHref(item)} className="font-medium text-brand-700 hover:underline">
-                      {item.code}
-                    </Link>
-                  ) : (
-                    <span className="text-neutral-900">{item.code}</span>
-                  )}
+                  <Link href={detailHref(item)} className="font-medium text-brand-700 hover:underline">
+                    {item.code}
+                  </Link>
                   <span className="text-sm text-neutral-600">{item.title}</span>
                 </div>
               </td>
