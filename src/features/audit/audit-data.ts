@@ -1,12 +1,13 @@
 import 'server-only'
 
 import { demoAuditEvents } from '@/features/audit/audit-fixture'
-import { loadActiveUsers } from '@/features/catalog/lookups'
 import { paginate } from '@/features/inspections/list-data'
+import { isApiError } from '@/lib/api/errors'
 import { loadOptional } from '@/lib/dal'
 import { auditActionLabel, AUDIT_ACTION_LABELS, periodStart, type AuditEvent, type AuditFilters } from '@/lib/domain/audit'
 import { dayInSaoPaulo } from '@/lib/domain/inspection-list'
-import { DEFAULT_PAGE_SIZE, type Page } from '@/lib/domain/page'
+import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, type Page } from '@/lib/domain/page'
+import type { User } from '@/lib/domain/user'
 
 export type FilterOption = { readonly value: string; readonly label: string }
 
@@ -84,12 +85,19 @@ export async function loadAuditFilterOptions(): Promise<{
     }
   }
 
-  const users = await Promise.all([loadActiveUsers('ADMIN'), loadActiveUsers('SUPERVISOR'), loadActiveUsers('TECHNICIAN')])
+  /*
+   * Todos os usuarios, inclusive bloqueados e inativos: costuma ser justamente
+   * quem se investiga na auditoria. Se a lista falhar, o filtro fica sem
+   * opcoes e a pagina continua de pe.
+   */
+  let users: Page<User> | null = null
+  try {
+    users = await loadOptional<Page<User>>('/users', { size: MAX_PAGE_SIZE, sort: 'name,asc' })
+  } catch (error) {
+    if (!isApiError(error)) throw error
+  }
   return {
-    actors: users
-      .flat()
-      .map((user) => ({ value: user.id, label: user.name }))
-      .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR')),
+    actors: (users?.content ?? []).map((user) => ({ value: user.id, label: user.name })),
     actions,
   }
 }
