@@ -154,14 +154,32 @@ estado.
   da mais grave para a menos grave. A criticidade vai sempre escrita no selo (RN-054).
 - **Detalhe** (`/non-conformities/{id}`): descrição, criticidade, a inspeção a que pertence
   (RN-052), horários de campo e do servidor, o **item de origem** com pergunta, resposta e
-  observação do técnico (RN-053) e as evidências. As fotos aparecem como marcadores até a
-  issue #19 trazer a imagem.
+  observação do técnico (RN-053) e as evidências.
 - **Bloco no detalhe da inspeção** com as não conformidades dela, cada uma levando ao detalhe; as
   não conformidades recentes do dashboard também abrem o detalhe.
 - **Contrato** em `lib/domain/non-conformity.ts`. A API ainda não publica
   `GET /non-conformities` nem `/{id}` (backend #23); em `development` a tela usa a demonstração
   ligada às inspeções de exemplo. O único ponto de troca é
   `features/non-conformities/non-conformities-data.ts`.
+
+## Evidências
+
+As fotografias seguem a issue #19 e não têm URL pública.
+
+- **Imagem só com sessão válida**: o navegador pede `/api/evidence/{id}?variant=thumbnail|original`,
+  um Route Handler que confere a sessão na API (401 sem ela, 403 fora do painel) e repassa o
+  binário de `GET /evidence/{id}/file`. O escopo de cada inspeção é decidido pela API, e o 403 ou
+  404 dela é repassado. A resposta usa cache privado, nunca compartilhado entre usuários.
+- **Miniatura na lista, original só na ampliação**: as miniaturas carregam sob demanda; a
+  ampliação mostra a imagem inteira, a descrição, o horário de captura no dispositivo e as
+  coordenadas (com link para o mapa), e navega pelas setas.
+- **Galeria no detalhe da inspeção**, agrupada pelo item do checklist (RN-045). A revisão e o
+  detalhe da não conformidade usam as mesmas miniaturas junto do item.
+- **Arquivo pendente** (metadados recebidos, upload não confirmado) aparece como "Aguardando
+  upload", sem imagem quebrada. Nenhuma tela oferece excluir evidência (RN-049).
+- **Contrato** em `lib/domain/evidence.ts`. A API ainda não publica as evidências (backend #22);
+  em `development` as imagens são desenhadas em SVG pelo próprio Route Handler. O único ponto de
+  troca da listagem é `features/evidence/evidence-data.ts`.
 
 O cabeçalho do painel tem a busca em todas as áreas (`/search`), notificações, ajuda
 (`/support`), o ambiente, o perfil e o menu da conta (configurações e sair).
