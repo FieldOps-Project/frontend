@@ -39,20 +39,22 @@ describe('InspectionTable', () => {
     expect(line.getByText('CS')).toBeInTheDocument()
   })
 
-  it('leva quem aguarda revisao para a tela de revisao', () => {
+  it('abre o detalhe pelo codigo da inspecao', () => {
+    render(<InspectionTable items={[BASE]} today="2026-10-23" />)
+
+    expect(screen.getByRole('link', { name: 'INS-2023-089' })).toHaveAttribute('href', `/inspections/${BASE.id}`)
+  })
+
+  it('leva quem aguarda revisao direto para a tela de revisao', () => {
     render(<InspectionTable items={[{ ...BASE, code: 'INSP-2023-0892', status: 'UNDER_REVIEW' }]} today="2026-10-23" />)
 
-    expect(screen.getByRole('link', { name: 'INSP-2023-0892' })).toHaveAttribute(
-      'href',
-      `/inspections/${BASE.id}/review`,
-    )
-    expect(screen.getByRole('link', { name: 'Revisar' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Revisar' })).toHaveAttribute('href', `/inspections/${BASE.id}/review`)
   })
 
   it('nao oferece revisar fora do recorte de revisao', () => {
     render(<InspectionTable items={[BASE]} today="2026-10-23" />)
 
-    expect(screen.queryByRole('link')).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Revisar' })).not.toBeInTheDocument()
   })
 
   it('indica quando ainda nao ha tecnico atribuido', () => {
