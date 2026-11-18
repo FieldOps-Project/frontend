@@ -8,12 +8,12 @@ import { formatRecentDate } from '@/lib/format'
 
 const HEAD = 'px-6 py-4 text-left text-[13px] font-medium tracking-wider whitespace-nowrap text-neutral-700 uppercase'
 
-function reviewHref(item: RecentNonConformity): string {
-  return `/inspections/${item.inspectionId}/review`
+function detailHref(item: RecentNonConformity): string {
+  return `/non-conformities/${item.id}`
 }
 
 function openLabel(item: RecentNonConformity): string {
-  return `Abrir a inspeção ${item.inspectionCode}: ${item.title}`
+  return `Abrir a não conformidade da inspeção ${item.inspectionCode}: ${item.title}`
 }
 
 /** Celular: a linha inteira e o alvo do toque. */
@@ -23,7 +23,7 @@ function CardList({ items }: { items: readonly RecentNonConformity[] }) {
       {items.map((item) => (
         <li key={item.id}>
           <Link
-            href={reviewHref(item)}
+            href={detailHref(item)}
             aria-label={openLabel(item)}
             className="flex items-center gap-3 px-4 py-4 transition-colors hover:bg-neutral-50 sm:px-6"
           >
@@ -85,7 +85,7 @@ function Table({ items }: { items: readonly RecentNonConformity[] }) {
             </td>
             <td className="px-6 py-5 text-right align-middle">
               <Link
-                href={reviewHref(item)}
+                href={detailHref(item)}
                 aria-label={openLabel(item)}
                 className="inline-grid size-9 place-items-center rounded-full text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-brand-700"
               >

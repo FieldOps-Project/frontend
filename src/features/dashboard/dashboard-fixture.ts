@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { demoInspections } from '@/features/inspections/list-fixture'
+import { demoNonConformityId } from '@/features/non-conformities/non-conformity-fixture'
 import { DEMO_REVIEW, DEMO_REVIEW_ID } from '@/features/inspections/review-fixture'
 import { emptyStatusCounts, type DashboardSummary, type RecentNonConformity } from '@/lib/domain/dashboard'
 import { dayInSaoPaulo, isAwaitingReview, isOverdue } from '@/lib/domain/inspection-list'
@@ -44,15 +45,15 @@ function at(now: Date, daysAgo: number, time: string): string {
 }
 
 /**
- * Nao conformidades recentes: as da inspecao de demonstracao da revisao, a
- * unica que abre em desenvolvimento -- assim a seta de cada linha leva a uma
- * tela que existe.
+ * Nao conformidades recentes: as da inspecao de demonstracao da revisao, com os
+ * mesmos identificadores da listagem de nao conformidades -- assim a seta de
+ * cada linha abre o detalhe de demonstracao.
  */
 export function demoRecentNonConformities(now: Date = new Date()): readonly RecentNonConformity[] {
   return DEMO_REVIEW.nonConformities.map((nonConformity, index) => {
     const reported = REPORTED[index % REPORTED.length] ?? REPORTED[0]
     return {
-      id: nonConformity.id,
+      id: demoNonConformityId(index + 1),
       inspectionId: DEMO_REVIEW_ID,
       inspectionCode: DEMO_REVIEW.code,
       title: nonConformity.title,

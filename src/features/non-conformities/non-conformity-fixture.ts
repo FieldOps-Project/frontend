@@ -14,7 +14,8 @@ import type { NonConformityDetail, NonConformityOrigin } from '@/lib/domain/non-
  * inspecao contem a mesma historia. As da inspecao em revisao sao as mesmas
  * da tela de revisao, com o item, a resposta e as fotos de la.
  */
-function ncId(n: number): string {
+/** Identificador da nao conformidade de demonstracao numero `n`; as tres primeiras sao as da revisao. */
+export function demoNonConformityId(n: number): string {
   return `9c000000-0000-4000-8000-${String(n).padStart(12, '0')}`
 }
 
@@ -157,7 +158,7 @@ export function demoNonConformities(now: Date = new Date()): readonly NonConform
 
     return [
       {
-        id: ncId(seed.n),
+        id: demoNonConformityId(seed.n),
         title: seed.title,
         description: seed.description,
         severity: seed.severity,
