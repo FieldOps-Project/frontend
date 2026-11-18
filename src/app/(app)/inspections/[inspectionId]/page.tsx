@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { IoCreateOutline, IoEyeOutline } from 'react-icons/io5'
 
-import { Notice } from '@/components/ui/notice'
+import { FlashNotice, Notice } from '@/components/ui/notice'
 import { CancelInspection } from '@/features/inspections/cancel-inspection'
 import { isDemoInspection, loadInspectionDetail, loadInspectionHistory } from '@/features/inspections/detail-data'
 import {
@@ -18,6 +18,7 @@ import { canCancel, canEditPlanning, canOpenReview } from '@/lib/domain/inspecti
 import { dayInSaoPaulo } from '@/lib/domain/inspection-list'
 import { MANAGER_ROLES } from '@/lib/domain/user'
 import { isId } from '@/lib/ids'
+import { param } from '@/lib/search-params'
 
 export const metadata: Metadata = {
   title: 'Detalhe da inspeção — FieldOps',
@@ -38,7 +39,7 @@ const EDIT_LINK =
  */
 export default async function InspectionDetailPage(props: PageProps<'/inspections/[inspectionId]'>) {
   const user = await requireRole(MANAGER_ROLES)
-  const { inspectionId } = await props.params
+  const [{ inspectionId }, searchParams] = await Promise.all([props.params, props.searchParams])
 
   if (!isId(inspectionId)) {
     notFound()
@@ -71,6 +72,8 @@ export default async function InspectionDetailPage(props: PageProps<'/inspection
           )
         }
       />
+
+      <FlashNotice code={param(searchParams, 'notice')} />
 
       {isDemoInspection(inspection.id) && (
         <Notice tone="warning">
