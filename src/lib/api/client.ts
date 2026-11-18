@@ -72,3 +72,29 @@ export async function apiFetch<T>(path: string, request: ApiRequest): Promise<T>
 
   return (await response.json()) as T
 }
+
+/**
+ * Leitura de arquivo (imagem de evidencia) para Route Handlers. Devolve a
+ * `Response` da API para o binario ser repassado em fluxo, sem carregar a
+ * imagem inteira na memoria do servidor do Next. Erros viram `ApiError`, como
+ * em `apiFetch`.
+ */
+export async function apiFetchFile(path: string, request: Omit<ApiRequest, 'method' | 'body'>): Promise<Response> {
+  const headers: Record<string, string> = { Accept: 'image/*' }
+  if (request.token) {
+    headers.Authorization = `Bearer ${request.token}`
+  }
+
+  let response: Response
+  try {
+    response = await fetch(buildUrl(path, request.query), { headers, cache: 'no-store' })
+  } catch {
+    throw new ApiError({ status: 0, code: NETWORK_ERROR_CODE, message: 'API unreachable' })
+  }
+
+  if (!response.ok) {
+    throw await toApiError(response)
+  }
+
+  return response
+}
