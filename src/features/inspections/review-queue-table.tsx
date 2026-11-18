@@ -7,8 +7,8 @@ import { INSPECTION_PRIORITY_LABELS } from '@/lib/domain/inspection-scheduling'
 import { isWaitingLong, waitingLabel, type ReviewQueueItem } from '@/lib/domain/review-queue'
 import { formatDateTime } from '@/lib/format'
 
-const HEAD = 'px-5 py-4 text-left text-[13px] font-medium tracking-wider whitespace-nowrap text-neutral-700 uppercase'
-const CELL = 'px-5 py-4 align-top'
+const HEAD = 'px-4 py-4 text-left text-[13px] font-medium tracking-wider whitespace-nowrap text-neutral-700 uppercase'
+const CELL = 'px-4 py-4 align-top'
 
 const REVIEW_BUTTON =
   'inline-flex h-10 items-center gap-1.5 rounded-field bg-brand-700 px-4 text-sm font-semibold whitespace-nowrap text-neutral-0 transition-colors hover:bg-brand-800'
@@ -49,12 +49,13 @@ function ReviewState({ item }: { item: ReviewQueueItem }) {
 
 /**
  * Fila de revisao (issue #21), na ordem em que chega: maior espera primeiro.
- * No celular cada inspecao vira um cartao; o botao Revisar fica em todas.
+ * Abaixo de 1280px cada inspecao vira um cartao, sem rolagem horizontal; o
+ * botao Revisar fica em todas.
  */
 export function ReviewQueueTable({ items, now }: { items: readonly ReviewQueueItem[]; now: Date }) {
   return (
     <>
-      <ul className="divide-y divide-neutral-200 lg:hidden">
+      <ul className="divide-y divide-neutral-200 xl:hidden">
         {items.map((item) => (
           <li key={item.id} className="flex flex-col gap-3 px-4 py-4 sm:px-5">
             <div className="flex flex-wrap items-start justify-between gap-2">
@@ -80,15 +81,15 @@ export function ReviewQueueTable({ items, now }: { items: readonly ReviewQueueIt
         ))}
       </ul>
 
-      <div className="hidden overflow-x-auto lg:block">
-        <table className="w-full min-w-[52rem]">
+      <div className="hidden xl:block">
+        <table className="w-full">
           <thead className="border-b border-neutral-200 bg-neutral-100">
             <tr>
               <th scope="col" className={HEAD}>
                 Inspeção
               </th>
               <th scope="col" className={HEAD}>
-                Cliente, local e técnico
+                Cliente e local
               </th>
               <th scope="col" className={HEAD}>
                 Espera
@@ -131,7 +132,7 @@ export function ReviewQueueTable({ items, now }: { items: readonly ReviewQueueIt
                 <td className={CELL}>
                   <Waiting item={item} now={now} />
                 </td>
-                <td className={`${CELL} min-w-48`}>
+                <td className={CELL}>
                   <ReviewState item={item} />
                 </td>
                 <td className={`${CELL} text-right`}>
