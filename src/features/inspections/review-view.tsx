@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react'
 import {
   IoAlertCircleOutline,
-  IoCameraOutline,
   IoCheckbox,
   IoCheckmark,
   IoClose,
@@ -14,6 +13,7 @@ import {
   IoTimeOutline,
 } from 'react-icons/io5'
 
+import { EvidenceThumbnails } from '@/features/evidence/evidence-viewer'
 import { INSPECTION_STATUS_LABELS } from '@/lib/domain/inspection'
 import {
   CONFORMITY_LABELS,
@@ -311,20 +311,7 @@ function ChecklistItem({ item, nonConformity }: { item: ReviewItem; nonConformit
               </span>
             </p>
           )}
-          {item.photos.length > 0 && (
-            <ul aria-label="Fotografias do item" className="flex flex-wrap gap-3">
-              {item.photos.map((photo, index) => (
-                <li key={photo.id} className="flex w-36 flex-col gap-1.5">
-                  <div className="grid aspect-[4/3] place-items-center rounded-field border border-neutral-200 bg-neutral-100 text-neutral-400">
-                    <IoCameraOutline aria-hidden className="size-7" />
-                  </div>
-                  <span className="text-xs text-neutral-600">
-                    {photo.description ?? `Foto ${index + 1}`} · {formatDateTime(photo.capturedAtDevice)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
+          {item.photos.length > 0 && <EvidenceThumbnails photos={item.photos} label={`Fotografias do item ${item.code}`} />}
         </div>
       )}
     </li>

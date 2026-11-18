@@ -19,6 +19,11 @@ export function demoNonConformityId(n: number): string {
   return `9c000000-0000-4000-8000-${String(n).padStart(12, '0')}`
 }
 
+/** Foto `index` da nao conformidade `n`, com UUID fixo para passar pelo Route Handler. */
+export function demoNonConformityPhotoId(n: number, index: number): string {
+  return `9e000000-0000-4000-8000-${String(n).padStart(6, '0')}${String(index).padStart(6, '0')}`
+}
+
 function inspectionId(n: number): string {
   return `c0000000-0000-4000-8000-${String(n).padStart(12, '0')}`
 }
@@ -178,9 +183,12 @@ export function demoNonConformities(now: Date = new Date()): readonly NonConform
         evidences:
           evidences ??
           seed.photos.map((description, index) => ({
-            id: `photo-nc-${seed.n}-${index + 1}`,
+            id: demoNonConformityPhotoId(seed.n, index + 1),
             description,
-            capturedAtDevice: createdAtDevice,
+            capturedAtDevice: minutesAfter(createdAtDevice, index),
+            latitude: inspection.startLocation?.latitude ?? null,
+            longitude: inspection.startLocation?.longitude ?? null,
+            uploadedAt: inspection.submittedAtServer ?? inspection.startedAtServer,
           })),
       },
     ]
