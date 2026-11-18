@@ -68,9 +68,21 @@ describe('detalhe de demonstracao', () => {
 
   it('monta o historico em ordem, terminando no estado atual', async () => {
     const history = (await loadInspectionHistory(DEMO_REVIEW_ID)) ?? []
-    expect(history.map((event) => event.newStatus)).toEqual(['DRAFT', 'ASSIGNED', 'IN_PROGRESS', 'SUBMITTED', 'UNDER_REVIEW'])
-    const times = history.map((event) => Date.parse(event.occurredAt))
+    expect(history.flatMap((event) => (event.newStatus ? [event.newStatus] : []))).toEqual([
+      'DRAFT',
+      'ASSIGNED',
+      'IN_PROGRESS',
+      'SUBMITTED',
+      'UNDER_REVIEW',
+    ])
+    const times = history.map((event) => Date.parse(event.deviceOccurredAt ?? event.occurredAt))
     expect(times).toEqual([...times].sort((a, b) => a - b))
+  })
+
+  it('inclui fotografias e nao conformidades na linha do tempo (issue #24)', async () => {
+    const actions = ((await loadInspectionHistory(DEMO_REVIEW_ID)) ?? []).map((event) => event.action)
+    expect(actions).toContain('EVIDENCE_ADDED')
+    expect(actions).toContain('NON_CONFORMITY_CREATED')
   })
 
   it('mostra na listagem, no detalhe e no historico o que foi mudado na demonstracao', async () => {

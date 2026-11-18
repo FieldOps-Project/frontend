@@ -2,10 +2,10 @@ import 'server-only'
 
 import { notFound } from 'next/navigation'
 
+import { demoInspectionTimeline } from '@/features/audit/audit-fixture'
 import { loadActiveUsers } from '@/features/catalog/lookups'
 import {
   demoInspectionDetail,
-  demoInspectionHistory,
   demoPlanningPeople,
   isDemoInspectionId,
 } from '@/features/inspections/detail-fixture'
@@ -38,13 +38,14 @@ export async function loadInspectionDetail(id: string): Promise<InspectionDetail
 }
 
 /**
- * Historico de estados a partir da auditoria (`GET /inspections/{id}/history`).
- * Enquanto a API nao publica o endpoint, devolve `null` e a tela mostra o bloco
- * como indisponivel, sem derrubar o restante do detalhe.
+ * Linha do tempo a partir da auditoria (`GET /inspections/{id}/history`):
+ * mudancas de estado, fotografias e nao conformidades (issue #24). Enquanto a
+ * API nao publica o endpoint, devolve `null` e a tela mostra o bloco como
+ * indisponivel, sem derrubar o restante do detalhe.
  */
 export async function loadInspectionHistory(id: string): Promise<readonly InspectionHistoryEvent[] | null> {
   if (isDemoInspection(id)) {
-    return demoInspectionHistory(id)
+    return demoInspectionTimeline(id)
   }
   return loadOptional<readonly InspectionHistoryEvent[]>(`/inspections/${id}/history`)
 }
