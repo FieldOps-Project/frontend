@@ -52,6 +52,8 @@ const SEEDS: readonly Seed[] = [
   { id: id(97), code: 'INS-2023-097', title: 'Vistoria de extintores', ...CLIENTS.alpha, siteName: 'Galpão 3 - Setor Norte', equipmentName: 'Extintor CO2 6 kg', ...DEMO_TECHNICIANS.anaPaula, priority: 'MEDIUM', status: 'CANCELED', day: -3, time: '15:00', answeredItems: 0, applicableItems: 15 },
   { id: id(98), code: 'INS-2023-098', title: 'Manutenção Preventiva', ...CLIENTS.beta, siteName: 'Armazém Central', equipmentName: 'Esteira EST-10', ...DEMO_TECHNICIANS.carlosSilva, priority: 'MEDIUM', status: 'ASSIGNED', day: 2, time: '11:00', answeredItems: 0, applicableItems: 24 },
   { id: id(99), code: 'INS-2023-099', title: 'Inspeção de Rotina', ...CLIENTS.delta, siteName: 'Bloco B - 2º andar', equipmentName: 'Chiller CH-3', ...DEMO_TECHNICIANS.unassigned, priority: 'LOW', status: 'DRAFT', day: 7, time: '09:30', answeredItems: 0, applicableItems: 30 },
+  { id: id(100), code: 'INS-2023-100', title: 'Vistoria de extintores', ...CLIENTS.omega, siteName: 'Obra - Torre B', equipmentName: 'Extintor AP 10 L', ...DEMO_TECHNICIANS.joaoPedro, priority: 'MEDIUM', status: 'SUBMITTED', day: -3, time: '08:30', answeredItems: 15, applicableItems: 15 },
+  { id: id(101), code: 'INS-2023-101', title: 'Manutenção Preventiva', ...CLIENTS.delta, siteName: 'Subsolo - Casa de máquinas', equipmentName: 'Bomba de recalque BR-2', ...DEMO_TECHNICIANS.carlosSilva, priority: 'HIGH', status: 'SUBMITTED', day: -1, time: '15:00', answeredItems: 22, applicableItems: 22 },
 ]
 
 /** Instante no dia relativo de hoje, no horario de Sao Paulo (UTC-3). */

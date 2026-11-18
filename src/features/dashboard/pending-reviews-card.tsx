@@ -13,7 +13,7 @@ const NUMBER = new Intl.NumberFormat('pt-BR')
 export function PendingReviewsCard({ count }: { count: number }) {
   return (
     <Link
-      href="/inspections?review=1"
+      href="/inspections/review-queue"
       aria-labelledby="pending-reviews-title"
       aria-describedby="pending-reviews-count"
       className={`${DASHBOARD_CARD} group relative flex flex-col justify-center gap-3 overflow-hidden px-6 py-6 transition-colors hover:border-tertiary-300`}

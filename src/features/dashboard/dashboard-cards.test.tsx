@@ -47,7 +47,7 @@ describe('PendingReviewsCard', () => {
     render(<PendingReviewsCard count={45} />)
 
     const card = screen.getByRole('link', { name: 'Revisões Pendentes' })
-    expect(card).toHaveAttribute('href', '/inspections?review=1')
+    expect(card).toHaveAttribute('href', '/inspections/review-queue')
     expect(card).toHaveTextContent('45')
     expect(card).toHaveTextContent('Requer Ação')
   })

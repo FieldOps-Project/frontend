@@ -162,6 +162,25 @@ estado.
   ligada às inspeções de exemplo. O único ponto de troca é
   `features/non-conformities/non-conformities-data.ts`.
 
+## Fila de revisão
+
+O `/inspections/review-queue` segue a issue #21: as inspeções enviadas e em revisão, da que espera
+há mais tempo para a mais recente.
+
+- **Tempo de espera** desde o envio confirmado pelo servidor, em linguagem natural ("enviada há 2
+  dias"), com a data completa no título; mais de um dia fica em destaque.
+- **Quem iniciou a revisão** aparece nas inspeções em revisão, para dois supervisores não
+  revisarem a mesma em paralelo.
+- **Navegação**: chega-se pelos atalhos do dashboard (Revisar Pendências e o cartão de revisões
+  pendentes) e pelo botão "Fila de revisão" da listagem, que mostra quantas aguardam. O botão
+  **Revisar** de cada linha abre a revisão com o link de volta para a fila; quem chega à revisão
+  pelo detalhe volta para o detalhe.
+- **Escopo** (RN-005): a API devolve ao supervisor as inspeções sob sua responsabilidade e ao
+  administrador todas. Fila vazia mostra "Tudo revisado!".
+- O único ponto de troca é `features/inspections/review-queue-data.ts`
+  (`GET /inspections?review=1&sort=submittedAtServer,asc`); em `development` a fila usa as
+  inspeções de demonstração.
+
 ## Evidências
 
 As fotografias seguem a issue #19 e não têm URL pública.
