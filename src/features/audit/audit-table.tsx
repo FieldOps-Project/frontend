@@ -17,7 +17,8 @@ import { dayInSaoPaulo, initials } from '@/lib/domain/inspection-list'
 import type { StatusTone } from '@/lib/domain/page'
 import { formatDateTimeSeconds } from '@/lib/format'
 
-const HEAD = 'px-4 py-4 text-left text-[13px] font-medium tracking-wider whitespace-nowrap text-neutral-700 uppercase'
+/** Cabecalho pode quebrar ("Entidade / afetada", como no Stitch): quem define a largura e o conteudo. */
+const HEAD = 'px-4 py-4 text-left text-[13px] leading-snug font-medium tracking-wider text-neutral-700 uppercase'
 const CELL = 'px-4 py-4 align-middle'
 
 /** Selo da acao como no Stitch: fundo suave, icone e o rotulo escrito. */

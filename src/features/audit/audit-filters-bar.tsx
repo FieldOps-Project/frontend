@@ -37,7 +37,7 @@ function Field({
   children: ReactNode
 }) {
   return (
-    <div className="flex min-w-64 flex-1 basis-64 flex-col gap-2">
+    <div className="flex min-w-0 flex-col gap-2">
       <label htmlFor={id} className="text-sm font-medium text-neutral-800">
         {label}
       </label>
@@ -85,8 +85,11 @@ export function AuditFiltersBar({
 
   return (
     <section aria-label="Filtros" role="search" className="rounded-card border border-neutral-200 bg-neutral-0 p-5">
-      {/* Cada campo tem largura minima para o texto caber inteiro; sem espaco, quebra para a linha de baixo. */}
-      <div className="flex flex-wrap items-end gap-4">
+      {/*
+        Uma linha so em telas largas, como no Stitch, com mais espaco para usuario e acao, que tem os textos
+        mais longos; abaixo disso, duas colunas.
+      */}
+      <div className="grid items-end gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)_minmax(0,0.7fr)_minmax(0,1.3fr)_auto]">
         <Field
           id="audit-period"
           label="Período"
@@ -121,7 +124,7 @@ export function AuditFiltersBar({
           value={filters.entityType ?? ''}
           onChange={(value) => update({ entityType: (value || undefined) as AuditFilters['entityType'] })}
         >
-          <option value="">Todas as Entidades</option>
+          <option value="">Todas</option>
           {AUDIT_ENTITY_TYPES.map((type) => (
             <option key={type} value={type}>
               {AUDIT_ENTITY_LABELS[type]}
@@ -146,7 +149,7 @@ export function AuditFiltersBar({
           type="button"
           onClick={() => update({ period: DEFAULT_AUDIT_PERIOD, actorId: undefined, entityType: undefined, action: undefined, inspectionId: undefined })}
           disabled={!hasActiveAuditFilters(filters)}
-          className="h-11 shrink-0 rounded-field border border-neutral-300 bg-neutral-100 px-5 text-base font-semibold text-neutral-900 transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-11 shrink-0 justify-self-end rounded-field border sm:col-span-2 xl:col-span-1 border-neutral-300 bg-neutral-100 px-5 text-base font-semibold text-neutral-900 transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Limpar
         </button>
