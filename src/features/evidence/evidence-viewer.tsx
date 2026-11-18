@@ -51,6 +51,8 @@ export function EvidenceThumbnails({ photos, label }: { photos: readonly Evidenc
   const dialogRef = useRef<HTMLDialogElement>(null)
   const viewable = photos.filter((photo) => !isPendingUpload(photo))
   const current = openIndex === null ? undefined : viewable[openIndex]
+  /** Posicao na lista completa, para "Foto N" ser o mesmo nome na miniatura e na ampliacao. */
+  const currentPosition = current ? photos.indexOf(current) : -1
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -117,7 +119,7 @@ export function EvidenceThumbnails({ photos, label }: { photos: readonly Evidenc
             <div className="relative bg-neutral-950">
               <Image
                 src={evidenceSrc(current.id, 'original')}
-                alt={photoLabel(current, openIndex)}
+                alt={photoLabel(current, currentPosition)}
                 width={1600}
                 height={1200}
                 unoptimized

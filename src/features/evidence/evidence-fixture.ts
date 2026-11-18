@@ -1,7 +1,7 @@
 import 'server-only'
 
 import { DEMO_REVIEW, DEMO_REVIEW_ID } from '@/features/inspections/review-fixture'
-import { demoNonConformities } from '@/features/non-conformities/non-conformity-fixture'
+import { demoNonConformities, demoNonConformityId } from '@/features/non-conformities/non-conformity-fixture'
 import type { Evidence, EvidenceVariant } from '@/lib/domain/evidence'
 
 /**
@@ -13,6 +13,12 @@ import type { Evidence, EvidenceVariant } from '@/lib/domain/evidence'
  * conformidade apontam para o mesmo arquivo. A imagem e desenhada aqui mesmo,
  * em SVG, com a descricao da foto -- nao ha binario de exemplo no repositorio.
  */
+/** As nao conformidades da revisao tem, na listagem, os identificadores 1 a 3 da demonstracao. */
+function reviewNonConformityId(itemId: string): string | null {
+  const index = DEMO_REVIEW.nonConformities.findIndex((nc) => nc.itemId === itemId)
+  return index === -1 ? null : demoNonConformityId(index + 1)
+}
+
 function reviewEvidences(): Evidence[] {
   return DEMO_REVIEW.sections.flatMap((section) =>
     section.items.flatMap((item) =>
@@ -20,7 +26,7 @@ function reviewEvidences(): Evidence[] {
         ...photo,
         inspectionId: DEMO_REVIEW_ID,
         responseId: null,
-        nonConformityId: DEMO_REVIEW.nonConformities.find((nc) => nc.itemId === item.id)?.id ?? null,
+        nonConformityId: reviewNonConformityId(item.id),
         itemId: item.id,
         itemCode: item.code,
         itemTitle: item.title,

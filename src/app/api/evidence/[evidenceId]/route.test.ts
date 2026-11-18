@@ -74,7 +74,14 @@ describe('GET /api/evidence/[id]', () => {
     const response = await call(API_ID, 'original')
     expect(apiFetchFile).toHaveBeenCalledWith(`/evidence/${API_ID}/file`, { token: 'token', query: { variant: 'original' } })
     expect(response.headers.get('Content-Type')).toBe('image/jpeg')
-    expect(response.headers.get('Cache-Control')).toContain('private')
+    expect(response.headers.get('Cache-Control')).toBe('private, no-cache')
+    expect(response.headers.get('X-Content-Type-Options')).toBe('nosniff')
+  })
+
+  it('nao repassa arquivo que nao e foto comum, como SVG com script', async () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'production')
+    apiFetchFile.mockResolvedValue(new Response('<svg onload="alert(1)"/>', { headers: { 'Content-Type': 'image/svg+xml' } }))
+    expect((await call(API_ID)).status).toBe(502)
   })
 
   it('repassa o 403 da API para quem esta fora do escopo da inspecao', async () => {

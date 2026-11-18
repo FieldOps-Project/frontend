@@ -6,8 +6,24 @@ import { canUsePanel } from '@/lib/domain/user'
 import { isId } from '@/lib/ids'
 import { getAccessToken, type SessionUser } from '@/lib/session'
 
-/** A imagem e da pessoa logada: nada de cache compartilhado entre usuarios. */
-const PRIVATE_CACHE = 'private, max-age=300'
+/**
+ * A imagem e da pessoa logada: nada de cache compartilhado, e o navegador
+ * pergunta de novo a cada uso. Com `max-age`, outra pessoa no mesmo computador
+ * veria a foto pelo cache depois da troca de usuario, sem passar pela checagem.
+ */
+const PRIVATE_CACHE = 'private, no-cache'
+
+/** So foto comum chega ao navegador: SVG pode carregar script. */
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+
+/**
+ * Mesmo aberta direto numa aba, a resposta nao executa nada: o navegador nao
+ * adivinha o tipo e a CSP bloqueia script e qualquer carga externa.
+ */
+const SAFE_HEADERS = {
+  'X-Content-Type-Options': 'nosniff',
+  'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+}
 
 function status(code: number): Response {
   return new Response(null, { status: code, headers: { 'Cache-Control': 'no-store' } })
@@ -50,18 +66,21 @@ export async function GET(request: Request, context: RouteContext<'/api/evidence
     if (evidence) {
       if (evidence.uploadedAt === null) return status(404)
       return new Response(demoEvidenceSvg(evidence, variant), {
-        headers: { 'Content-Type': 'image/svg+xml; charset=utf-8', 'Cache-Control': PRIVATE_CACHE },
+        headers: { 'Content-Type': 'image/svg+xml; charset=utf-8', 'Cache-Control': PRIVATE_CACHE, ...SAFE_HEADERS },
       })
     }
   }
 
   try {
     const file = await apiFetchFile(`/evidence/${evidenceId}/file`, { token, query: { variant } })
+    const type = file.headers.get('Content-Type')?.split(';')[0]?.trim().toLowerCase() ?? ''
+    if (!ALLOWED_TYPES.includes(type)) {
+      await file.body?.cancel()
+      return status(502)
+    }
+    const etag = file.headers.get('ETag')
     return new Response(file.body, {
-      headers: {
-        'Content-Type': file.headers.get('Content-Type') ?? 'application/octet-stream',
-        'Cache-Control': PRIVATE_CACHE,
-      },
+      headers: { 'Content-Type': type, 'Cache-Control': PRIVATE_CACHE, ...SAFE_HEADERS, ...(etag ? { ETag: etag } : {}) },
     })
   } catch (error) {
     if (isApiError(error) && [401, 403, 404].includes(error.status)) return status(error.status)
