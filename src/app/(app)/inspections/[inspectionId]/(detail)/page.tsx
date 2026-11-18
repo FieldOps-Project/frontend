@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation'
 import { IoCreateOutline, IoEyeOutline } from 'react-icons/io5'
 
 import { FlashNotice, Notice } from '@/components/ui/notice'
+import { loadInspectionEvidences } from '@/features/evidence/evidence-data'
+import { EvidenceGallery } from '@/features/evidence/evidence-gallery'
 import { CancelInspection } from '@/features/inspections/cancel-inspection'
 import { isDemoInspection, loadInspectionDetail, loadInspectionHistory } from '@/features/inspections/detail-data'
 import {
@@ -47,10 +49,11 @@ export default async function InspectionDetailPage(props: PageProps<'/inspection
     notFound()
   }
 
-  const [inspection, history, nonConformities] = await Promise.all([
+  const [inspection, history, nonConformities, evidences] = await Promise.all([
     loadInspectionDetail(inspectionId),
     loadInspectionHistory(inspectionId),
     loadInspectionNonConformities(inspectionId),
+    loadInspectionEvidences(inspectionId),
   ])
 
   const editable = canEditPlanning(inspection.status)
@@ -111,6 +114,8 @@ export default async function InspectionDetailPage(props: PageProps<'/inspection
       </div>
 
       <InspectionNonConformities items={nonConformities} />
+
+      <EvidenceGallery evidences={evidences} />
     </div>
   )
 }
