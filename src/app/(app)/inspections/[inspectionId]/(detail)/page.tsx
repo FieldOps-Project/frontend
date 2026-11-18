@@ -13,6 +13,8 @@ import {
   PlanningDetails,
   StatusHistory,
 } from '@/features/inspections/detail-view'
+import { loadInspectionNonConformities } from '@/features/non-conformities/non-conformities-data'
+import { InspectionNonConformities } from '@/features/non-conformities/non-conformity-view'
 import { requireRole } from '@/lib/dal'
 import { canCancel, canEditPlanning, canOpenReview } from '@/lib/domain/inspection-detail'
 import { dayInSaoPaulo } from '@/lib/domain/inspection-list'
@@ -45,9 +47,10 @@ export default async function InspectionDetailPage(props: PageProps<'/inspection
     notFound()
   }
 
-  const [inspection, history] = await Promise.all([
+  const [inspection, history, nonConformities] = await Promise.all([
     loadInspectionDetail(inspectionId),
     loadInspectionHistory(inspectionId),
+    loadInspectionNonConformities(inspectionId),
   ])
 
   const editable = canEditPlanning(inspection.status)
@@ -106,6 +109,8 @@ export default async function InspectionDetailPage(props: PageProps<'/inspection
         <ExecutionDetails inspection={inspection} />
         <StatusHistory events={history} />
       </div>
+
+      <InspectionNonConformities items={nonConformities} />
     </div>
   )
 }
