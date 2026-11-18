@@ -144,6 +144,25 @@ listagem abre o detalhe; o link **Revisar** continua indo direto para a revisão
   histórico, e cancelar ou replanejar aparece também na listagem e no dashboard até o servidor
   reiniciar. O único ponto de troca para a API é `features/inspections/detail-data.ts`.
 
+## Não conformidades
+
+O `/non-conformities` segue a issue #20 e o documento 14.12. No MVP a não conformidade é
+registrada e consultada, não tratada: só existe o estado "Aberta" e a tela não oferece mudança de
+estado.
+
+- **Listagem** com filtros por criticidade, cliente e período (na URL), paginação e ordem padrão
+  da mais grave para a menos grave. A criticidade vai sempre escrita no selo (RN-054).
+- **Detalhe** (`/non-conformities/{id}`): descrição, criticidade, a inspeção a que pertence
+  (RN-052), horários de campo e do servidor, o **item de origem** com pergunta, resposta e
+  observação do técnico (RN-053) e as evidências. As fotos aparecem como marcadores até a
+  issue #19 trazer a imagem.
+- **Bloco no detalhe da inspeção** com as não conformidades dela, cada uma levando ao detalhe; as
+  não conformidades recentes do dashboard também abrem o detalhe.
+- **Contrato** em `lib/domain/non-conformity.ts`. A API ainda não publica
+  `GET /non-conformities` nem `/{id}` (backend #23); em `development` a tela usa a demonstração
+  ligada às inspeções de exemplo. O único ponto de troca é
+  `features/non-conformities/non-conformities-data.ts`.
+
 O cabeçalho do painel tem a busca em todas as áreas (`/search`), notificações, ajuda
 (`/support`), o ambiente, o perfil e o menu da conta (configurações e sair).
 
