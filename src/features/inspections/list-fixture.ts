@@ -2,7 +2,7 @@ import 'server-only'
 
 import { demoInspectionChanges } from '@/features/inspections/inspection-demo-store'
 import { DEMO_REVIEW_ID } from '@/features/inspections/review-fixture'
-import type { InspectionListItem } from '@/lib/domain/inspection-list'
+import { dayInSaoPaulo, type InspectionListItem } from '@/lib/domain/inspection-list'
 
 /**
  * Inspecoes de demonstracao do acompanhamento.
@@ -58,7 +58,7 @@ const SEEDS: readonly Seed[] = [
 
 /** Instante no dia relativo de hoje, no horario de Sao Paulo (UTC-3). */
 function at(now: Date, day: number, time: string): string {
-  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(now)
+  const today = dayInSaoPaulo(now)
   const base = new Date(`${today}T${time}:00-03:00`)
   return new Date(base.getTime() + day * 86_400_000).toISOString()
 }

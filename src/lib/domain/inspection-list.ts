@@ -48,9 +48,12 @@ const OPEN_FOR_EXECUTION: readonly InspectionStatus[] = ['ASSIGNED', 'IN_PROGRES
 const DAY_MS = 86_400_000
 const TIME_ZONE = 'America/Sao_Paulo'
 
+/** Criado uma vez: montar um `Intl.DateTimeFormat` por chamada pesa nas listagens grandes. */
+const DAY = new Intl.DateTimeFormat('en-CA', { timeZone: TIME_ZONE })
+
 /** Dia (`AAAA-MM-DD`) de um instante no fuso da operacao. */
 export function dayInSaoPaulo(value: string | Date): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: TIME_ZONE }).format(new Date(value))
+  return DAY.format(new Date(value))
 }
 
 function daysBetween(fromDay: string, toDay: string): number {
