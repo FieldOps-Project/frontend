@@ -85,7 +85,7 @@ export function NonConformityTable({ items }: { items: readonly NonConformityLis
                     {item.itemCode && <span className="text-xs text-neutral-500">Item {item.itemCode}</span>}
                   </div>
                 </td>
-                <td className={CELL}>
+                <td className={`${CELL} whitespace-nowrap`}>
                   <Link
                     href={`/inspections/${item.inspectionId}`}
                     className="text-neutral-900 hover:text-brand-700 hover:underline"
@@ -102,7 +102,7 @@ export function NonConformityTable({ items }: { items: readonly NonConformityLis
                     </span>
                   </div>
                 </td>
-                <td className={`${CELL} whitespace-nowrap text-neutral-900`}>
+                <td className={`${CELL} pr-6 whitespace-nowrap text-neutral-900`}>
                   <div className="flex flex-col gap-1">
                     {formatDateTime(item.createdAtDevice)}
                     <span className="text-xs text-neutral-600">por {item.createdByName}</span>
