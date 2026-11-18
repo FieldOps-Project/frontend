@@ -13,7 +13,11 @@ import {
   type PlanningValues,
 } from '@/features/inspections/planning-validation'
 import { formError, requireRole, send } from '@/lib/dal'
-import { canEditPlanning, type UpdateInspectionPlanningRequest } from '@/lib/domain/inspection-detail'
+import {
+  canEditPlanning,
+  scheduledDateInSaoPaulo,
+  type UpdateInspectionPlanningRequest,
+} from '@/lib/domain/inspection-detail'
 import { INSPECTION_PRIORITY_LABELS, scheduledForFromDate, type InspectionPriority } from '@/lib/domain/inspection-scheduling'
 import { MANAGER_ROLES } from '@/lib/domain/user'
 import { submittedValues, text } from '@/lib/form-data'
@@ -64,7 +68,11 @@ export async function updateInspectionPlanning(id: string, _previous: FormState,
   const body: UpdateInspectionPlanningRequest = {
     technicianId: technician.id,
     supervisorId: supervisor?.id ?? null,
-    scheduledFor: scheduledForFromDate(values.scheduledDate as string),
+    // O formulario so tem a data: se ela nao mudou, o horario agendado fica como estava.
+    scheduledFor:
+      values.scheduledDate === scheduledDateInSaoPaulo(inspection.scheduledFor)
+        ? inspection.scheduledFor
+        : scheduledForFromDate(values.scheduledDate as string),
     priority: values.priority as InspectionPriority,
     instructions: values.instructions ?? null,
   }

@@ -35,7 +35,7 @@ vi.mock('@/lib/dal', () => ({
   requireRole: async () => ({ id: 'u1', name: 'Mariana Costa', email: 'm@fieldops.dev', role: 'SUPERVISOR' }),
   send: (path: string, request: unknown) => send(path, request),
   formError: (error: Error) => ({ status: 'error', message: error.message, fieldErrors: {}, values: {} }),
-  load: async () => ({ id: API_ID, status: 'ASSIGNED' }),
+  load: async () => ({ id: API_ID, status: 'ASSIGNED', scheduledFor: '2026-11-20T17:00:00Z' }),
   loadOptional: vi.fn(),
 }))
 
@@ -103,6 +103,14 @@ describe('updateInspectionPlanning', () => {
       status: 'ASSIGNED',
     })
     expect((await loadInspectionHistory(ASSIGNED_ID))?.at(-1)).toMatchObject({ action: 'INSPECTION_UPDATED', actorName: 'Mariana Costa' })
+  })
+
+  it('mantem o horario agendado quando a data nao muda', async () => {
+    const before = await loadInspectionDetail(ASSIGNED_ID)
+    const sameDay = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date(before.scheduledFor))
+
+    await submit(ASSIGNED_ID, { ...VALID, scheduledDate: sameDay })
+    expect((await loadInspectionDetail(ASSIGNED_ID)).scheduledFor).toBe(before.scheduledFor)
   })
 
   it('atribui o rascunho ao escolher o tecnico', async () => {
