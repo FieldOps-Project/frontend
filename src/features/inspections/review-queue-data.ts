@@ -3,6 +3,7 @@ import 'server-only'
 import { demoInspectionDetail, demoInspectionHistory } from '@/features/inspections/detail-fixture'
 import { paginate } from '@/features/inspections/list-data'
 import { demoInspections } from '@/features/inspections/list-fixture'
+import { isApiError } from '@/lib/api/errors'
 import { loadOptional } from '@/lib/dal'
 import { isAwaitingReview } from '@/lib/domain/inspection-list'
 import { DEFAULT_PAGE_SIZE, type Page } from '@/lib/domain/page'
@@ -58,15 +59,25 @@ export async function loadReviewQueue(page: number, size: number = DEFAULT_PAGE_
     return paginate(demoQueue(), page, size)
   }
   return loadOptional<Page<ReviewQueueItem>>('/inspections', {
-    review: 'true',
+    // Mesmo valor do filtro "Aguardando revisao" da listagem (`list-filters.ts`).
+    review: '1',
     page,
     size,
     sort: 'submittedAtServer,asc',
   })
 }
 
-/** Quantas aguardam revisao, para o atalho da listagem de inspecoes. */
+/**
+ * Quantas aguardam revisao, para o atalho da listagem de inspecoes. E so um
+ * numero no botao: se a API falhar, o botao aparece sem ele, em vez de derrubar
+ * a listagem inteira. Redirecionamento de sessao (401/403) continua valendo.
+ */
 export async function countReviewQueue(): Promise<number | null> {
-  const page = await loadReviewQueue(0, 1)
-  return page?.totalElements ?? null
+  try {
+    const page = await loadReviewQueue(0, 1)
+    return page?.totalElements ?? null
+  } catch (error) {
+    if (isApiError(error)) return null
+    throw error
+  }
 }

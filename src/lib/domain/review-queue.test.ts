@@ -12,6 +12,11 @@ describe('waitingLabel', () => {
     expect(waitingLabel('2026-11-17T10:00:00Z', NOW)).toBe('há 1 dia')
     expect(waitingLabel('2026-11-16T10:00:00Z', NOW)).toBe('há 2 dias')
   })
+
+  it('nao quebra sem data de envio', () => {
+    expect(waitingLabel('', NOW)).toBe('sem data de envio')
+    expect(isWaitingLong('', NOW)).toBe(false)
+  })
 })
 
 describe('isWaitingLong', () => {

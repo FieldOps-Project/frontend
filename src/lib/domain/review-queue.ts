@@ -4,7 +4,7 @@ import type { InspectionPriority } from '@/lib/domain/inspection-scheduling'
 /**
  * Linha da fila de revisao (issue #21): inspecao enviada ou em revisao, com o
  * tempo de espera desde o envio e quem ja iniciou a revisao. Formato esperado
- * de `GET /inspections?review=true` ordenado por `submittedAtServer`.
+ * de `GET /inspections?review=1` ordenado por `submittedAtServer`.
  */
 export type ReviewQueueItem = {
   readonly id: string
@@ -33,7 +33,9 @@ const RELATIVE = new Intl.RelativeTimeFormat('pt-BR', { numeric: 'always' })
 
 /** Tempo desde o envio em linguagem natural, como "há 2 dias" ou "há 3 horas". */
 export function waitingLabel(since: string, now: Date = new Date()): string {
-  const minutes = Math.max(Math.floor((now.getTime() - new Date(since).getTime()) / 60_000), 0)
+  const sent = new Date(since).getTime()
+  if (Number.isNaN(sent)) return 'sem data de envio'
+  const minutes = Math.max(Math.floor((now.getTime() - sent) / 60_000), 0)
   if (minutes < 1) return 'agora mesmo'
   if (minutes < 60) return RELATIVE.format(-minutes, 'minute')
   const hours = Math.floor(minutes / 60)
@@ -43,5 +45,6 @@ export function waitingLabel(since: string, now: Date = new Date()): string {
 
 /** Espera de mais de um dia ganha destaque: inspecao enviada nao deve ficar parada. */
 export function isWaitingLong(since: string, now: Date = new Date()): boolean {
-  return now.getTime() - new Date(since).getTime() > 24 * 60 * 60_000
+  const sent = new Date(since).getTime()
+  return !Number.isNaN(sent) && now.getTime() - sent > 24 * 60 * 60_000
 }

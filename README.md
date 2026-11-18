@@ -178,7 +178,7 @@ há mais tempo para a mais recente.
 - **Escopo** (RN-005): a API devolve ao supervisor as inspeções sob sua responsabilidade e ao
   administrador todas. Fila vazia mostra "Tudo revisado!".
 - O único ponto de troca é `features/inspections/review-queue-data.ts`
-  (`GET /inspections?review=true&sort=submittedAtServer,asc`); em `development` a fila usa as
+  (`GET /inspections?review=1&sort=submittedAtServer,asc`); em `development` a fila usa as
   inspeções de demonstração.
 
 ## Evidências
