@@ -52,7 +52,7 @@ function avatarTone(name: string): string {
 export function ActionBadge({ action }: { action: string }) {
   return (
     <span
-      className={`inline-flex max-w-40 items-center gap-1.5 rounded px-2.5 py-1 text-left text-sm leading-snug font-medium ${ACTION_BADGE[auditActionTone(action)]}`}
+      className={`inline-flex max-w-36 items-center gap-1.5 rounded px-2.5 py-1 text-left text-sm leading-snug font-medium ${ACTION_BADGE[auditActionTone(action)]}`}
     >
       {actionIcon(action)}
       {auditActionLabel(action)}
@@ -129,15 +129,14 @@ function When({ event }: { event: AuditEvent }) {
  * leitura (RN-088): nenhuma linha oferece editar ou excluir.
  *
  * A tabela tem layout fixo: cada coluna tem a largura do seu conteudo e a
- * descricao fica com a sobra, cortando com reticencias -- nada passa da borda.
- * Quem decide entre tabela e cartoes e a largura do proprio quadro (container
- * query, `@5xl` = 64rem), nao a da janela: o menu lateral e o zoom do navegador
- * mudam o espaco real, e so o quadro sabe quanto sobrou.
+ * descricao fica com a sobra, cortando com reticencias (o texto inteiro
+ * aparece ao passar o mouse) -- nada passa da borda. Abaixo de 1280px cada
+ * evento vira um cartao.
  */
 export function AuditTable({ events }: { events: readonly AuditEvent[] }) {
   return (
     <>
-      <ul className="divide-y divide-neutral-200 @5xl:hidden">
+      <ul className="divide-y divide-neutral-200 xl:hidden">
         {events.map((event) => (
           <li key={event.id} className="flex flex-col gap-2.5 px-4 py-4 sm:px-5">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -154,14 +153,14 @@ export function AuditTable({ events }: { events: readonly AuditEvent[] }) {
         ))}
       </ul>
 
-      <div className="hidden @5xl:block">
+      <div className="hidden xl:block">
         <table className="w-full table-fixed">
           <colgroup>
-            <col className="w-28" />
-            <col className="w-52" />
-            <col className="w-44" />
+            <col className="w-26" />
             <col className="w-48" />
-            <col className="w-38" />
+            <col className="w-40" />
+            <col className="w-44" />
+            <col className="w-36" />
             <col />
           </colgroup>
           <thead className="border-b border-neutral-200 bg-neutral-100">

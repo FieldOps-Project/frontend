@@ -69,7 +69,7 @@ export default async function AuditPage(props: PageProps<'/audit'>) {
         </p>
       )}
 
-      <section aria-label="Eventos" className={`${CARD} @container overflow-hidden`}>
+      <section aria-label="Eventos" className={`${CARD} overflow-hidden`}>
         {page === null ? (
           <EmptyState
             title="Auditoria indisponível"

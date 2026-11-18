@@ -89,7 +89,7 @@ export function AuditFiltersBar({
         Uma linha so em telas largas, como no Stitch, com mais espaco para usuario e acao, que tem os textos
         mais longos; abaixo disso, duas colunas.
       */}
-      <div className="grid items-end gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)_minmax(0,0.7fr)_minmax(0,1.3fr)_auto]">
+      <div className="grid items-end gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)_minmax(0,0.6fr)_minmax(0,1.15fr)_auto]">
         <Field
           id="audit-period"
           label="Período"
