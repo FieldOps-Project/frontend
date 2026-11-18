@@ -74,6 +74,8 @@ export type AuditEvent = {
   readonly entityId: string
   /** Como a entidade e reconhecida na tela, como `INS-2023-089`. */
   readonly entityLabel: string
+  /** Inspecao relacionada, quando houver (`inspection_id`): foto e nao conformidade tambem tem. */
+  readonly inspectionId: string | null
   /** Horario do servidor (RN-087). */
   readonly occurredAt: string
   /** Horario do dispositivo, quando a acao aconteceu no aplicativo (RN-074). */
@@ -100,8 +102,8 @@ export type AuditFilters = {
   readonly actorId?: string
   readonly entityType?: AuditEntityType
   readonly action?: string
-  /** Eventos de um registro so, como os de uma inspecao vindos do detalhe dela. */
-  readonly entityId?: string
+  /** Eventos de uma inspecao so, como no link "Ver na auditoria" do detalhe dela. */
+  readonly inspectionId?: string
 }
 
 const DAY_MS = 86_400_000
