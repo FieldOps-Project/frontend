@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { MdArrowForward, MdOutlineLocationOn, MdOutlinePersonSearch, MdOutlineSchedule } from 'react-icons/md'
+import { MdArrowForward, MdOutlineLocationOn, MdOutlinePerson, MdOutlinePersonSearch, MdOutlineSchedule } from 'react-icons/md'
 
 import { StatusBadge } from '@/components/ui/status-badge'
 import { INSPECTION_STATUS_LABELS, INSPECTION_STATUS_TONES } from '@/lib/domain/inspection'
@@ -33,7 +33,7 @@ function Waiting({ item, now }: { item: ReviewQueueItem; now: Date }) {
 /** Quem ja pegou a revisao: evita dois supervisores revisando a mesma inspecao. */
 function ReviewState({ item }: { item: ReviewQueueItem }) {
   return (
-    <div className="flex flex-col items-start gap-1.5">
+    <div className="flex flex-col items-start gap-1.5 [&>span:first-child]:whitespace-nowrap">
       <StatusBadge label={INSPECTION_STATUS_LABELS[item.status]} tone={INSPECTION_STATUS_TONES[item.status]} />
       {item.status === 'UNDER_REVIEW' ? (
         <span className="flex items-center gap-1 text-sm text-neutral-700">
@@ -41,7 +41,7 @@ function ReviewState({ item }: { item: ReviewQueueItem }) {
           {item.reviewStartedByName ? `Iniciada por ${item.reviewStartedByName}` : 'Revisão iniciada'}
         </span>
       ) : (
-        <span className="text-sm text-neutral-600">Ninguém iniciou ainda</span>
+        <span className="text-sm text-neutral-600">Aguardando revisor</span>
       )}
     </div>
   )
@@ -81,20 +81,14 @@ export function ReviewQueueTable({ items, now }: { items: readonly ReviewQueueIt
       </ul>
 
       <div className="hidden overflow-x-auto lg:block">
-        <table className="w-full min-w-[64rem]">
+        <table className="w-full min-w-[52rem]">
           <thead className="border-b border-neutral-200 bg-neutral-100">
             <tr>
               <th scope="col" className={HEAD}>
                 Inspeção
               </th>
               <th scope="col" className={HEAD}>
-                Cliente &amp; local
-              </th>
-              <th scope="col" className={HEAD}>
-                Técnico
-              </th>
-              <th scope="col" className={HEAD}>
-                Prioridade
+                Cliente, local e técnico
               </th>
               <th scope="col" className={HEAD}>
                 Espera
@@ -102,7 +96,7 @@ export function ReviewQueueTable({ items, now }: { items: readonly ReviewQueueIt
               <th scope="col" className={HEAD}>
                 Revisão
               </th>
-              <th scope="col" className={`${HEAD} text-right`}>
+              <th scope="col" className={HEAD}>
                 <span className="sr-only">Ação</span>
               </th>
             </tr>
@@ -116,6 +110,9 @@ export function ReviewQueueTable({ items, now }: { items: readonly ReviewQueueIt
                       {item.code}
                     </Link>
                     <span className="text-sm text-neutral-600">{item.title}</span>
+                    <span className="text-xs text-neutral-600">
+                      Prioridade <span className="font-semibold text-neutral-800">{INSPECTION_PRIORITY_LABELS[item.priority]}</span>
+                    </span>
                   </div>
                 </td>
                 <td className={CELL}>
@@ -125,14 +122,16 @@ export function ReviewQueueTable({ items, now }: { items: readonly ReviewQueueIt
                       <MdOutlineLocationOn aria-hidden className="size-3.5 shrink-0" />
                       {item.siteName}
                     </span>
+                    <span className="flex items-center gap-1 text-sm text-neutral-600">
+                      <MdOutlinePerson aria-hidden className="size-3.5 shrink-0" />
+                      {item.technicianName ?? 'Sem técnico'}
+                    </span>
                   </div>
                 </td>
-                <td className={`${CELL} text-neutral-900`}>{item.technicianName ?? '—'}</td>
-                <td className={`${CELL} text-neutral-900`}>{INSPECTION_PRIORITY_LABELS[item.priority]}</td>
                 <td className={CELL}>
                   <Waiting item={item} now={now} />
                 </td>
-                <td className={CELL}>
+                <td className={`${CELL} min-w-48`}>
                   <ReviewState item={item} />
                 </td>
                 <td className={`${CELL} text-right`}>
