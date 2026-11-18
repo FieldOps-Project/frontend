@@ -38,11 +38,6 @@ export const AUDIT_ENTITY_LABELS: Record<AuditEntityType, string> = {
 /** Acoes em linguagem de negocio: `INSPECTION_SUBMITTED` cru nao diz nada a quem le. */
 export const AUDIT_ACTION_LABELS: Record<string, string> = {
   ...HISTORY_ACTION_LABELS,
-  RESPONSE_CREATED: 'Resposta registrada',
-  RESPONSE_UPDATED: 'Resposta alterada',
-  EVIDENCE_ADDED: 'Fotografia capturada',
-  EVIDENCE_REMOVED: 'Fotografia removida',
-  NON_CONFORMITY_CREATED: 'Não conformidade criada',
   TEMPLATE_PUBLISHED: 'Versão de modelo publicada',
   RECORD_UPDATED: 'Edição de registro',
   USER_BLOCKED: 'Usuário bloqueado',

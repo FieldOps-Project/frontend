@@ -110,7 +110,7 @@ export default async function InspectionDetailPage(props: PageProps<'/inspection
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <ExecutionDetails inspection={inspection} />
-        <StatusHistory events={history} />
+        <StatusHistory events={history} inspectionId={inspection.id} />
       </div>
 
       <InspectionNonConformities items={nonConformities} />

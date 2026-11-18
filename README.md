@@ -128,8 +128,9 @@ listagem abre o detalhe; o link **Revisar** continua indo direto para a revisão
 - **Execução**: horários do dispositivo e do servidor lado a lado (RN-074), com "Aguardando
   sincronização" quando o servidor ainda não recebeu; localização registrada com precisão e
   horário; progresso dos itens.
-- **Histórico de estados** como linha do tempo (autor, ação, horário do servidor e, quando houver,
-  do dispositivo), a partir de `GET /inspections/{id}/history`. Se a API não responder, só esse
+- **Linha do tempo** (autor, ação, horário do servidor e, quando houver, do dispositivo), com
+  mudanças de estado, fotografias e não conformidades (issue #24), a partir de
+  `GET /inspections/{id}/history`, e o link "Ver na auditoria". Se a API não responder, só esse
   bloco aparece como indisponível.
 - **Ações conforme o estado** (documento 7.6): **Cancelar** em atribuída, em execução e
   reprovada, com motivo obrigatório e botão desativado enquanto ele estiver vazio (RN-029);

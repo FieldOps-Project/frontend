@@ -31,7 +31,8 @@ describe('acoes conforme o estado', () => {
 describe('historyActionLabel', () => {
   it('traduz as acoes conhecidas e mantem as desconhecidas como vieram', () => {
     expect(historyActionLabel('INSPECTION_CANCELED')).toBe('Inspeção cancelada')
-    expect(historyActionLabel('EVIDENCE_ADDED')).toBe('EVIDENCE_ADDED')
+    expect(historyActionLabel('EVIDENCE_ADDED')).toBe('Fotografia capturada')
+    expect(historyActionLabel('ALGO_NOVO')).toBe('ALGO_NOVO')
   })
 })
 

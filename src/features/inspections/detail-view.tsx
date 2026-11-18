@@ -297,19 +297,40 @@ export function ExecutionDetails({ inspection }: { inspection: InspectionDetail 
   )
 }
 
-/** Historico de estados a partir da auditoria, como linha do tempo (documento 10.12.1). */
-export function StatusHistory({ events }: { events: readonly InspectionHistoryEvent[] | null }) {
+/**
+ * Linha do tempo da inspecao a partir da auditoria (documento 10.12.1, issues
+ * #18 e #24): mudancas de estado, fotografias e nao conformidades, com os
+ * eventos completos na area de auditoria.
+ */
+export function StatusHistory({
+  events,
+  inspectionId,
+}: {
+  events: readonly InspectionHistoryEvent[] | null
+  inspectionId: string
+}) {
   return (
     <section aria-labelledby="history-title" className={`${CARD} flex flex-col gap-5 p-6`}>
-      <SectionTitle id="history-title" icon={<IoGitCommitOutline />}>
-        Histórico de estados
+      <SectionTitle
+        id="history-title"
+        icon={<IoGitCommitOutline />}
+        aside={
+          <Link
+            href={`/audit?period=all&inspectionId=${inspectionId}`}
+            className="text-sm font-medium text-brand-700 hover:underline"
+          >
+            Ver na auditoria
+          </Link>
+        }
+      >
+        Linha do tempo
       </SectionTitle>
       {events === null ? (
         <p className="text-sm text-neutral-600">
-          Histórico indisponível no momento: a API ainda não publica a auditoria desta inspeção.
+          Linha do tempo indisponível no momento: a API ainda não publica a auditoria desta inspeção.
         </p>
       ) : events.length === 0 ? (
-        <p className="text-sm text-neutral-600">Nenhuma mudança de estado registrada.</p>
+        <p className="text-sm text-neutral-600">Nenhum evento registrado.</p>
       ) : (
         <ol className="relative flex flex-col gap-5 border-l-2 border-neutral-200 pl-6">
           {events.map((event) => (

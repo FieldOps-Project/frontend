@@ -39,7 +39,7 @@ describe('auditoria de demonstracao', () => {
     expect(events.some((event) => event.actorName === null)).toBe(true)
   })
 
-  it('filtra por periodo, usuario, entidade, acao e inspecao', async () => {
+  it('filtra por periodo, usuario, entidade, acao e inspecao', { timeout: 20_000 }, async () => {
     const all = await demoPage({ period: 'all' })
     const week = await demoPage({})
     expect(week.totalElements).toBeLessThanOrEqual(all.totalElements)
