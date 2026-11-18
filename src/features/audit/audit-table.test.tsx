@@ -46,7 +46,7 @@ describe('AuditTable', () => {
 
   it('mostra o horario do dispositivo quando a acao veio do aplicativo', () => {
     render(<AuditTable events={[{ ...APPROVAL, deviceOccurredAt: '2026-11-18T17:30:12Z' }]} />)
-    expect(within(screen.getByRole('table')).getByText('18/11/2026, 14:30:12')).toBeInTheDocument()
+    expect(within(screen.getByRole('table')).getByText('14:30:12')).toBeInTheDocument()
   })
 
   it('identifica acao do sistema e entidade sem pagina', () => {

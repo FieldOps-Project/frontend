@@ -13,7 +13,7 @@ import {
 } from 'react-icons/md'
 
 import { auditActionLabel, auditActionTone, entityHref, type AuditEvent } from '@/lib/domain/audit'
-import { initials } from '@/lib/domain/inspection-list'
+import { dayInSaoPaulo, initials } from '@/lib/domain/inspection-list'
 import type { StatusTone } from '@/lib/domain/page'
 import { formatDateTimeSeconds } from '@/lib/format'
 
@@ -50,7 +50,9 @@ function avatarTone(name: string): string {
 
 export function ActionBadge({ action }: { action: string }) {
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-sm font-medium ${ACTION_BADGE[auditActionTone(action)]}`}>
+    <span
+      className={`inline-flex max-w-52 items-center gap-1.5 rounded px-2.5 py-1 text-left text-sm leading-snug font-medium ${ACTION_BADGE[auditActionTone(action)]}`}
+    >
       {actionIcon(action)}
       {auditActionLabel(action)}
     </span>
@@ -60,7 +62,7 @@ export function ActionBadge({ action }: { action: string }) {
 function Actor({ event }: { event: AuditEvent }) {
   if (!event.actorName) {
     return (
-      <span className="flex items-center gap-2.5 text-neutral-900">
+      <span className="flex items-center gap-2.5 whitespace-nowrap text-neutral-900">
         <span aria-hidden className="grid size-8 shrink-0 place-items-center rounded-full bg-neutral-100 text-neutral-700">
           <MdOutlineSmartToy className="size-5" />
         </span>
@@ -69,7 +71,7 @@ function Actor({ event }: { event: AuditEvent }) {
     )
   }
   return (
-    <span className="flex items-center gap-2.5 text-neutral-900">
+    <span className="flex items-center gap-2.5 whitespace-nowrap text-neutral-900">
       <span aria-hidden className={`grid size-8 shrink-0 place-items-center rounded-full text-xs font-semibold ${avatarTone(event.actorName)}`}>
         {initials(event.actorName)}
       </span>
@@ -81,12 +83,18 @@ function Actor({ event }: { event: AuditEvent }) {
 function Entity({ event }: { event: AuditEvent }) {
   const href = entityHref(event)
   return href ? (
-    <Link href={href} className="font-medium text-brand-700 hover:underline">
+    <Link href={href} className="font-medium whitespace-nowrap text-brand-700 hover:underline">
       {event.entityLabel}
     </Link>
   ) : (
-    <span className="text-neutral-900">{event.entityLabel}</span>
+    <span className="whitespace-nowrap text-neutral-900">{event.entityLabel}</span>
   )
+}
+
+/** So a hora quando o dispositivo registrou no mesmo dia do servidor; a data inteira quando nao. */
+function deviceTime(device: string, server: string): string {
+  const full = formatDateTimeSeconds(device)
+  return dayInSaoPaulo(device) === dayInSaoPaulo(server) ? (full.split(', ')[1] ?? full) : full
 }
 
 /** Horario do servidor; o do dispositivo aparece embaixo quando a acao veio do aplicativo (RN-074). */
@@ -98,7 +106,7 @@ function When({ event }: { event: AuditEvent }) {
       </time>
       {event.deviceOccurredAt && (
         <span className="text-xs whitespace-nowrap text-neutral-600">
-          Dispositivo: <time dateTime={event.deviceOccurredAt}>{formatDateTimeSeconds(event.deviceOccurredAt)}</time>
+          No dispositivo: <time dateTime={event.deviceOccurredAt}>{deviceTime(event.deviceOccurredAt, event.occurredAt)}</time>
         </span>
       )}
     </span>
@@ -131,22 +139,22 @@ export function AuditTable({ events }: { events: readonly AuditEvent[] }) {
       </ul>
 
       <div className="hidden xl:block">
-        <table className="w-full table-fixed">
+        <table className="w-full">
           <thead className="border-b border-neutral-200 bg-neutral-100">
             <tr>
-              <th scope="col" className={`${HEAD} w-[8%]`}>
+              <th scope="col" className={HEAD}>
                 ID do evento
               </th>
-              <th scope="col" className={`${HEAD} w-[15%]`}>
+              <th scope="col" className={HEAD}>
                 Data/hora
               </th>
-              <th scope="col" className={`${HEAD} w-[15%]`}>
+              <th scope="col" className={HEAD}>
                 Usuário
               </th>
-              <th scope="col" className={`${HEAD} w-[18%]`}>
+              <th scope="col" className={HEAD}>
                 Ação
               </th>
-              <th scope="col" className={`${HEAD} w-[16%] whitespace-normal`}>
+              <th scope="col" className={HEAD}>
                 Entidade afetada
               </th>
               <th scope="col" className={HEAD}>
@@ -157,7 +165,7 @@ export function AuditTable({ events }: { events: readonly AuditEvent[] }) {
           <tbody className="divide-y divide-neutral-200">
             {events.map((event) => (
               <tr key={event.id} className="hover:bg-neutral-50">
-                <td className={`${CELL} font-mono text-sm text-neutral-700`}>{event.code}</td>
+                <td className={`${CELL} font-mono text-sm whitespace-nowrap text-neutral-700`}>{event.code}</td>
                 <td className={CELL}>
                   <When event={event} />
                 </td>
@@ -167,10 +175,11 @@ export function AuditTable({ events }: { events: readonly AuditEvent[] }) {
                 <td className={CELL}>
                   <ActionBadge action={event.action} />
                 </td>
-                <td className={`${CELL} break-words`}>
+                <td className={CELL}>
                   <Entity event={event} />
                 </td>
-                <td className={CELL}>
+                {/* `w-full max-w-0`: a descricao fica com a sobra da linha e corta com reticencias, sem empurrar as outras colunas. */}
+                <td className={`${CELL} w-full max-w-0`}>
                   <span title={event.description} className="block truncate text-neutral-800">
                     {event.description}
                   </span>
