@@ -54,9 +54,15 @@ describe('demonstracao', () => {
   })
 })
 
+async function demoPage(filters: Parameters<typeof loadNonConformityPage>[0]) {
+  const page = await loadNonConformityPage(filters, 0)
+  if (!page) throw new Error('a demonstracao sempre responde')
+  return page
+}
+
 describe('loadNonConformityPage', () => {
   it('ordena da mais grave para a menos grave', async () => {
-    const page = await loadNonConformityPage({}, 0)
+    const page = await demoPage({})
     const ranks = page.content.map((nc) => RANK[nc.severity])
     expect(ranks).toEqual([...ranks].sort((a, b) => a - b))
     expect(page.content[0]?.severity).toBe('CRITICAL')
@@ -67,27 +73,34 @@ describe('loadNonConformityPage', () => {
     const first = all[0]
     if (!first) throw new Error('sem dados')
 
-    const bySeverity = await loadNonConformityPage({ severity: 'HIGH' }, 0)
+    const bySeverity = await demoPage({ severity: 'HIGH' })
     expect(bySeverity.content.every((nc) => nc.severity === 'HIGH')).toBe(true)
 
-    const byClient = await loadNonConformityPage({ clientId: first.clientId }, 0)
+    const byClient = await demoPage({ clientId: first.clientId })
     expect(byClient.content.every((nc) => nc.clientId === first.clientId)).toBe(true)
 
-    const future = await loadNonConformityPage({ from: '2999-01-01' }, 0)
+    const future = await demoPage({ from: '2999-01-01' })
     expect(future.totalElements).toBe(0)
   })
 
   it('fora da demonstracao, manda os filtros e a ordem para a API', async () => {
     vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'production')
-    load.mockResolvedValue({ content: [] })
+    loadOptional.mockResolvedValue({ content: [] })
 
     await loadNonConformityPage({ severity: 'CRITICAL', from: '2026-11-01' }, 2)
-    expect(load).toHaveBeenCalledWith('/non-conformities', expect.objectContaining({
+    expect(loadOptional).toHaveBeenCalledWith('/non-conformities', expect.objectContaining({
       severity: 'CRITICAL',
       from: '2026-11-01',
       page: 2,
       sort: 'severity,desc',
     }))
+  })
+
+  it('devolve indisponivel enquanto a API nao publica o endpoint', async () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'production')
+    loadOptional.mockResolvedValue(null)
+
+    expect(await loadNonConformityPage({}, 0)).toBeNull()
   })
 })
 

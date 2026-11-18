@@ -18,7 +18,12 @@ import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, type Page } from '@/lib/domain/page'
 
 export type FilterOption = { readonly value: string; readonly label: string }
 
-/** Ordem padrao: criticidade decrescente, depois a mais recente (issue #20). */
+/**
+ * Ordem padrao: criticidade decrescente, depois a mais recente (issue #20). A
+ * API precisa ordenar pelo peso da criticidade, nao pelo texto do enum -- em
+ * ordem alfabetica, CRITICAL ficaria por ultimo -- e desempatar pela data de
+ * campo. Esse requisito vai junto do pedido do endpoint (backend #23).
+ */
 const DEFAULT_SORT = 'severity,desc'
 
 function usesDemo(): boolean {
@@ -63,13 +68,14 @@ function toListItem(detail: NonConformityDetail): NonConformityListItem {
  * Pagina da listagem geral. Com a API, os filtros seguem como parametros de
  * `GET /non-conformities` (paginado no servidor); em desenvolvimento as nao
  * conformidades de demonstracao passam pelos mesmos filtros e pela mesma ordem.
- * Este arquivo e o unico ponto de troca para a API.
+ * Este arquivo e o unico ponto de troca para a API. Enquanto o endpoint nao
+ * existir, devolve `null` e a tela mostra a listagem como indisponivel.
  */
 export async function loadNonConformityPage(
   filters: NonConformityFilters,
   page: number,
   size: number = DEFAULT_PAGE_SIZE,
-): Promise<Page<NonConformityListItem>> {
+): Promise<Page<NonConformityListItem> | null> {
   if (usesDemo()) {
     const items = demoNonConformities()
       .map(toListItem)
@@ -78,7 +84,7 @@ export async function loadNonConformityPage(
     return paginate(items, page, size)
   }
 
-  return load<Page<NonConformityListItem>>('/non-conformities', {
+  return loadOptional<Page<NonConformityListItem>>('/non-conformities', {
     ...filterParams(filters),
     page,
     size,
@@ -109,7 +115,7 @@ export async function loadInspectionNonConformities(inspectionId: string): Promi
     size: MAX_PAGE_SIZE,
     sort: DEFAULT_SORT,
   })
-  return page?.content ?? null
+  return page ? page.content.toSorted(bySeverityDesc) : null
 }
 
 /** Clientes do seletor, coerentes com os dados mostrados. */

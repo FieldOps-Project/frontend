@@ -51,7 +51,12 @@ export default async function NonConformitiesPage(props: PageProps<'/non-conform
       <NonConformityFilters filters={filters} clients={clients} />
 
       <section aria-label="Resultados" className={`${CARD} overflow-hidden`}>
-        {page.totalElements === 0 ? (
+        {page === null ? (
+          <EmptyState
+            title="Não conformidades indisponíveis"
+            description="A API ainda não publica a consulta de não conformidades. Tente novamente mais tarde."
+          />
+        ) : page.totalElements === 0 ? (
           <EmptyState
             title={filtered ? 'Nenhuma não conformidade encontrada' : 'Nenhuma não conformidade registrada'}
             description={
