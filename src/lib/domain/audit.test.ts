@@ -22,7 +22,7 @@ describe('auditoria', () => {
   })
 
   it('leva ao registro afetado quando o painel tem pagina para ele', () => {
-    expect(entityHref({ entityType: 'INSPECTION', entityId: 'i1' })).toBe('/inspections/i1')
-    expect(entityHref({ entityType: 'REPORT', entityId: 'r1' })).toBeNull()
+    expect(entityHref({ entityType: 'INSPECTION', entityId: 'i1', inspectionId: 'i1' })).toBe('/inspections/i1')
+    expect(entityHref({ entityType: 'REPORT', entityId: 'r1', inspectionId: null })).toBeNull()
   })
 })

@@ -51,7 +51,7 @@ function avatarTone(name: string): string {
 export function ActionBadge({ action }: { action: string }) {
   return (
     <span
-      className={`inline-flex max-w-52 items-center gap-1.5 rounded px-2.5 py-1 text-left text-sm leading-snug font-medium ${ACTION_BADGE[auditActionTone(action)]}`}
+      className={`inline-flex max-w-44 items-center gap-1.5 rounded px-2.5 py-1 text-left text-sm leading-snug font-medium ${ACTION_BADGE[auditActionTone(action)]}`}
     >
       {actionIcon(action)}
       {auditActionLabel(action)}
@@ -80,14 +80,22 @@ function Actor({ event }: { event: AuditEvent }) {
   )
 }
 
+/** Registro em cima e o detalhe (como `item 1.4`) embaixo, para a coluna nao alargar. */
 function Entity({ event }: { event: AuditEvent }) {
   const href = entityHref(event)
+  const [main, ...rest] = event.entityLabel.split(' · ')
+  const label = (
+    <>
+      <span className="whitespace-nowrap">{main}</span>
+      {rest.length > 0 && <span className="text-sm font-normal whitespace-nowrap text-neutral-600">{rest.join(' · ')}</span>}
+    </>
+  )
   return href ? (
-    <Link href={href} className="font-medium whitespace-nowrap text-brand-700 hover:underline">
-      {event.entityLabel}
+    <Link href={href} className="inline-flex flex-col font-medium text-brand-700 hover:underline">
+      {label}
     </Link>
   ) : (
-    <span className="whitespace-nowrap text-neutral-900">{event.entityLabel}</span>
+    <span className="inline-flex flex-col text-neutral-900">{label}</span>
   )
 }
 
@@ -179,7 +187,7 @@ export function AuditTable({ events }: { events: readonly AuditEvent[] }) {
                   <Entity event={event} />
                 </td>
                 {/* `w-full max-w-0`: a descricao fica com a sobra da linha e corta com reticencias, sem empurrar as outras colunas. */}
-                <td className={`${CELL} w-full max-w-0`}>
+                <td className={`${CELL} w-full max-w-0 min-w-44`}>
                   <span title={event.description} className="block truncate text-neutral-800">
                     {event.description}
                   </span>

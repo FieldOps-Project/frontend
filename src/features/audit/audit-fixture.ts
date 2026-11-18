@@ -30,6 +30,16 @@ function actorId(name: string | null): string | null {
     .replace(/[^a-z0-9]+/g, '-')}`
 }
 
+/**
+ * Horario do servidor de algo registrado no aplicativo: nunca antes do
+ * dispositivo. A inspecao em execucao sincroniza item a item, entao o servidor
+ * recebe alguns minutos depois da captura.
+ */
+function receivedAfter(server: string | null, device: string): string {
+  const earliest = new Date(Date.parse(device) + 2 * 60_000).toISOString()
+  return server && server > earliest ? server : earliest
+}
+
 function minutesAgo(now: Date, minutes: number): string {
   return new Date(now.getTime() - minutes * 60_000).toISOString()
 }
@@ -64,7 +74,7 @@ function evidenceEvents(now: Date): Draft[] {
         entityId: evidence.id,
         entityLabel: evidence.itemCode ? `${inspection.code} · item ${evidence.itemCode}` : inspection.code,
         inspectionId: inspection.id,
-        occurredAt: evidence.serverReceivedAt,
+        occurredAt: receivedAfter(evidence.serverReceivedAt, evidence.capturedAtDevice),
         deviceOccurredAt: evidence.capturedAtDevice,
         description: evidence.description ?? 'Fotografia sem descrição',
       },
@@ -81,7 +91,7 @@ function nonConformityEvents(now: Date): Draft[] {
     entityId: nc.id,
     entityLabel: nc.itemCode ? `${nc.inspectionCode} · item ${nc.itemCode}` : nc.inspectionCode,
     inspectionId: nc.inspectionId,
-    occurredAt: nc.serverReceivedAt ?? nc.createdAtDevice,
+    occurredAt: receivedAfter(nc.serverReceivedAt, nc.createdAtDevice),
     deviceOccurredAt: nc.createdAtDevice,
     description: nc.title,
   }))

@@ -111,8 +111,11 @@ export function periodStart(period: AuditPeriod, today: string): string | null {
 }
 
 /** Pagina do registro afetado, quando o painel tem uma. */
-export function entityHref(event: Pick<AuditEvent, 'entityType' | 'entityId'>): string | null {
+export function entityHref(event: Pick<AuditEvent, 'entityType' | 'entityId' | 'inspectionId'>): string | null {
   switch (event.entityType) {
+    /** A foto nao tem pagina propria: abre a galeria da inspecao. */
+    case 'EVIDENCE':
+      return event.inspectionId ? `/inspections/${event.inspectionId}#evidence-title` : null
     case 'INSPECTION':
       return `/inspections/${event.entityId}`
     case 'NON_CONFORMITY':
