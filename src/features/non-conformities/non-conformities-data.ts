@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 
 import { loadClients } from '@/features/catalog/lookups'
 import { paginate } from '@/features/inspections/list-data'
+import { filterParams } from '@/features/non-conformities/list-filters'
 import { demoNonConformities } from '@/features/non-conformities/non-conformity-fixture'
 import { load, loadOptional } from '@/lib/dal'
 import { dayInSaoPaulo } from '@/lib/domain/inspection-list'
@@ -78,10 +79,7 @@ export async function loadNonConformityPage(
   }
 
   return load<Page<NonConformityListItem>>('/non-conformities', {
-    severity: filters.severity,
-    clientId: filters.clientId,
-    from: filters.from,
-    to: filters.to,
+    ...filterParams(filters),
     page,
     size,
     sort: DEFAULT_SORT,
