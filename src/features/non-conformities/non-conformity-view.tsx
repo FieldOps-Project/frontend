@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { MdArrowBack, MdChevronRight, MdOutlineCameraAlt, MdOutlineChecklist, MdOutlineInfo, MdOutlineReportProblem } from 'react-icons/md'
 
 import { SeverityBadge } from '@/features/dashboard/severity-badge'
+import { EvidenceThumbnails } from '@/features/evidence/evidence-viewer'
 import {
   NON_CONFORMITY_STATUS_LABELS,
   type NonConformityDetail,
@@ -117,10 +118,7 @@ export function NonConformityOrigin({ item }: { item: NonConformityDetail }) {
   )
 }
 
-/**
- * Evidencias da nao conformidade. As fotos aparecem como marcadores ate a
- * visualizacao de evidencias (issue #19) trazer a imagem.
- */
+/** Evidencias da nao conformidade, com miniatura e ampliacao (issue #19). */
 export function NonConformityEvidences({ item }: { item: NonConformityDetail }) {
   return (
     <section aria-labelledby="nc-evidence-title" className={`${CARD} flex flex-col gap-5 p-6`}>
@@ -131,17 +129,7 @@ export function NonConformityEvidences({ item }: { item: NonConformityDetail }) 
       {item.evidences.length === 0 ? (
         <p className="text-sm text-neutral-600">Nenhuma evidência anexada a esta não conformidade.</p>
       ) : (
-        <ul aria-label="Fotografias da não conformidade" className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {item.evidences.map((photo, index) => (
-            <li key={photo.id} className="flex flex-col gap-2">
-              <div className="grid aspect-[4/3] place-items-center rounded-field border border-neutral-200 bg-neutral-100 text-neutral-400">
-                <MdOutlineCameraAlt aria-hidden className="size-8" />
-              </div>
-              <span className="text-sm text-neutral-800">{photo.description ?? `Foto ${index + 1}`}</span>
-              <span className="text-xs text-neutral-600">Capturada em {formatDateTime(photo.capturedAtDevice)}</span>
-            </li>
-          ))}
-        </ul>
+        <EvidenceThumbnails photos={item.evidences} label="Fotografias da não conformidade" />
       )}
     </section>
   )

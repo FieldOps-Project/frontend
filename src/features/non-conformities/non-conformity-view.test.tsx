@@ -70,7 +70,7 @@ describe('detalhe da nao conformidade', () => {
 
   it('lista as evidencias e trata a ausencia delas', () => {
     const { rerender } = render(<NonConformityEvidences item={DETAIL} />)
-    expect(screen.getByText('Manômetro em 11,2 bar')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Ampliar Manômetro em 11,2 bar' })).toBeInTheDocument()
 
     rerender(<NonConformityEvidences item={{ ...DETAIL, evidences: [] }} />)
     expect(screen.getByText('Nenhuma evidência anexada a esta não conformidade.')).toBeInTheDocument()
