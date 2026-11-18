@@ -1,6 +1,6 @@
 import 'server-only'
 
-import type { InspectionReview, ReviewItem, ReviewSection } from '@/lib/domain/inspection-review'
+import type { InspectionReview, ReviewItem, ReviewPhoto, ReviewSection } from '@/lib/domain/inspection-review'
 
 /**
  * Inspecao de demonstracao da tela de revisao.
@@ -16,6 +16,25 @@ export const DEMO_REVIEW_ID = '7c1e2f3a-0892-4d6b-9a10-2023d0000892'
 /** UUID fixo por item, para a demonstracao passar pelas mesmas validacoes da API. */
 function itemId(section: number, item: number): string {
   return `7c1e2f3a-0000-4000-8000-${String(section).padStart(4, '0')}${String(item).padStart(8, '0')}`
+}
+
+/**
+ * Foto de demonstracao com UUID fixo. A imagem e gerada pelo Route Handler de
+ * evidencias; `uploaded: false` simula o arquivo que ainda nao chegou.
+ */
+export function demoReviewPhotoId(n: number): string {
+  return `7c1e2f3a-0000-4000-8000-9000${String(n).padStart(8, '0')}`
+}
+
+function photo(n: number, description: string, capturedAtDevice: string, { uploaded = true } = {}): ReviewPhoto {
+  return {
+    id: demoReviewPhotoId(n),
+    description,
+    capturedAtDevice,
+    latitude: -23.55052 + n * 0.00001,
+    longitude: -46.633308 - n * 0.00001,
+    uploadedAt: uploaded ? '2023-10-24T14:31:00Z' : null,
+  }
 }
 
 type ItemSeed = readonly [title: string, overrides?: Partial<ReviewItem>]
@@ -63,8 +82,8 @@ export const DEMO_REVIEW: InspectionReview = {
           ...NON_CONFORMING,
           observation: 'Trinca na lateral do alojamento do filtro; ar passa sem filtragem.',
           photos: [
-            { id: 'photo-1', description: 'Trinca lateral do alojamento', capturedAtDevice: '2023-10-24T11:42:00Z' },
-            { id: 'photo-2', description: 'Vista geral do filtro', capturedAtDevice: '2023-10-24T11:43:00Z' },
+            photo(1, 'Trinca lateral do alojamento', '2023-10-24T11:42:00Z'),
+            photo(2, 'Vista geral do filtro', '2023-10-24T11:43:00Z'),
           ],
         },
       ],
@@ -95,7 +114,11 @@ export const DEMO_REVIEW: InspectionReview = {
       ['Bearings without abnormal noise'],
       [
         'Motor vibration levels within tolerance',
-        { ...NON_CONFORMING, observation: 'Vibração acima do normal em carga máxima.' },
+        {
+          ...NON_CONFORMING,
+          observation: 'Vibração acima do normal em carga máxima.',
+          photos: [photo(3, 'Medição do vibrômetro', '2023-10-24T12:31:00Z', { uploaded: false })],
+        },
       ],
       ['Motor current draw', { responseType: 'NUMBER', conformity: null, displayValue: '12,4 A' }],
       ['Shaft alignment verified'],
@@ -109,7 +132,11 @@ export const DEMO_REVIEW: InspectionReview = {
     section(4, 'Drainage & Condensate', [
       [
         'Condensate drain clear of blockages',
-        { ...NON_CONFORMING, observation: 'Escoamento lento; acúmulo de resíduos na saída.' },
+        {
+          ...NON_CONFORMING,
+          observation: 'Escoamento lento; acúmulo de resíduos na saída.',
+          photos: [photo(4, 'Saída do dreno obstruída', '2023-10-24T13:20:00Z')],
+        },
       ],
       ['Drain pan free from standing water'],
       ['Drain line slope adequate'],

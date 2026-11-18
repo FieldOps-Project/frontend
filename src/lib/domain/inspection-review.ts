@@ -1,3 +1,4 @@
+import type { EvidencePhoto } from '@/lib/domain/evidence'
 import type { InspectionStatus } from '@/lib/domain/inspection'
 import type { StatusTone } from '@/lib/domain/page'
 
@@ -44,11 +45,8 @@ export type GeoPoint = {
   readonly accuracy: number | null
 }
 
-export type ReviewPhoto = {
-  readonly id: string
-  readonly description: string | null
-  readonly capturedAtDevice: string
-}
+/** Foto da resposta do tecnico, no mesmo formato das evidencias (documento 10.9.1). */
+export type ReviewPhoto = EvidencePhoto
 
 /** Item do snapshot com a resposta do tecnico. */
 export type ReviewItem = {

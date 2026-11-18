@@ -34,7 +34,16 @@ const DETAIL: NonConformityDetail = {
     answer: '11,2 bar',
     observation: 'Válvula de segurança não atuou durante o teste.',
   },
-  evidences: [{ id: 'p1', description: 'Manômetro em 11,2 bar', capturedAtDevice: '2026-11-14T16:46:00Z' }],
+  evidences: [
+    {
+      id: '9e000000-0000-4000-8000-000004000001',
+      description: 'Manômetro em 11,2 bar',
+      capturedAtDevice: '2026-11-14T16:46:00Z',
+      latitude: -23.5,
+      longitude: -46.6,
+      uploadedAt: '2026-11-14T19:30:00Z',
+    },
+  ],
 }
 
 describe('detalhe da nao conformidade', () => {
