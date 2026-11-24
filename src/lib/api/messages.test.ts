@@ -20,6 +20,13 @@ describe('messageFor', () => {
     expect(messageFor(error)).toMatch(/não encontrado/)
   })
 
+  it('nunca mostra a mensagem tecnica de um codigo desconhecido', () => {
+    const conflict = new ApiError({ status: 409, code: 'SOMETHING_NEW', message: 'Cannot do X in state Y' })
+    expect(messageFor(conflict)).toBe(
+      'Esta ação não é mais possível no estado atual do registro. Recarregue a página e tente de novo.',
+    )
+  })
+
   it('nao expoe mensagem tecnica de erro interno', () => {
     const error = new ApiError({ status: 500, code: 'SOMETHING_ODD', message: 'NullPointerException' })
 
@@ -44,6 +51,16 @@ describe('fieldErrorsFor', () => {
     const error = new ApiError({ status: 400, code: 'TEMPLATE_ITEM_OPTIONS_DUPLICATED', message: 'dup' })
 
     expect(fieldErrorsFor(error)).toEqual({ options: 'As opções da escolha única não podem se repetir.' })
+  })
+
+  it('nunca mostra a mensagem de campo em ingles que o painel nao conhece', () => {
+    const error = new ApiError({
+      status: 422,
+      code: 'VALIDATION_ERROR',
+      message: 'invalid',
+      fieldErrors: [{ field: 'document', message: 'must be a valid CPF or CNPJ' }],
+    })
+    expect(fieldErrorsFor(error)).toEqual({ document: 'Valor não aceito. Revise este campo.' })
   })
 
   it('traduz as mensagens de validacao por campo', () => {
