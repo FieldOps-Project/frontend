@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createTemplate } from '@/features/templates/actions'
 import { publishTemplate } from '@/features/templates/builder-actions'
-import { fail, mockApi, ok, recordRequests, server, signedInAs } from '@/test/api'
+import { capture, fail, mockApi, ok, recordRequests, server, signedInAs } from '@/test/api'
 import { form, outcome, withSession } from '@/test/next'
 
 vi.mock('server-only', () => ({}))
@@ -66,19 +66,19 @@ beforeEach(() => {
 
 describe('5. criacao de modelo', () => {
   it('envia titulo, descricao e categoria e abre o construtor do modelo criado', async () => {
-    server.use(signedInAs('ADMIN'), ok('post', '/inspection-templates', { id: TEMPLATE_ID }, 201))
-    const received = recordRequests()
+    const created = capture('post', '/inspection-templates', { id: TEMPLATE_ID }, 201)
+    server.use(signedInAs('ADMIN'), created.handler)
 
     const result = await outcome(() =>
       createTemplate({ status: 'idle' }, form({ title: 'Inspeção de caldeiras', category: 'Equipamentos' })),
     )
 
     expect(result).toEqual({ redirectedTo: `/inspection-templates/${TEMPLATE_ID}/edit?notice=created` })
-    expect(received.find((request) => request.method === 'POST')?.body).toEqual({
+    expect(created.bodies).toEqual([{
       title: 'Inspeção de caldeiras',
       description: null,
       category: 'Equipamentos',
-    })
+    }])
   })
 
   it('titulo repetido (409) volta como erro no campo de titulo', async () => {

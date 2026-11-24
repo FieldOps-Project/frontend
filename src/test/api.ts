@@ -60,14 +60,27 @@ export function signedInAs(role: Role): RequestHandler {
   return ok('get', '/auth/me', { id: 'u-1', name: `Pessoa ${role}`, email: `${role.toLowerCase()}@fieldops.test`, role })
 }
 
-export type RecordedRequest = { readonly method: string; readonly path: string; readonly body: unknown }
+export type RecordedRequest = { readonly method: string; readonly path: string }
 
-/** Guarda as chamadas que chegarem a API, para o teste conferir o que foi (ou nao foi) enviado. */
+/**
+ * Guarda metodo e caminho de cada chamada, na hora em que ela sai -- sem
+ * esperar nada assincrono, para o teste nunca conferir antes do registro. Para
+ * conferir o corpo, use `capture`, que le dentro do proprio handler.
+ */
 export function recordRequests(): RecordedRequest[] {
   const received: RecordedRequest[] = []
-  server.events.on('request:start', async ({ request }) => {
-    const body = request.method === 'GET' ? null : await request.clone().json().catch(() => null)
-    received.push({ method: request.method, path: new URL(request.url).pathname.replace('/api/v1', ''), body })
+  server.events.on('request:start', ({ request }) => {
+    received.push({ method: request.method, path: new URL(request.url).pathname.replace('/api/v1', '') })
   })
   return received
+}
+
+/** Responde a chamada e guarda o corpo recebido, lido antes da resposta sair. */
+export function capture(method: Method, path: string, response: JsonBodyType = null, status = 200) {
+  const bodies: unknown[] = []
+  const handler = http[method](`${API}${path}`, async ({ request }) => {
+    bodies.push(await request.json().catch(() => null))
+    return status === 204 ? new HttpResponse(null, { status }) : HttpResponse.json(response, { status })
+  })
+  return { handler, bodies }
 }
