@@ -232,6 +232,25 @@ body {
     outline: 2px solid var(--color-brand-600);
     outline-offset: 2px;
   }
+
+  /*
+   * O autopreenchimento do navegador pinta o proprio fundo por cima do campo,
+   * ignorando o token -- no claro passa quase despercebido (o amarelo claro do
+   * Chrome perto do branco), mas no escuro vira um retangulo claro dentro do
+   * campo escuro (visto no login, com usuario e senha salvos). A sombra
+   * gigante por dentro reescreve esse fundo pelo `--color-input`, que ja muda
+   * com o tema, entao um unico bloco resolve os dois.
+   */
+  input:autofill,
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--color-neutral-900);
+    -webkit-box-shadow: 0 0 0 1000px var(--color-input) inset;
+    box-shadow: 0 0 0 1000px var(--color-input) inset;
+    caret-color: var(--color-neutral-900);
+    transition: background-color 600000s, color 600000s;
+  }
 }
 
 /*
