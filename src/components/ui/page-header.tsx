@@ -13,7 +13,7 @@ export function PageHeader({
     <div className="flex flex-wrap items-end justify-between gap-4">
       <div className="flex min-w-0 flex-col gap-1">
         <h1 className="text-2xl font-semibold text-neutral-900">{title}</h1>
-        {description && <p className="text-sm text-neutral-500">{description}</p>}
+        {description && <p className="text-sm text-neutral-600">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>

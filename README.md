@@ -276,6 +276,88 @@ build quando algum teste falha (passo "Testes" de `.github/workflows`).
 | 10 | Motivo obrigatório na reprovação | `src/test/flows/review.test.ts` |
 | 11 | Erros da API (401, 403, 409, 422) com `fieldErrors` no campo certo | `src/test/flows/api-errors.test.ts` |
 
+## Acessibilidade, responsividade e estados de interface
+
+A issue #26 pede uma auditoria tela a tela dos nove estados do documento 14.15, acessibilidade
+básica e responsividade em 1366×768 e 1920×1080 (RNF-007), sem rolagem horizontal da página.
+
+- **Varredura automática**: as 40 telas, nas duas larguras, passadas pelo [axe-core](https://github.com/dequelabs/axe-core)
+  (WCAG 2 A/AA) e medidas quanto à rolagem horizontal. Encontrados e corrigidos:
+  - **contraste insuficiente** em 9 pontos — trilha de navegação, cabeçalho de tabela, descrição de
+    página, selo de estado "neutro", card "Cancelada" do dashboard, rótulo do campo de QR code e o
+    campo de exemplo da prévia do checklist. A maioria falhava por pouco (ratio 4.14–4.49 de 4.5
+    exigido); os tokens de cor usados viraram `neutral-600`/`neutral-700` conforme o fundo;
+  - **um décimo ponto que o axe não pega**: a busca do cabeçalho (ícone e campo, presente nas 40
+    telas) também estava em `neutral-500` sobre `neutral-100` (ratio 3.83). O axe-core não confere
+    de forma confiável o contraste do texto de `placeholder`, então a varredura passou batido; o
+    `/code-review` achou lendo o componente. Mesma correção, para `neutral-700`;
+  - **paginação simples** (`components/ui/pagination.tsx`) sem `aria-disabled` nos links
+    "Anterior"/"Próxima" quando desativados — o axe não isenta contraste de um controle que não se
+    anuncia como inativo; agora segue o mesmo padrão da paginação numérica;
+  - **`<dl>` mal formado** no detalhe de equipamento (`div` dentro de `div` fora do padrão
+    dt/dd) — corrigido com o mesmo prop `wide` já usado no detalhe da inspeção;
+  - **construtor de modelos sem `<h1>`**: o título visível é a trilha da `BuilderToolbar`
+    (desenho do Stitch); ganhou um `<h1 className="sr-only">` para a hierarquia de títulos ficar
+    coerente sem mudar o visual.
+  - Nenhuma tela teve rolagem horizontal da página; tabelas largas (auditoria, fila de revisão)
+    continuam rolando dentro do próprio container, como o RNF-007 permite.
+- **Teclado e diálogos**: conferido à mão que o diálogo de confirmação e o de cancelar inspeção
+  prendem o foco, fecham com Esc e devolvem o foco a quem abriu.
+- **Estado nunca só por cor**: todo selo de situação (`StatusBadge`, `SeverityBadge`) escreve o
+  rótulo, cor e ícone só reforçam.
+
+### Estados por tela (documento 14.15)
+
+Levantado a partir do código (arquivo `loading.tsx` irmão, uso de `EmptyState`, `FormFooter`/
+`SubmitButton`, `FlashNotice`/toast), não clicando tela por tela. "—" quer dizer que o estado não
+se aplica a essa tela (uma tela só de leitura não tem "processando", por exemplo), não que falte
+fazer. Autorização (403 → `/forbidden`), sessão expirada (401) e erro de rede/interno são tratados
+uma vez para o painel inteiro, em `lib/dal.ts` e em `(app)/error.tsx`, por isso não têm coluna
+própria aqui.
+
+| Tela | Carregando | Com dados | Sem dados | Erro de validação | Processando | Confirmação |
+| --- | --- | --- | --- | --- | --- | --- |
+| Dashboard | ✓ | ✓ | — | — | — | — |
+| Usuários — lista | — | ✓ | ✓ | — | — | ✓ |
+| Usuários — novo | — | ✓ | — | ✓ | ✓ | — |
+| Usuários — detalhe | ✓ (instantâneo) | — | — | — | — | — |
+| Usuários — editar | — | ✓ | — | ✓ | ✓ | — |
+| Clientes — lista | — | ✓ | ✓ | — | — | ✓ |
+| Clientes — novo | — | ✓ | — | ✓ | ✓ | — |
+| Clientes — detalhe | ✓ (instantâneo) | — | — | — | — | — |
+| Clientes — editar | — | ✓ | — | ✓ | ✓ | — |
+| Clientes — locais do cliente | — | ✓ | ✓ | — | — | — |
+| Locais — lista | — | ✓ | ✓ | — | — | ✓ |
+| Locais — novo | — | ✓ | ✓ | ✓ | ✓ | — |
+| Locais — detalhe | ✓ (instantâneo) | — | — | — | — | — |
+| Locais — editar | — | ✓ | — | ✓ | ✓ | — |
+| Locais — equipamentos do local | — | ✓ | ✓ | — | — | — |
+| Equipamentos — lista | — | ✓ | ✓ | — | — | ✓ |
+| Equipamentos — novo | — | ✓ | ✓ | ✓ | ✓ | — |
+| Equipamentos — detalhe | — | ✓ | — | — | — | ✓ |
+| Equipamentos — editar | — | ✓ | — | ✓ | ✓ | — |
+| Equipamentos — etiqueta | — | ✓ | — | — | — | — |
+| Modelos — lista | ✓ | ✓ | ✓ | — | — | ✓ |
+| Modelos — novo | — | ✓ | — | ✓ | ✓ | — |
+| Modelos — detalhe (redireciona ao construtor) | ✓ (instantâneo) | — | — | — | — | — |
+| Modelos — construtor | ✓ | ✓ | — | ✓ | ✓ | ✓ |
+| Modelos — prévia | ✓ | ✓ | — | — | — | — |
+| Modelos — versões | — | ✓ | ✓ | — | — | — |
+| Modelos — versão (detalhe) | ✓ | ✓ | — | — | — | — |
+| Inspeções — lista | — | ✓ | ✓ | — | ✓ | ✓ |
+| Inspeções — nova | — | ✓ | — | ✓ | ✓ | — |
+| Inspeções — fila de revisão | ✓ | ✓ | ✓ | — | — | — |
+| Inspeções — detalhe | ✓ | ✓ | — | — | ✓ | ✓ |
+| Inspeções — editar planejamento | — | ✓ | — | ✓ | ✓ | — |
+| Inspeções — revisão | — | ✓ | — | — | ✓ | ✓ |
+| Não conformidades — lista | ✓ | ✓ | ✓ | — | ✓ | — |
+| Não conformidades — detalhe | ✓ | ✓ | — | — | — | — |
+| Auditoria | ✓ | ✓ | ✓ | — | ✓ | — |
+| Busca | — | ✓ | — | — | — | — |
+| Configurações | — | ✓ | — | — | — | — |
+| Suporte | — | ✓ | — | — | — | — |
+| Acesso negado | — | ✓ | — | — | — | — |
+
 ## Contribuição
 
 Veja o [Guia de Contribuição](https://github.com/FieldOps-Project/docs/blob/main/CONTRIBUTING.md)

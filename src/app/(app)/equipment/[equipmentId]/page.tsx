@@ -23,9 +23,9 @@ import { formatDate, formatDateTime, orDash } from '@/lib/format'
 import { isId } from '@/lib/ids'
 import { param } from '@/lib/search-params'
 
-function Detail({ label, children }: { label: string; children: ReactNode }) {
+function Detail({ label, children, wide = false }: { label: string; children: ReactNode; wide?: boolean }) {
   return (
-    <div className="flex flex-col gap-0.5">
+    <div className={`flex flex-col gap-0.5 ${wide ? 'sm:col-span-2' : ''}`}>
       <dt className="text-xs font-medium tracking-wide text-neutral-500 uppercase">{label}</dt>
       <dd className="text-sm text-neutral-800">{children}</dd>
     </div>
@@ -86,9 +86,9 @@ export default async function EquipmentDetailPage(props: PageProps<'/equipment/[
             <Detail label="Modelo">{orDash(equipment.model)}</Detail>
             <Detail label="Instalação">{formatDate(equipment.installedAt)}</Detail>
             <Detail label="Atualizado em">{formatDateTime(equipment.updatedAt)}</Detail>
-            <div className="sm:col-span-2">
-              <Detail label="Descrição">{orDash(equipment.description)}</Detail>
-            </div>
+            <Detail label="Descrição" wide>
+              {orDash(equipment.description)}
+            </Detail>
           </dl>
         </section>
 

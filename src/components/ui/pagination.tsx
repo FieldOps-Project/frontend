@@ -36,7 +36,7 @@ export function Pagination({
       </span>
       <div className="flex items-center gap-2">
         {page.first ? (
-          <span className={`${LINK} pointer-events-none opacity-40`}>Anterior</span>
+          <span aria-disabled="true" className={`${LINK} pointer-events-none opacity-40`}>Anterior</span>
         ) : (
           <Link className={LINK} href={withParams(pathname, { ...params, page: page.page - 1 })}>
             Anterior
@@ -46,7 +46,7 @@ export function Pagination({
           Página {page.page + 1} de {Math.max(page.totalPages, 1)}
         </span>
         {page.last ? (
-          <span className={`${LINK} pointer-events-none opacity-40`}>Próxima</span>
+          <span aria-disabled="true" className={`${LINK} pointer-events-none opacity-40`}>Próxima</span>
         ) : (
           <Link className={LINK} href={withParams(pathname, { ...params, page: page.page + 1 })}>
             Próxima

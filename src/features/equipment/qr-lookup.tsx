@@ -13,7 +13,7 @@ export function QrLookup() {
 
   return (
     <form action={action} className="flex flex-col gap-1.5">
-      <label htmlFor="qr-lookup" className="text-xs font-medium text-neutral-500">
+      <label htmlFor="qr-lookup" className="text-xs font-medium text-neutral-600">
         Abrir pelo QR Code
       </label>
       <div className="flex gap-2">

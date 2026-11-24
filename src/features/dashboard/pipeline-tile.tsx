@@ -11,7 +11,7 @@ const TONES: Record<InspectionStatus, { readonly box: string; readonly text: str
   UNDER_REVIEW: { box: 'border-tertiary-300 bg-tertiary-100/70 hover:bg-tertiary-100', text: 'text-tertiary-700' },
   APPROVED: { box: 'border-neutral-200 bg-neutral-50 hover:bg-neutral-100', text: 'text-secondary-500' },
   REJECTED: { box: 'border-danger-soft bg-danger-soft/40 hover:bg-danger-soft/70', text: 'text-danger' },
-  CANCELED: { box: 'border-neutral-200 bg-neutral-200 hover:bg-neutral-300/70', text: 'text-neutral-500' },
+  CANCELED: { box: 'border-neutral-200 bg-neutral-200 hover:bg-neutral-300/70', text: 'text-neutral-700' },
 }
 
 const NUMBER = new Intl.NumberFormat('pt-BR')

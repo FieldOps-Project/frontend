@@ -216,7 +216,7 @@ export function InspectionSummary({ review }: { review: InspectionReview }) {
           <span className="text-sm text-neutral-700">Itens verificados</span>
           <span className="text-2xl font-semibold text-neutral-900">
             {answered}
-            <span className="text-base font-normal text-neutral-600">/{items.length}</span>
+            <span className="text-base font-normal text-neutral-700">/{items.length}</span>
           </span>
         </div>
         <div className="flex flex-col gap-1.5 rounded border border-danger/30 bg-danger-soft p-4 text-danger">
