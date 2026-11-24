@@ -76,7 +76,7 @@ export async function SitesList({
       ) : (
         <Table caption="Locais" head={['Local', 'Cliente', 'Cidade', 'Contato', 'Situação', 'Atualizado em', '']}>
           {page.content.map((site) => (
-            <tr key={site.id} className="hover:bg-neutral-50">
+            <tr key={site.id} className="hover:bg-surface-hover">
               <Td>
                 <span className="flex flex-col">
                   <span className="font-medium text-neutral-900">{site.name}</span>

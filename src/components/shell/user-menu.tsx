@@ -9,7 +9,7 @@ import { USER_ROLE_LABELS } from '@/lib/domain/user'
 import type { SessionUser } from '@/lib/session'
 
 const ITEM =
-  'flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-neutral-950'
+  'flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-neutral-700 transition-colors hover:bg-surface-hover hover:text-neutral-950'
 
 /**
  * Menu do avatar: quem esta logado, com qual perfil e em qual ambiente, e como

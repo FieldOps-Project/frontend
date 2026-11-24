@@ -187,7 +187,7 @@ export function AuditTable({ events }: { events: readonly AuditEvent[] }) {
           </thead>
           <tbody className="divide-y divide-neutral-200">
             {events.map((event) => (
-              <tr key={event.id} className="hover:bg-neutral-50">
+              <tr key={event.id} className="hover:bg-surface-hover">
                 <td className={`${CELL} font-mono text-sm whitespace-nowrap text-neutral-700`}>{event.code}</td>
                 <td className={CELL}>
                   <When event={event} />

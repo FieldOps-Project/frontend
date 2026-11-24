@@ -104,7 +104,7 @@ export function ReviewQueueTable({ items, now }: { items: readonly ReviewQueueIt
           </thead>
           <tbody className="divide-y divide-neutral-200">
             {items.map((item) => (
-              <tr key={item.id} className="hover:bg-neutral-50">
+              <tr key={item.id} className="hover:bg-surface-hover">
                 <td className={CELL}>
                   <div className="flex flex-col gap-1">
                     <Link href={`/inspections/${item.id}`} className="font-medium whitespace-nowrap text-brand-700 hover:underline">

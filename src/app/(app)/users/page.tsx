@@ -79,7 +79,7 @@ export default async function UsersPage(props: PageProps<'/users'>) {
         ) : (
           <Table caption="Usuários" head={['Nome', 'E-mail', 'Perfil', 'Situação', 'Atualizado em', '']}>
             {page.content.map((user) => (
-              <tr key={user.id} className="hover:bg-neutral-50">
+              <tr key={user.id} className="hover:bg-surface-hover">
                 <Td>
                   <span className="font-medium text-neutral-900">{user.name}</span>
                   {user.id === me.id && <span className="ml-2 text-xs text-neutral-500">(você)</span>}

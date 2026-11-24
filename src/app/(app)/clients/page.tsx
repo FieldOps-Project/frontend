@@ -77,7 +77,7 @@ export default async function ClientsPage(props: PageProps<'/clients'>) {
         ) : (
           <Table caption="Clientes" head={['Nome', 'Documento', 'E-mail', 'Telefone', 'Situação', 'Atualizado em', '']}>
             {page.content.map((client) => (
-              <tr key={client.id} className="hover:bg-neutral-50">
+              <tr key={client.id} className="hover:bg-surface-hover">
                 <Td>
                   <span className="flex flex-col">
                     <span className="font-medium text-neutral-900">{client.name}</span>

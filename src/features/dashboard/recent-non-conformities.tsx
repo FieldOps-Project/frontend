@@ -25,7 +25,7 @@ function CardList({ items }: { items: readonly RecentNonConformity[] }) {
           <Link
             href={detailHref(item)}
             aria-label={openLabel(item)}
-            className="flex items-center gap-3 px-4 py-4 transition-colors hover:bg-neutral-50 sm:px-6"
+            className="flex items-center gap-3 px-4 py-4 transition-colors hover:bg-surface-hover sm:px-6"
           >
             <span className="flex min-w-0 flex-1 flex-col gap-2">
               <span className="flex flex-wrap items-center justify-between gap-2">
@@ -70,7 +70,7 @@ function Table({ items }: { items: readonly RecentNonConformity[] }) {
       </thead>
       <tbody className="divide-y divide-neutral-200">
         {items.map((item) => (
-          <tr key={item.id} className="transition-colors hover:bg-neutral-50">
+          <tr key={item.id} className="transition-colors hover:bg-surface-hover">
             <td className="px-6 py-5 align-middle">
               <SeverityBadge severity={item.severity} />
             </td>

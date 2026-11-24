@@ -57,7 +57,7 @@ export function NavList({ items, onNavigate }: { items: readonly NavigationItem[
               className={`group flex items-center gap-4 border-l-[3px] px-5 py-3.5 text-[15px] transition-colors ${
                 active
                   ? 'rounded-r-md border-brand-700 bg-neutral-100 font-medium text-brand-700'
-                  : 'border-transparent text-neutral-800 hover:bg-neutral-50 hover:text-neutral-950'
+                  : 'border-transparent text-neutral-800 hover:bg-surface-hover hover:text-neutral-950'
               }`}
             >
               {Icon && (
