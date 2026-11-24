@@ -8,6 +8,7 @@ import { TemplateConfigPanel } from '@/features/templates/builder/template-confi
 import { VersionHistory } from '@/features/templates/builder/version-history'
 import { loadTemplateCategories, loadTemplateDetail, loadTemplateVersions } from '@/features/templates/templates-data'
 import { requireRole } from '@/lib/dal'
+import { draftVersionNumber } from '@/lib/domain/template-builder'
 import { MANAGER_ROLES } from '@/lib/domain/user'
 import { param } from '@/lib/search-params'
 
@@ -29,6 +30,12 @@ export default async function TemplateBuilderPage(props: PageProps<'/inspection-
 
   return (
     <div className="flex flex-col gap-6">
+      {/*
+       * O cabecalho visivel e o caminho de "BuilderToolbar" (breadcrumb no
+       * desenho do Stitch); este h1 oculto da a pagina um titulo de verdade
+       * na hierarquia, antes dos h2 das secoes abaixo.
+       */}
+      <h1 className="sr-only">{template.title} – Versão {draftVersionNumber(template)} (rascunho)</h1>
       <BuilderToolbar template={template}>
         <BuilderActionsBar template={template} />
       </BuilderToolbar>
