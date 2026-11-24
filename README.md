@@ -358,6 +358,46 @@ própria aqui.
 | Suporte | — | ✓ | — | — | — | — |
 | Acesso negado | — | ✓ | — | — | — | — |
 
+## Tema
+
+Claro, escuro ou "sistema" (padrão), trocável no menu do avatar e em Configurações, sem flash
+na carga e persistido entre sessões (card #29).
+
+- **Regra: cor vem sempre de um token, nunca de classe `dark:` espalhada.** Os ~1.300 usos de
+  `bg-neutral-0`, `text-neutral-900` etc. funcionam nos dois temas porque cada degrau da rampa
+  é redefinido dentro de `[data-theme="dark"]` em `globals.css` — o degrau N do claro vira o
+  degrau N do escuro (mesma lógica da Atlassian). Um componente só deveria usar `dark:` com uma
+  razão concreta para não caber num token existente; na dúvida, criar um token novo em vez de
+  espalhar a classe.
+- **Tokens de exceção** — o que não pode seguir a rampa, porque o valor "espelhado" dá errado:
+
+  | Token | Uso | Por quê não segue a rampa |
+  | --- | --- | --- |
+  | `surface-overlay` | Diálogos, popover, menus, toasts | Tem que ficar **mais claro** que o cartão no escuro — diálogo mais escuro que a página é o erro clássico de tema escuro |
+  | `surface-hover` | `hover:` sobre superfície | A rampa espelhada inverteria o hover: escureceria em vez de clarear |
+  | `blanket` / `blanket-strong` | Fundo atrás de modais e do visualizador de fotos | Unifica as 4 opacidades antigas (40/50/40/70) em 2 |
+  | `input` / `input-border` / `input-disabled` | Campos de formulário | Precisam de superfície própria, senão somem dentro do cartão; desabilitado fica **mais escuro**, não mais claro |
+  | `media` | Fundo atrás da foto no visualizador | A rampa deixaria a moldura quase branca |
+  | `knob` | Bolinha dos interruptores | Precisa contrastar com o trilho nos dois temas |
+  | `paper` / `ink` | Etiqueta impressa do equipamento | Papel e tinta não têm tema — é um objeto físico |
+  | `shadow-raised` / `shadow-overlay` | Sombra de cartão/diálogo | O Tailwind 4 compila `shadow-*` com valor fixo; estes dois utilitários leem uma variável (`--elevation-*`) que o bloco escuro troca por sombra + contorno, porque sombra sozinha não aparece no escuro |
+
+- **Mecanismo**: um script inline no `<head>` (`src/lib/theme.ts`, `THEME_INIT_SCRIPT`) aplica
+  `data-theme` no `<html>` antes da primeira pintura — sem isso have flash do tema errado na
+  recarga. `ThemeSync` (`src/components/theme/theme-sync.tsx`) reaplica em `useLayoutEffect`
+  (Strict Mode redesenha o `<html>` no remount de dev), segue o sistema operacional ao vivo
+  quando a preferência é "sistema" e sincroniza a troca feita em outra aba pelo evento
+  `storage`. `ThemeSwitcher` (`src/components/shell/theme-switcher.tsx`) é o controle visível,
+  um `radiogroup` acessível com `useSyncExternalStore` — sem isso o valor inicial do servidor
+  (sempre "sistema") divergiria do valor real do cliente na hidratação.
+- **Impressão e QR Code nunca escurecem**: o bloco escuro fica dentro de `@media screen`, e o
+  QR Code/a etiqueta usam `paper`/`ink`, fixos nos dois temas — leitor de QR não lê código
+  invertido, e a etiqueta representa papel.
+- **Como testar**: `localStorage.setItem('fieldops-theme', 'dark')` e recarregar, ou pelo
+  seletor em Configurações. Ao adicionar uma tela ou componente novo, abrir em claro e escuro
+  antes do PR; campo, diálogo ou mídia nova provavelmente precisa de um dos tokens acima, não
+  de `bg-neutral-0` direto.
+
 ## Contribuição
 
 Veja o [Guia de Contribuição](https://github.com/FieldOps-Project/docs/blob/main/CONTRIBUTING.md)
