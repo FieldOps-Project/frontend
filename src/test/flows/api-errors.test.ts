@@ -1,127 +1,114 @@
-import { http, HttpResponse } from 'msw'
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { changeClientStatus, createClient } from '@/features/clients/actions'
 import { load } from '@/lib/dal'
-import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE } from '@/lib/session-cookies'
-import { ADMIN, api, API_BASE_URL, apiError, recordRequests, server, signedInAs } from '@/test/api-server'
-import { clearCookies, outcome, setCookie } from '@/test/next-server'
+import { fail, mockApi, ok, server, signedInAs } from '@/test/api'
+import { form, outcome, withSession } from '@/test/next'
 
 vi.mock('server-only', () => ({}))
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
-vi.mock('next/headers', async () => {
-  const next = await import('@/test/next-server')
-  return { cookies: async () => next.cookiesStore, headers: async () => new Headers({ 'x-fo-pathname': '/clients' }) }
-})
-vi.mock('next/navigation', async () => (await import('@/test/next-server')).navigation)
+vi.mock('next/headers', async () => (await import('@/test/next')).nextHeaders)
+vi.mock('next/navigation', async () => (await import('@/test/next')).nextNavigation)
 
 /**
- * Fluxo 11 do documento 14.16: tratamento de erro da API (401, 403, 409 e 422).
- * Tudo passa pelo codigo real -- Server Action, `dal`, `apiFetch` e sessao --;
- * so a resposta HTTP e simulada.
+ * Fluxo 11 do documento 14.16: tratamento de erro da API. Cada status chega
+ * pela rede e passa pelo codigo real -- cliente HTTP, DAL e traducao de
+ * mensagens --, e o usuario so ve linguagem de negocio (documento 14, 8.3).
  */
-const CLIENT_ID = 'b0000000-0000-4000-8000-000000000001'
+mockApi()
 
-function clientForm(values: Record<string, string>): FormData {
-  const form = new FormData()
-  for (const [name, value] of Object.entries(values)) form.set(name, value)
-  return form
-}
+const CLIENT_ID = '3d8dc050-54f4-4d3b-9e5d-5fdb29ae3ed5'
+const NEW_CLIENT = { name: 'Indústria Alfa', document: '12345678000190', email: 'contato@alfa.test' }
 
-beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
-afterAll(() => server.close())
-
-beforeEach(() => {
-  vi.stubEnv('API_BASE_URL', API_BASE_URL)
-  setCookie(ACCESS_TOKEN_COOKIE, 'token-valido')
-  server.use(signedInAs(ADMIN))
-})
-
-afterEach(() => {
-  server.resetHandlers()
-  server.events.removeAllListeners()
-  clearCookies()
-  vi.unstubAllEnvs()
-})
-
-describe('422: validacao da API', () => {
-  it('leva cada erro ao campo certo, com mensagem de negocio', async () => {
-    server.use(
-      http.post(api('/clients'), () =>
-        apiError(422, 'VALIDATION_ERROR', [{ field: 'name', message: 'must not be blank' }]),
-      ),
-    )
-
-    const { value } = await outcome(() => createClient({ status: 'idle' }, clientForm({ name: ' ', email: 'x@y.com' })))
-
-    expect(value).toMatchObject({ status: 'error', message: 'Revise os campos destacados.' })
-    expect(value?.status === 'error' && value.fieldErrors.name).toBeTruthy()
-    expect(value?.status === 'error' && value.values.email).toBe('x@y.com')
-  })
-})
-
-describe('409: conflito', () => {
-  it('leva o e-mail duplicado ao campo de e-mail, sem a mensagem tecnica', async () => {
-    server.use(http.post(api('/clients'), () => apiError(409, 'EMAIL_ALREADY_EXISTS')))
-
-    const { value } = await outcome(() => createClient({ status: 'idle' }, clientForm({ name: 'Alpha', email: 'dup@alpha.com' })))
-
-    expect(value?.status === 'error' && value.fieldErrors.email).toBe('Este e-mail já está cadastrado.')
-    expect(JSON.stringify(value)).not.toContain('mensagem tecnica')
-  })
-})
-
-describe('403: perfil sem permissao', () => {
-  it('leitura leva a pagina de acesso negado', async () => {
-    server.use(http.get(api('/clients'), () => apiError(403, 'AUTH_FORBIDDEN')))
-
-    expect(await outcome(() => load('/clients'))).toEqual({ redirect: '/forbidden' })
-  })
-
-  it('acao de botao devolve a mensagem de negocio', async () => {
-    server.use(http.patch(api(`/clients/${CLIENT_ID}/status`), () => apiError(403, 'AUTH_FORBIDDEN')))
-
-    const { value } = await outcome(() => changeClientStatus(CLIENT_ID, 'INACTIVE'))
-    expect(value).toEqual({ ok: false, message: 'Seu perfil não tem permissão para esta ação.' })
-  })
-})
-
-describe('401: sessao expirada', () => {
-  it('na escrita, renova a sessao uma unica vez e repete a operacao com o token novo', async () => {
-    setCookie(REFRESH_TOKEN_COOKIE, 'refresh-valido')
-    const received = recordRequests()
+describe('11. erros da API', () => {
+  it('401 numa Server Action renova a sessao e repete a chamada uma unica vez', async () => {
+    withSession()
     let attempts = 0
+    const { http, HttpResponse } = await import('msw')
     server.use(
-      http.post(api('/clients'), ({ request }) => {
+      signedInAs('ADMIN'),
+      ok('post', '/auth/refresh', { accessToken: 'novo', refreshToken: 'novo-rt', expiresIn: 900 }),
+      http.post('http://api.test/api/v1/clients', ({ request }) => {
         attempts += 1
-        return request.headers.get('Authorization') === 'Bearer token-novo'
-          ? HttpResponse.json({ id: CLIENT_ID }, { status: 201 })
-          : apiError(401, 'AUTH_TOKEN_EXPIRED')
+        return request.headers.get('Authorization') === 'Bearer novo'
+          ? HttpResponse.json({ id: 'c-1' }, { status: 201 })
+          : HttpResponse.json({ status: 401, code: 'AUTH_INVALID_TOKEN', message: 'expired' }, { status: 401 })
       }),
-      http.post(api('/auth/refresh'), () =>
-        HttpResponse.json({ accessToken: 'token-novo', refreshToken: 'refresh-novo', expiresIn: 900 }),
-      ),
     )
 
-    const result = await outcome(() => createClient({ status: 'idle' }, clientForm({ name: 'Alpha' })))
-
-    expect(result).toEqual({ redirect: '/clients?notice=created' })
+    expect(await outcome(() => createClient({ status: 'idle' }, form(NEW_CLIENT)))).toEqual({
+      redirectedTo: '/clients?notice=created',
+    })
     expect(attempts).toBe(2)
-    expect(received.filter((request) => request.path === '/auth/refresh')).toHaveLength(1)
   })
 
-  it('sem refresh token, leva ao login avisando que a sessao expirou', async () => {
-    server.use(http.post(api('/clients'), () => apiError(401, 'AUTH_TOKEN_EXPIRED')))
+  it('401 sem conseguir renovar leva ao login com o aviso de sessao expirada', async () => {
+    withSession()
+    server.use(
+      signedInAs('ADMIN'),
+      fail('post', '/auth/refresh', 401, 'AUTH_INVALID_REFRESH_TOKEN'),
+      fail('post', '/clients', 401, 'AUTH_INVALID_TOKEN'),
+    )
 
-    expect(await outcome(() => createClient({ status: 'idle' }, clientForm({ name: 'Alpha' })))).toEqual({
-      redirect: '/login?expired=1',
+    expect(await outcome(() => createClient({ status: 'idle' }, form(NEW_CLIENT)))).toEqual({
+      redirectedTo: '/login?expired=1',
     })
   })
 
-  it('na leitura, manda renovar e voltar a mesma pagina', async () => {
-    server.use(http.get(api('/clients'), () => apiError(401, 'AUTH_TOKEN_EXPIRED')))
+  it('403 numa leitura leva a pagina de acesso negado', async () => {
+    withSession()
+    server.use(fail('get', '/users', 403, 'AUTH_FORBIDDEN'))
 
-    const { redirect } = await outcome(() => load('/clients'))
-    expect(redirect).toContain('redirect=%2Fclients')
+    expect(await outcome(() => load('/users'))).toEqual({ redirectedTo: '/forbidden' })
+  })
+
+  it('403 numa acao de botao vira mensagem de negocio', async () => {
+    withSession()
+    server.use(signedInAs('SUPERVISOR'), fail('patch', `/clients/${CLIENT_ID}/status`, 403, 'AUTH_FORBIDDEN'))
+
+    expect((await outcome(() => changeClientStatus(CLIENT_ID, 'INACTIVE'))).result).toEqual({
+      ok: false,
+      message: 'Seu perfil não tem permissão para esta ação.',
+    })
+  })
+
+  it('409 de e-mail duplicado aparece no campo de e-mail, sem o codigo tecnico', async () => {
+    withSession()
+    server.use(signedInAs('ADMIN'), fail('post', '/clients', 409, 'EMAIL_ALREADY_EXISTS'))
+
+    const { result } = await outcome(() => createClient({ status: 'idle' }, form(NEW_CLIENT)))
+
+    expect(result).toMatchObject({
+      status: 'error',
+      fieldErrors: { email: 'Este e-mail já está cadastrado.' },
+      values: { email: 'contato@alfa.test', name: 'Indústria Alfa' },
+    })
+    expect(JSON.stringify(result)).not.toMatch(/EMAIL_ALREADY_EXISTS|Technical message/)
+  })
+
+  it('422 leva cada fieldError ao campo certo e preserva o que foi digitado', async () => {
+    withSession()
+    server.use(
+      signedInAs('ADMIN'),
+      fail('post', '/clients', 422, 'VALIDATION_ERROR', [
+        { field: 'document', message: 'must be a valid CPF or CNPJ' },
+        { field: 'name', message: 'must not be blank' },
+      ]),
+    )
+
+    const { result } = await outcome(() => createClient({ status: 'idle' }, form(NEW_CLIENT)))
+
+    expect(result).toMatchObject({ status: 'error', message: 'Revise os campos destacados.' })
+    const fieldErrors = (result as { fieldErrors: Record<string, string> }).fieldErrors
+    expect(Object.keys(fieldErrors).sort()).toEqual(['document', 'name'])
+    expect(Object.values(fieldErrors).join(' ')).not.toMatch(/must /)
+  })
+
+  it('API fora do ar vira aviso compreensivel', async () => {
+    withSession()
+    const { http, HttpResponse } = await import('msw')
+    server.use(signedInAs('ADMIN'), http.post('http://api.test/api/v1/clients', () => HttpResponse.error()))
+
+    const { result } = await outcome(() => createClient({ status: 'idle' }, form(NEW_CLIENT)))
+    expect(result).toMatchObject({ status: 'error', message: expect.stringContaining('Não foi possível falar com a API') })
   })
 })
