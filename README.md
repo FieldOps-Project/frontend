@@ -287,6 +287,10 @@ básica e responsividade em 1366×768 e 1920×1080 (RNF-007), sem rolagem horizo
     página, selo de estado "neutro", card "Cancelada" do dashboard, rótulo do campo de QR code e o
     campo de exemplo da prévia do checklist. A maioria falhava por pouco (ratio 4.14–4.49 de 4.5
     exigido); os tokens de cor usados viraram `neutral-600`/`neutral-700` conforme o fundo;
+  - **um décimo ponto que o axe não pega**: a busca do cabeçalho (ícone e campo, presente nas 40
+    telas) também estava em `neutral-500` sobre `neutral-100` (ratio 3.83). O axe-core não confere
+    de forma confiável o contraste do texto de `placeholder`, então a varredura passou batido; o
+    `/code-review` achou lendo o componente. Mesma correção, para `neutral-700`;
   - **paginação simples** (`components/ui/pagination.tsx`) sem `aria-disabled` nos links
     "Anterior"/"Próxima" quando desativados — o axe não isenta contraste de um controle que não se
     anuncia como inativo; agora segue o mesmo padrão da paginação numérica;
