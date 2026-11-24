@@ -37,6 +37,11 @@ const CODE_MESSAGES: Record<string, string> = {
   TEMPLATE_VERSION_PUBLISHED: 'Esta versão já foi publicada e não pode ser alterada.',
   TEMPLATE_PUBLISH_INVALID: 'O modelo tem pendências que impedem a publicação.',
   DATA_CONFLICT: 'Outra alteração foi salva ao mesmo tempo. Recarregue a página e tente de novo.',
+  TECHNICIAN_NOT_ELIGIBLE: 'Somente técnico ativo pode receber a inspeção.',
+  TEMPLATE_VERSION_UNAVAILABLE: 'Esta versão do modelo não está disponível para novas inspeções.',
+  EQUIPMENT_INACTIVE: 'O equipamento está inativo e não pode receber novas inspeções.',
+  SITE_CLIENT_MISMATCH: 'O local não pertence ao cliente selecionado.',
+  EQUIPMENT_SITE_MISMATCH: 'O equipamento não pertence ao local selecionado.',
   INSPECTION_INVALID_TRANSITION: 'Esta ação não é possível no estado atual da inspeção. Recarregue a página para ver o estado atualizado.',
   INSPECTION_NOT_EDITABLE: 'O planejamento não pode mais ser alterado: a execução já foi iniciada.',
   INSPECTION_CANCEL_REASON_REQUIRED: 'Informe o motivo do cancelamento.',
@@ -65,6 +70,11 @@ const CODE_FIELDS: Record<string, string> = {
   TEMPLATE_ITEM_OPTIONS_REQUIRED: 'options',
   TEMPLATE_ITEM_OPTIONS_DUPLICATED: 'options',
   TEMPLATE_ITEM_OPTIONS_NOT_ALLOWED: 'options',
+  TECHNICIAN_NOT_ELIGIBLE: 'technicianId',
+  TEMPLATE_VERSION_UNAVAILABLE: 'templateVersionId',
+  EQUIPMENT_INACTIVE: 'equipmentId',
+  SITE_CLIENT_MISMATCH: 'siteId',
+  EQUIPMENT_SITE_MISMATCH: 'equipmentId',
 }
 
 /** Mensagens do Bean Validation, que a API devolve em ingles. */

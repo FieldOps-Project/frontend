@@ -53,6 +53,19 @@ describe('fieldErrorsFor', () => {
     expect(fieldErrorsFor(error)).toEqual({ options: 'As opções da escolha única não podem se repetir.' })
   })
 
+  it('leva as recusas do agendamento ao campo certo, com o motivo', () => {
+    const cases = [
+      ['TECHNICIAN_NOT_ELIGIBLE', 'technicianId', 'Somente técnico ativo pode receber a inspeção.'],
+      ['TEMPLATE_VERSION_UNAVAILABLE', 'templateVersionId', 'Esta versão do modelo não está disponível para novas inspeções.'],
+      ['EQUIPMENT_INACTIVE', 'equipmentId', 'O equipamento está inativo e não pode receber novas inspeções.'],
+      ['SITE_CLIENT_MISMATCH', 'siteId', 'O local não pertence ao cliente selecionado.'],
+      ['EQUIPMENT_SITE_MISMATCH', 'equipmentId', 'O equipamento não pertence ao local selecionado.'],
+    ] as const
+    for (const [code, field, message] of cases) {
+      expect(fieldErrorsFor(new ApiError({ status: 422, code, message: 'technical' }))).toEqual({ [field]: message })
+    }
+  })
+
   it('nunca mostra a mensagem de campo em ingles que o painel nao conhece', () => {
     const error = new ApiError({
       status: 422,
