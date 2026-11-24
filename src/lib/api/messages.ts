@@ -37,6 +37,17 @@ const CODE_MESSAGES: Record<string, string> = {
   TEMPLATE_VERSION_PUBLISHED: 'Esta versão já foi publicada e não pode ser alterada.',
   TEMPLATE_PUBLISH_INVALID: 'O modelo tem pendências que impedem a publicação.',
   DATA_CONFLICT: 'Outra alteração foi salva ao mesmo tempo. Recarregue a página e tente de novo.',
+  TECHNICIAN_NOT_ELIGIBLE: 'Somente técnico ativo pode receber a inspeção.',
+  TEMPLATE_VERSION_UNAVAILABLE: 'Esta versão do modelo não está disponível para novas inspeções.',
+  EQUIPMENT_INACTIVE: 'O equipamento está inativo e não pode receber novas inspeções.',
+  SITE_CLIENT_MISMATCH: 'O local não pertence ao cliente selecionado.',
+  EQUIPMENT_SITE_MISMATCH: 'O equipamento não pertence ao local selecionado.',
+  INSPECTION_INVALID_TRANSITION: 'Esta ação não é possível no estado atual da inspeção. Recarregue a página para ver o estado atualizado.',
+  INSPECTION_NOT_EDITABLE: 'O planejamento não pode mais ser alterado: a execução já foi iniciada.',
+  INSPECTION_CANCEL_REASON_REQUIRED: 'Informe o motivo do cancelamento.',
+  INSPECTION_APPROVED_READ_ONLY: 'Inspeção aprovada é somente leitura.',
+  INSPECTION_RESPONSES_LOCKED: 'As respostas desta inspeção estão bloqueadas para edição.',
+  EVIDENCE_READ_ONLY: 'Esta evidência é somente leitura.',
   [NETWORK_ERROR_CODE]: 'Não foi possível falar com a API. Verifique se ela está no ar e tente de novo.',
   INTERNAL_ERROR: 'A API encontrou um erro inesperado. Tente novamente em instantes.',
 }
@@ -59,6 +70,11 @@ const CODE_FIELDS: Record<string, string> = {
   TEMPLATE_ITEM_OPTIONS_REQUIRED: 'options',
   TEMPLATE_ITEM_OPTIONS_DUPLICATED: 'options',
   TEMPLATE_ITEM_OPTIONS_NOT_ALLOWED: 'options',
+  TECHNICIAN_NOT_ELIGIBLE: 'technicianId',
+  TEMPLATE_VERSION_UNAVAILABLE: 'templateVersionId',
+  EQUIPMENT_INACTIVE: 'equipmentId',
+  SITE_CLIENT_MISMATCH: 'siteId',
+  EQUIPMENT_SITE_MISMATCH: 'equipmentId',
 }
 
 /** Mensagens do Bean Validation, que a API devolve em ingles. */
@@ -70,6 +86,12 @@ const FIELD_MESSAGE_PATTERNS: readonly (readonly [RegExp, (match: RegExpMatchArr
   [/must be less than or equal to (-?[\d.]+)/i, (m) => `O valor máximo é ${m[1]}.`],
 ]
 
+/**
+ * Mensagem de campo que o painel nao conhece vem do Bean Validation, em ingles:
+ * nunca vai para a tela. Fica uma orientacao generica no proprio campo.
+ */
+const UNKNOWN_FIELD_MESSAGE = 'Valor não aceito. Revise este campo.'
+
 export function translateFieldMessage(message: string): string {
   for (const [pattern, render] of FIELD_MESSAGE_PATTERNS) {
     const match = message.match(pattern)
@@ -77,7 +99,7 @@ export function translateFieldMessage(message: string): string {
       return render(match)
     }
   }
-  return message
+  return UNKNOWN_FIELD_MESSAGE
 }
 
 export function messageFor(error: ApiError): string {
@@ -91,7 +113,19 @@ export function messageFor(error: ApiError): string {
   if (error.status >= 500) {
     return CODE_MESSAGES.INTERNAL_ERROR as string
   }
-  return error.message
+  /*
+   * Codigo que o painel ainda nao conhece: a mensagem da API e tecnica e em
+   * ingles, entao nunca vai para a tela. Fica a explicacao pelo tipo de recusa.
+   */
+  return STATUS_MESSAGES[error.status] ?? 'Não foi possível concluir a ação. Tente novamente.'
+}
+
+const STATUS_MESSAGES: Record<number, string> = {
+  400: 'Algum dado enviado não foi aceito. Revise e tente de novo.',
+  401: 'Sua sessão expirou. Entre novamente.',
+  403: 'Seu perfil não tem permissão para esta ação.',
+  409: 'Esta ação não é mais possível no estado atual do registro. Recarregue a página e tente de novo.',
+  422: 'Algum dado enviado não foi aceito. Revise e tente de novo.',
 }
 
 export function fieldErrorsFor(error: ApiError): Record<string, string> {
