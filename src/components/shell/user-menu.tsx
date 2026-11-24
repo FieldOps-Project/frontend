@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { MdLogout, MdOutlinePerson, MdOutlineSettings } from 'react-icons/md'
 
+import { ThemeSwitcher } from '@/components/shell/theme-switcher'
 import { Popover } from '@/components/ui/popover'
 import { signOut } from '@/features/auth/actions'
 import { USER_ROLE_LABELS } from '@/lib/domain/user'
@@ -35,6 +36,11 @@ export function UserMenu({ user, environmentLabel }: { user: SessionUser; enviro
             <p className="mt-1 text-xs text-neutral-600">
               {USER_ROLE_LABELS[user.role]} · Ambiente: {environmentLabel}
             </p>
+          </div>
+
+          <div className="flex items-center justify-between gap-3 border-b border-neutral-200 px-4 py-3">
+            <span className="text-sm text-neutral-700">Aparência</span>
+            <ThemeSwitcher compact />
           </div>
 
           <div className="py-1">

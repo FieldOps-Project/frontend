@@ -2,6 +2,11 @@ export type ThemePreference = 'light' | 'dark' | 'system'
 
 export const THEME_STORAGE_KEY = 'fieldops-theme'
 export const DEFAULT_THEME_PREFERENCE: ThemePreference = 'system'
+/** Disparado depois que `applyTheme` grava no localStorage, para quem le a
+ *  preferencia com `useSyncExternalStore` (ex.: `ThemeSwitcher`) perceber a
+ *  troca feita por outra instancia na mesma aba -- o evento `storage` do
+ *  navegador so dispara nas OUTRAS abas, nunca na que escreveu. */
+export const THEME_CHANGE_EVENT = 'fieldops-theme-change'
 
 function isThemePreference(value: string | null): value is ThemePreference {
   return value === 'light' || value === 'dark' || value === 'system'
@@ -41,6 +46,8 @@ export function applyTheme(preference: ThemePreference): void {
   } catch {
     // Aba privada ou storage bloqueado: a preferencia so vale para esta carga.
   }
+
+  window.dispatchEvent(new Event(THEME_CHANGE_EVENT))
 
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {

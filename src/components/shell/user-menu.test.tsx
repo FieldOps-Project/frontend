@@ -25,4 +25,11 @@ describe('UserMenu', () => {
     expect(screen.getByRole('link', { name: 'Configurações' })).toHaveAttribute('href', '/settings')
     expect(screen.getByRole('button', { name: 'Sair' })).toHaveAttribute('type', 'submit')
   })
+
+  it('oferece o alternador de aparencia', () => {
+    render(<UserMenu user={USER} environmentLabel="Produção" />)
+    fireEvent.click(screen.getByRole('button', { name: 'Menu da conta' }))
+
+    expect(screen.getByRole('radiogroup', { name: 'Aparência' })).toBeInTheDocument()
+  })
 })
