@@ -18,7 +18,7 @@ const APPROVE_BUTTON =
   'inline-flex h-11 items-center gap-2 rounded-field bg-success px-5 text-base font-semibold text-neutral-0 transition-colors hover:brightness-95 disabled:cursor-wait disabled:opacity-70'
 
 const TEXTAREA =
-  'w-full rounded-field border border-neutral-200 bg-neutral-0 px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-100 aria-[invalid=true]:border-danger'
+  'w-full rounded-field border border-input-border bg-input px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-100 aria-[invalid=true]:border-danger'
 
 /**
  * Aprovar e reprovar (documento 14.11 e AC-REVIEW).

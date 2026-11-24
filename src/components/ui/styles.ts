@@ -13,8 +13,14 @@ export const BUTTON_DANGER =
 
 export const LINK = 'font-medium text-brand-700 hover:text-brand-800 hover:underline'
 
+/*
+ * O campo tem superficie propria, e nao a do cartao: no tema escuro cartao e
+ * campo da mesma cor fazem o formulario sumir, porque so a borda separaria os
+ * dois e ela sozinha nao da contraste. Desabilitado fica mais escuro que o
+ * ativo -- afundado, nao mais chamativo.
+ */
 export const INPUT =
-  'w-full rounded-field border border-neutral-200 bg-neutral-0 px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-100 disabled:bg-neutral-100 disabled:text-neutral-500 aria-[invalid=true]:border-danger'
+  'w-full rounded-field border border-input-border bg-input px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-100 disabled:bg-input-disabled disabled:text-neutral-500 aria-[invalid=true]:border-danger'
 
 /**
  * Caixa de campo com conteudo ao lado do valor (icone, botao de ver a senha).
@@ -22,8 +28,13 @@ export const INPUT =
  * dela recebe foco; o input em si nao desenha contorno.
  */
 export const INPUT_BOX =
-  'flex w-full items-center gap-2.5 rounded-field border border-neutral-200 bg-neutral-0 px-3 text-sm transition-colors focus-within:border-brand-600 focus-within:ring-2 focus-within:ring-brand-100 has-[:disabled]:bg-neutral-100 has-[[aria-invalid=true]]:border-danger'
+  'flex w-full items-center gap-2.5 rounded-field border border-input-border bg-input px-3 text-sm transition-colors focus-within:border-brand-600 focus-within:ring-2 focus-within:ring-brand-100 has-[:disabled]:bg-input-disabled has-[[aria-invalid=true]]:border-danger'
 
+/*
+ * Continua transparente de proposito: quem pinta o fundo e a caixa. Dar
+ * `bg-input` tambem ao input de dentro desenha um retangulo de outra cor
+ * dentro da caixa, visivel no login, na senha, na busca e nos filtros.
+ */
 export const INPUT_BARE =
   'min-w-0 flex-1 bg-transparent py-2 text-neutral-900 outline-none placeholder:text-neutral-400 focus-visible:outline-none disabled:text-neutral-500'
 

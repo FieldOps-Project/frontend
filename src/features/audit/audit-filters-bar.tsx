@@ -18,7 +18,7 @@ import { withParams } from '@/lib/search-params'
 type Option = { readonly value: string; readonly label: string }
 
 const SELECT =
-  'h-11 w-full appearance-none rounded-field border border-neutral-200 bg-neutral-0 pr-9 pl-10 text-base text-neutral-900 focus:border-brand-600 focus:ring-2 focus:ring-brand-100 focus:outline-none'
+  'h-11 w-full appearance-none rounded-field border border-input-border bg-input pr-9 pl-10 text-base text-neutral-900 focus:border-brand-600 focus:ring-2 focus:ring-brand-100 focus:outline-none'
 
 /** Seletor com icone a esquerda e seta a direita, como os campos do Stitch. */
 function Field({
