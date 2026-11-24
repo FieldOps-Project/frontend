@@ -68,7 +68,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
           event.preventDefault()
           settle(false)
         }}
-        className="m-auto w-[calc(100%-2rem)] max-w-md rounded-card border border-neutral-200 p-0 backdrop:bg-neutral-900/40"
+        className="m-auto w-[calc(100%-2rem)] max-w-md rounded-card border border-neutral-200 bg-surface-overlay p-0 shadow-overlay backdrop:bg-blanket"
       >
         {pending && (
           <div className="flex flex-col gap-4 p-6">

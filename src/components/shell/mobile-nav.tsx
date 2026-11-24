@@ -54,7 +54,7 @@ export function MobileNav({ items }: { items: readonly NavigationItem[] }) {
           <div
             role="presentation"
             onClick={() => setOpen(false)}
-            className="absolute inset-0 bg-neutral-900/50"
+            className="absolute inset-0 bg-blanket"
           />
 
           <div className="relative flex h-full scrollbar-none w-72 max-w-[85%] overflow-y-auto flex-col border-r border-neutral-200 bg-neutral-0">

@@ -66,7 +66,7 @@ export function CancelInspection({ inspectionId, code }: { inspectionId: string;
         ref={dialogRef}
         onClose={() => setOpen(false)}
         aria-labelledby="cancel-inspection-title"
-        className="m-auto w-[calc(100%-2rem)] max-w-lg rounded-card border border-neutral-200 bg-neutral-0 p-0 shadow-xl backdrop:bg-neutral-950/40"
+        className="m-auto w-[calc(100%-2rem)] max-w-lg rounded-card border border-neutral-200 bg-surface-overlay p-0 shadow-overlay backdrop:bg-blanket"
       >
         {open && (
           <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4 p-6">

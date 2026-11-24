@@ -8,7 +8,7 @@ import { evidenceSrc, isPendingUpload, type EvidencePhoto } from '@/lib/domain/e
 import { formatDateTime } from '@/lib/format'
 
 const NAV_BUTTON =
-  'grid size-11 place-items-center rounded-full bg-neutral-0/90 text-neutral-900 shadow transition-colors hover:bg-neutral-0 disabled:opacity-40'
+  'grid size-11 place-items-center rounded-full bg-neutral-0/90 text-neutral-900 shadow-raised transition-colors hover:bg-neutral-0 disabled:opacity-40'
 
 function photoLabel(photo: EvidencePhoto, index: number): string {
   return photo.description ?? `Foto ${index + 1}`
@@ -84,7 +84,7 @@ export function EvidenceThumbnails({ photos, label }: { photos: readonly Evidenc
                 type="button"
                 onClick={() => setOpenIndex(viewable.indexOf(photo))}
                 aria-label={`Ampliar ${photoLabel(photo, index)}`}
-                className="overflow-hidden rounded-field border border-neutral-200 bg-neutral-100 transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-brand-600"
+                className="overflow-hidden rounded-field border border-neutral-200 bg-neutral-100 transition-shadow hover:shadow-raised focus-visible:ring-2 focus-visible:ring-brand-600"
               >
                 <Image
                   src={evidenceSrc(photo.id, 'thumbnail')}
@@ -112,7 +112,7 @@ export function EvidenceThumbnails({ photos, label }: { photos: readonly Evidenc
           if (event.key === 'ArrowLeft') move(-1)
         }}
         aria-label="Evidência ampliada"
-        className="m-auto w-[calc(100%-2rem)] max-w-5xl rounded-card border border-neutral-200 bg-neutral-0 p-0 shadow-xl backdrop:bg-neutral-950/70"
+        className="m-auto w-[calc(100%-2rem)] max-w-5xl rounded-card border border-neutral-200 bg-surface-overlay p-0 shadow-overlay backdrop:bg-blanket-strong"
       >
         {current && openIndex !== null && (
           <div className="flex flex-col">

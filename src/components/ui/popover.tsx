@@ -70,7 +70,7 @@ export function Popover({
           id={panelId}
           role="dialog"
           aria-label={label}
-          className={`absolute top-full right-0 z-40 mt-2 max-w-[calc(100vw-2rem)] rounded-card border border-neutral-200 bg-neutral-0 shadow-lg ${panelClassName}`}
+          className={`absolute top-full right-0 z-40 mt-2 max-w-[calc(100vw-2rem)] rounded-card border border-neutral-200 bg-surface-overlay shadow-overlay ${panelClassName}`}
         >
           {typeof children === 'function' ? children(close) : children}
         </div>
