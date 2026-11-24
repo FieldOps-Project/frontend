@@ -1,6 +1,14 @@
 @import "tailwindcss";
 
 /*
+ * Escotilha para o raro caso sem token. A regra do tema e que a cor vem sempre
+ * de um token -- o bloco escuro la embaixo redefine o token e a tela inteira
+ * acompanha. Classe `dark:` espalhada pelos componentes duplica as ~1.300
+ * classes de cor do painel e ninguem mantem; so usar com justificativa.
+ */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/*
  * Paleta e medidas do produto, a paleta "FieldOps Narrative" do sistema de
  * design: primaria #0052CC, secundaria #091E42, terciaria #A33500 e neutro
  * #F4F5F7. O degrau 600 da primaria e a cor de acao; os neutros descem para o
@@ -58,6 +66,41 @@
   --color-info: #0369a1;
   --color-info-soft: #e0f2fe;
 
+  /*
+   * Tokens de excecao: o que nao pode seguir a rampa quando ela espelha.
+   * No claro cada um vale exatamente o que a tela ja usava hoje, entao o tema
+   * claro nao muda nenhum pixel; o bloco escuro e que os separa da rampa.
+   */
+
+  /* Superficie elevada (dialogo, popover, menu). No escuro precisa ser MAIS
+   * clara que o cartao: dialogo mais escuro que a pagina e o erro classico. */
+  --color-surface-overlay: #ffffff;
+  /* Hover sobre superficie. No escuro clareia, em vez de escurecer. */
+  --color-surface-hover: #f4f5f7;
+  /* Escurecimento atras dos modais. */
+  --color-blanket: rgb(9 30 66 / 0.45);
+  --color-blanket-strong: rgb(9 30 66 / 0.7);
+  /* Campos de formulario: superficie propria, senao somem dentro do cartao. */
+  --color-input: #ffffff;
+  --color-input-border: #dfe1e6;
+  --color-input-disabled: #ebecf0;
+  /* Fundo atras da foto no visualizador de evidencias. */
+  --color-media: #091e42;
+  /* Bolinha dos interruptores: tem que contrastar com o trilho nos dois temas. */
+  --color-knob: #ffffff;
+  /* Etiqueta fisica do equipamento: papel e tinta nao mudam com o tema. */
+  --color-paper: #ffffff;
+  --color-ink: #172b4d;
+
+  /*
+   * As sombras `shadow-sm`/`shadow-lg`/`shadow-xl` do Tailwind 4 sao compiladas
+   * com valores fixos, entao redefinir `--shadow-*` em tempo de execucao nao
+   * teria efeito. Estes dois utilitarios leem uma variavel, que o bloco escuro
+   * troca -- no escuro a sombra sozinha nao aparece e precisa de contorno.
+   */
+  --shadow-raised: var(--elevation-raised);
+  --shadow-overlay: var(--elevation-overlay);
+
   --radius-field: 10px;
   --radius-card: 14px;
 
@@ -65,10 +108,114 @@
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
+:root {
+  /* Avisa o navegador para acompanhar o tema nos controles que ele mesmo
+   * desenha: `select`, calendario do `input[type=date]` e barras de rolagem. */
+  color-scheme: light;
+
+  /* Iguais ao `shadow-sm` e ao `shadow-xl` de hoje. */
+  --elevation-raised: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --elevation-overlay: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+/*
+ * Tema escuro: a mesma rampa, espelhada degrau a degrau com os valores do tema
+ * escuro da Atlassian (`@atlaskit/tokens`, tema `atlassian-dark`), que e a
+ * familia que o claro ja usa. O degrau N do claro vira o degrau N do escuro,
+ * entao `bg-neutral-0`, `text-neutral-900` e companhia funcionam sozinhos nas
+ * 37 telas, sem reescrever classe nenhuma.
+ *
+ * Fica dentro de `@media screen` de proposito: na impressao o painel sai sempre
+ * claro, sem precisar de regra extra para desfazer o escuro.
+ */
+@media screen {
+  [data-theme="dark"] {
+    color-scheme: dark;
+
+    --color-brand-50: #1c2b41;
+    --color-brand-100: #09326c;
+    --color-brand-200: #0055cc;
+    --color-brand-300: #0c66e4;
+    --color-brand-400: #1d7afc;
+    --color-brand-500: #388bff;
+    --color-brand-600: #579dff;
+    --color-brand-700: #6aa8ff;
+    --color-brand-800: #85b8ff;
+    --color-brand-900: #cce0ff;
+
+    --color-secondary-50: #1c2b41;
+    --color-secondary-100: #2c333a;
+    --color-secondary-300: #738496;
+    --color-secondary-500: #9fadbc;
+    --color-secondary-700: #c7d1db;
+    --color-secondary-900: #dee4ea;
+
+    --color-tertiary-50: #2e1c10;
+    --color-tertiary-100: #4a2410;
+    --color-tertiary-300: #a54800;
+    --color-tertiary-500: #fea362;
+    --color-tertiary-700: #fea362;
+    --color-tertiary-900: #fec195;
+
+    --color-neutral-0: #1d2125;
+    --color-neutral-50: #161a1d;
+    --color-neutral-100: #2c333a;
+    --color-neutral-200: #38414a;
+    --color-neutral-300: #454f59;
+    --color-neutral-400: #738496;
+    --color-neutral-500: #8c9bab;
+    --color-neutral-600: #9fadbc;
+    --color-neutral-700: #b0bcc9;
+    --color-neutral-800: #b6c2cf;
+    --color-neutral-900: #c7d1db;
+    --color-neutral-950: #dee4ea;
+
+    /*
+     * No escuro a cor "forte" de cada estado serve de texto sobre a superficie
+     * e de fundo com texto escuro: os dois usos passam de 4,5:1, entao um valor
+     * so basta.
+     */
+    --color-success: #4bce97;
+    --color-success-soft: #1c3329;
+    --color-warning: #f5cd47;
+    --color-warning-soft: #332e1b;
+    --color-danger: #f87168;
+    --color-danger-soft: #42221f;
+    --color-info: #85b8ff;
+    --color-info-soft: #1c2b41;
+
+    --color-surface-overlay: #282e33;
+    --color-surface-hover: #282e33;
+    --color-blanket: rgb(16 18 20 / 0.6);
+    --color-blanket-strong: rgb(16 18 20 / 0.85);
+    --color-input: #22272b;
+    --color-input-border: #738496;
+    /* Afundado: o campo desabilitado tem que ser mais escuro que o ativo. */
+    --color-input-disabled: #1a1e21;
+    --color-media: #101214;
+    --color-knob: #dee4ea;
+    /* `paper` e `ink` ficam de fora: etiqueta impressa nao tem tema. */
+
+    --elevation-raised: 0 0 0 1px #00000000, 0 1px 1px #03040480, 0 0 1px #03040480;
+    --elevation-overlay: 0 0 0 1px #39424a, 0 8px 12px #0304045c, 0 0 1px 1px #03040480;
+  }
+}
+
 body {
   background-color: var(--color-neutral-50);
   color: var(--color-neutral-800);
   font-family: var(--font-sans);
+}
+
+/*
+ * No instante da troca de tema, desligar as animacoes de cor. Sem isto cada
+ * `transition-colors` da tela corre no seu proprio tempo e o tema entra em
+ * ondas, como se a pagina estivesse sendo pintada a rolo.
+ */
+[data-theme-switching] *,
+[data-theme-switching] *::before,
+[data-theme-switching] *::after {
+  transition: none !important;
 }
 
 /*
