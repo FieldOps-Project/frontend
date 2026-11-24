@@ -251,6 +251,31 @@ O `typecheck` é um passo separado do build de propósito: o build do Next pode 
 configurado para ignorar erro de tipo, e nesse caso a verificação exigida pelo RNF-009
 deixaria de acontecer.
 
+## Testes dos fluxos prioritários
+
+A issue #25 pede os onze fluxos do documento 14.16 cobertos e rodando no CI, que reprova o
+build quando algum teste falha (passo "Testes" de `.github/workflows`).
+
+- **API simulada na rede** com o MSW (`src/test/api.ts`): o `fetch` de verdade é interceptado,
+  então o cliente HTTP, a sessão, a DAL e a tradução de erros continuam sendo o código real.
+  Chamada sem handler falha o teste. Só as peças do próprio Next (cookies, `redirect`,
+  `notFound`) são simuladas, em `src/test/next.ts`.
+- `npx vitest run src/test` roda só os fluxos; `npm test` roda a suíte inteira.
+
+| # | Fluxo (documento 14.16) | Onde está o teste |
+| - | ----------------------- | ----------------- |
+| 1 | Proteção de rota sem sessão | `src/test/flows/access.test.ts` e `src/proxy.test.ts` |
+| 2 | Permissões por perfil (menu e ação) | `src/test/flows/access.test.ts` (Server Action recusada) e `src/lib/navigation.test.ts` (menu) |
+| 3 | Validação de formulário | `features/auth/login-form.test.tsx`, `features/inspections/schedule-form.test.tsx`, `features/templates/new-template-form.test.tsx` |
+| 4 | Filtro encadeado cliente → local → equipamento, com limpeza | `features/inspections/schedule-form.test.tsx` ("limpa local e equipamento ao trocar o cliente") |
+| 5 | Criação de modelo | `features/templates/actions.test.ts` |
+| 6 | Bloqueio de publicação inválida | `features/templates/builder/builder-actions-bar.test.tsx` e `features/templates/publication-check.test.ts` |
+| 7 | Criação de inspeção | `features/inspections/schedule-actions.test.ts` |
+| 8 | Estados de tela | `src/test/flows/screen-states.test.tsx` |
+| 9 | Aprovação | `src/test/flows/review.test.ts` |
+| 10 | Motivo obrigatório na reprovação | `src/test/flows/review.test.ts` |
+| 11 | Erros da API (401, 403, 409, 422) com `fieldErrors` no campo certo | `src/test/flows/api-errors.test.ts` |
+
 ## Contribuição
 
 Veja o [Guia de Contribuição](https://github.com/FieldOps-Project/docs/blob/main/CONTRIBUTING.md)
