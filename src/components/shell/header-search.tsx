@@ -13,14 +13,14 @@ export function HeaderSearch() {
   return (
     <>
       <Form action="/search" role="search" className="hidden w-full max-w-[25rem] sm:block">
-        <label className="flex h-10 items-center gap-3 rounded-md bg-neutral-100 px-4 text-neutral-500 transition-shadow focus-within:bg-neutral-0 focus-within:ring-2 focus-within:ring-brand-200">
+        <label className="flex h-10 items-center gap-3 rounded-md bg-neutral-100 px-4 text-neutral-700 transition-shadow focus-within:bg-neutral-0 focus-within:ring-2 focus-within:ring-brand-200">
           <MdSearch aria-hidden className="size-5 shrink-0" />
           <span className="sr-only">Pesquisar em todo o painel</span>
           <input
             name="q"
             type="search"
             placeholder="Pesquisar em todo o painel..."
-            className="min-w-0 flex-1 bg-transparent text-[15px] text-neutral-900 outline-none placeholder:text-neutral-500 focus-visible:outline-none"
+            className="min-w-0 flex-1 bg-transparent text-[15px] text-neutral-900 outline-none placeholder:text-neutral-700 focus-visible:outline-none"
           />
         </label>
       </Form>
