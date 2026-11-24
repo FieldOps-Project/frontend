@@ -25,6 +25,7 @@ export function mockApi(...handlers: RequestHandler[]): void {
   })
   afterEach(() => {
     server.resetHandlers()
+    server.events.removeAllListeners()
     vi.unstubAllEnvs()
   })
   afterAll(() => server.close())
@@ -57,4 +58,16 @@ export type Role = 'ADMIN' | 'SUPERVISOR' | 'TECHNICIAN'
 /** `GET /auth/me`: quem a API diz que esta logado. */
 export function signedInAs(role: Role): RequestHandler {
   return ok('get', '/auth/me', { id: 'u-1', name: `Pessoa ${role}`, email: `${role.toLowerCase()}@fieldops.test`, role })
+}
+
+export type RecordedRequest = { readonly method: string; readonly path: string; readonly body: unknown }
+
+/** Guarda as chamadas que chegarem a API, para o teste conferir o que foi (ou nao foi) enviado. */
+export function recordRequests(): RecordedRequest[] {
+  const received: RecordedRequest[] = []
+  server.events.on('request:start', async ({ request }) => {
+    const body = request.method === 'GET' ? null : await request.clone().json().catch(() => null)
+    received.push({ method: request.method, path: new URL(request.url).pathname.replace('/api/v1', ''), body })
+  })
+  return received
 }

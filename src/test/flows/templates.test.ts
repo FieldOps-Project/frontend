@@ -1,0 +1,137 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { createTemplate } from '@/features/templates/actions'
+import { publishTemplate } from '@/features/templates/builder-actions'
+import { fail, mockApi, ok, recordRequests, server, signedInAs } from '@/test/api'
+import { form, outcome, withSession } from '@/test/next'
+
+vi.mock('server-only', () => ({}))
+vi.mock('next/headers', async () => (await import('@/test/next')).nextHeaders)
+vi.mock('next/navigation', async () => (await import('@/test/next')).nextNavigation)
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
+
+/**
+ * Fluxos 5 e 6 do documento 14.16: criacao de modelo e bloqueio de publicacao
+ * invalida, pela rede (contrato do documento 12.9). A conferencia local e a
+ * recusa da API (`422 TEMPLATE_PUBLISH_INVALID`) ficam em
+ * `features/templates/publication-check.test.ts`.
+ */
+mockApi()
+
+const TEMPLATE_ID = 'e0000000-0000-4000-8000-000000000099'
+const SECTION_ID = 'e1000000-0000-4000-8000-000000000001'
+
+/** Modelo pronto para publicar: uma secao com um item de conformidade (RN-016). */
+const TEMPLATE = {
+  id: TEMPLATE_ID,
+  title: 'Inspeção de caldeiras',
+  description: null,
+  category: 'Equipamentos',
+  status: 'DRAFT',
+  currentVersion: null,
+  createdBy: 'u-1',
+  createdAt: '2026-11-20T12:00:00Z',
+  updatedAt: '2026-11-20T12:00:00Z',
+  version: 1,
+  draftVersionId: null,
+  sections: [
+    {
+      id: SECTION_ID,
+      title: 'Segurança',
+      description: null,
+      displayOrder: 1,
+      items: [
+        {
+          id: 'e2000000-0000-4000-8000-000000000001',
+          sectionId: SECTION_ID,
+          code: null,
+          title: 'Válvula de segurança atua?',
+          description: null,
+          responseType: 'CONFORMITY',
+          required: true,
+          observationRequiredOnFailure: true,
+          evidenceRequiredOnFailure: true,
+          options: [],
+          displayOrder: 1,
+        },
+      ],
+    },
+  ],
+}
+
+beforeEach(() => {
+  vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'production')
+  withSession()
+})
+
+describe('5. criacao de modelo', () => {
+  it('envia titulo, descricao e categoria e abre o construtor do modelo criado', async () => {
+    server.use(signedInAs('ADMIN'), ok('post', '/inspection-templates', { id: TEMPLATE_ID }, 201))
+    const received = recordRequests()
+
+    const result = await outcome(() =>
+      createTemplate({ status: 'idle' }, form({ title: 'Inspeção de caldeiras', category: 'Equipamentos' })),
+    )
+
+    expect(result).toEqual({ redirectedTo: `/inspection-templates/${TEMPLATE_ID}/edit?notice=created` })
+    expect(received.find((request) => request.method === 'POST')?.body).toEqual({
+      title: 'Inspeção de caldeiras',
+      description: null,
+      category: 'Equipamentos',
+    })
+  })
+
+  it('titulo repetido (409) volta como erro no campo de titulo', async () => {
+    server.use(signedInAs('ADMIN'), fail('post', '/inspection-templates', 409, 'TEMPLATE_TITLE_ALREADY_EXISTS'))
+
+    const { result } = await outcome(() =>
+      createTemplate({ status: 'idle' }, form({ title: 'Inspeção de caldeiras', category: 'Equipamentos' })),
+    )
+    expect(result).toMatchObject({ status: 'error', fieldErrors: { title: 'Já existe um modelo com este título.' } })
+  })
+})
+
+describe('6. bloqueio de publicacao invalida', () => {
+  it('modelo sem secao nao chega a ser enviado para publicar', async () => {
+    server.use(signedInAs('ADMIN'), ok('get', `/inspection-templates/${TEMPLATE_ID}`, { ...TEMPLATE, sections: [] }))
+    const received = recordRequests()
+
+    const { result } = await outcome(() => publishTemplate(TEMPLATE_ID))
+
+    expect(result).toMatchObject({ ok: false })
+    expect(result && !result.ok && result.issues?.length).toBeGreaterThan(0)
+    expect(received.some((request) => request.path.endsWith('/publish'))).toBe(false)
+  })
+
+  it('a recusa da API (422 TEMPLATE_PUBLISH_INVALID) vira pendencia', async () => {
+    server.use(
+      signedInAs('ADMIN'),
+      ok('get', `/inspection-templates/${TEMPLATE_ID}`, TEMPLATE),
+      fail('post', `/inspection-templates/${TEMPLATE_ID}/publish`, 422, 'TEMPLATE_PUBLISH_INVALID', [
+        { field: 'sections[0].items', message: 'must not be empty' },
+      ]),
+    )
+
+    const { result } = await outcome(() => publishTemplate(TEMPLATE_ID))
+    expect(result).toMatchObject({ ok: false })
+    expect(result && !result.ok && result.issues?.length).toBeGreaterThan(0)
+  })
+
+  it('modelo valido e publicado com o numero da versao gerada', async () => {
+    server.use(
+      signedInAs('ADMIN'),
+      ok('get', `/inspection-templates/${TEMPLATE_ID}`, TEMPLATE),
+      ok('post', `/inspection-templates/${TEMPLATE_ID}/publish`, {
+        id: 'v1',
+        templateId: TEMPLATE_ID,
+        versionNumber: 1,
+        title: TEMPLATE.title,
+        publishedBy: 'u-1',
+        publishedAt: '2026-11-24T12:00:00Z',
+        activeForNewInspections: true,
+      }),
+    )
+
+    expect((await outcome(() => publishTemplate(TEMPLATE_ID))).result).toMatchObject({ ok: true, versionNumber: 1 })
+  })
+})
