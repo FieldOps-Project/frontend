@@ -46,7 +46,7 @@ export default async function LoginPage(props: PageProps<'/login'>) {
 
         <section
           aria-label="Entrar no painel"
-          className="rounded-card border border-neutral-200 bg-neutral-0 p-6 shadow-sm sm:p-7"
+          className="rounded-card border border-neutral-200 bg-neutral-0 p-6 shadow-raised sm:p-7"
         >
           <LoginForm
             redirectTo={redirectTo}

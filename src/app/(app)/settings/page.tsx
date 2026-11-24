@@ -1,3 +1,4 @@
+import { ThemeSwitcher } from '@/components/shell/theme-switcher'
 import { PageHeader } from '@/components/ui/page-header'
 import { CARD } from '@/components/ui/styles'
 import { verifySession } from '@/lib/dal'
@@ -7,10 +8,13 @@ import { USER_ROLE_LABELS } from '@/lib/domain/user'
 /**
  * Configuracoes da conta, aberta pelo rodape do menu.
  *
- * O documento 14 nao preve preferencias editaveis no MVP; a tela mostra quem
- * esta logado, com qual perfil e em qual ambiente, que e o que a pessoa costuma
- * procurar aqui. Troca de senha segue pelo fluxo controlado de redefinicao
- * (documento 14.6), feito por um administrador.
+ * O documento 14 nao preve preferencias editaveis no MVP; o cartao "Conta"
+ * mostra quem esta logado, com qual perfil e em qual ambiente, que e o que a
+ * pessoa costuma procurar aqui. Troca de senha segue pelo fluxo controlado de
+ * redefinicao (documento 14.6), feito por um administrador.
+ *
+ * "Aparencia" e a excecao: preferencia de conforto do card #29 (P1 pos-MVP,
+ * documento 8.3), fora do que o documento 14 cobre.
  */
 export default async function SettingsPage() {
   const user = await verifySession()
@@ -41,6 +45,18 @@ export default async function SettingsPage() {
         <p className="border-t border-neutral-200 px-5 py-4 text-sm text-neutral-500">
           Para trocar a senha ou o perfil, peça a um administrador a redefinição de acesso.
         </p>
+      </section>
+
+      <section aria-labelledby="appearance-title" className={`${CARD} max-w-2xl`}>
+        <h2 id="appearance-title" className="border-b border-neutral-200 px-5 py-4 text-base font-semibold text-neutral-900">
+          Aparência
+        </h2>
+        <div className="flex flex-col gap-3 px-5 py-4">
+          <ThemeSwitcher />
+          <p className="text-sm text-neutral-500">
+            Sistema acompanha a configuração do seu computador ou celular.
+          </p>
+        </div>
       </section>
     </div>
   )

@@ -97,7 +97,7 @@ export default async function InspectionTemplatesPage(props: PageProps<'/inspect
           <>
             <Table caption="Modelos de inspeção" head={['Modelo', 'Categoria', 'Situação', 'Atualizado em', '']}>
               {page.content.map((template) => (
-                <tr key={template.id} className="hover:bg-neutral-50">
+                <tr key={template.id} className="hover:bg-surface-hover">
                   <Td>
                     <span className="flex max-w-[16rem] min-w-0 flex-col 2xl:max-w-md">
                       <Link

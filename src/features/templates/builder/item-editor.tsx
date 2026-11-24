@@ -23,7 +23,7 @@ import {
 } from '@/lib/domain/template-builder'
 
 const FIELD =
-  'h-11 min-w-0 rounded-md border border-neutral-300 bg-neutral-0 px-3 text-[15px] text-neutral-950 outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-100 aria-[invalid=true]:border-danger'
+  'h-11 min-w-0 rounded-md border border-neutral-300 bg-input px-3 text-[15px] text-neutral-950 outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-100 aria-[invalid=true]:border-danger'
 
 function initialInput(item: TemplateItem | undefined): ItemInput {
   return {

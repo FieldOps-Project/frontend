@@ -43,7 +43,7 @@ export function SidebarFooter({
             <Link
               href={link.href}
               onClick={onNavigate}
-              className="flex items-center gap-4 rounded-md px-5 py-2.5 text-[15px] text-neutral-800 transition-colors hover:bg-neutral-50 hover:text-neutral-950"
+              className="flex items-center gap-4 rounded-md px-5 py-2.5 text-[15px] text-neutral-800 transition-colors hover:bg-surface-hover hover:text-neutral-950"
             >
               <link.icon aria-hidden className="size-[22px] shrink-0" />
               {link.label}

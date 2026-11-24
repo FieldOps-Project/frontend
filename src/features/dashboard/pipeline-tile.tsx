@@ -4,10 +4,10 @@ import { INSPECTION_STATUS_LABELS, type InspectionStatus } from '@/lib/domain/in
 
 /** Cores de cada estado, as do desenho do painel no Stitch. */
 const TONES: Record<InspectionStatus, { readonly box: string; readonly text: string }> = {
-  DRAFT: { box: 'border-neutral-300 bg-neutral-0 hover:bg-neutral-50', text: 'text-neutral-950' },
-  ASSIGNED: { box: 'border-neutral-300 bg-neutral-0 hover:bg-neutral-50', text: 'text-neutral-950' },
+  DRAFT: { box: 'border-neutral-300 bg-neutral-0 hover:bg-surface-hover', text: 'text-neutral-950' },
+  ASSIGNED: { box: 'border-neutral-300 bg-neutral-0 hover:bg-surface-hover', text: 'text-neutral-950' },
   IN_PROGRESS: { box: 'border-brand-200 bg-brand-50 hover:bg-brand-100/70', text: 'text-brand-700' },
-  SUBMITTED: { box: 'border-neutral-300 bg-neutral-0 hover:bg-neutral-50', text: 'text-neutral-950' },
+  SUBMITTED: { box: 'border-neutral-300 bg-neutral-0 hover:bg-surface-hover', text: 'text-neutral-950' },
   UNDER_REVIEW: { box: 'border-tertiary-300 bg-tertiary-100/70 hover:bg-tertiary-100', text: 'text-tertiary-700' },
   APPROVED: { box: 'border-neutral-200 bg-neutral-50 hover:bg-neutral-100', text: 'text-secondary-500' },
   REJECTED: { box: 'border-danger-soft bg-danger-soft/40 hover:bg-danger-soft/70', text: 'text-danger' },

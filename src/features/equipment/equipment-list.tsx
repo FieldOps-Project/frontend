@@ -85,7 +85,7 @@ export async function EquipmentList({
           {page.content.map((equipment) => {
             const site = sitesById.get(equipment.siteId)
             return (
-              <tr key={equipment.id} className="hover:bg-neutral-50">
+              <tr key={equipment.id} className="hover:bg-surface-hover">
                 <Td>
                   <span className="flex flex-col">
                     <Link href={`/equipment/${equipment.id}`} className="font-medium text-neutral-900 hover:underline">

@@ -163,7 +163,7 @@ export function SectionCard({
                 maxLength={BUILDER_LIMITS.sectionTitle}
                 aria-invalid={error ? true : undefined}
                 onChange={() => setError(null)}
-                className="h-10 min-w-0 flex-1 rounded-md border border-neutral-300 px-3 text-base font-semibold text-neutral-950 outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-100 aria-[invalid=true]:border-danger"
+                className="h-10 min-w-0 flex-1 rounded-md border border-neutral-300 bg-input px-3 text-base font-semibold text-neutral-950 outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-100 aria-[invalid=true]:border-danger"
               />
               <button type="button" onClick={() => setRenaming(false)} className="px-2 text-sm font-medium text-neutral-700">
                 Cancelar

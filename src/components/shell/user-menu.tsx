@@ -3,13 +3,14 @@
 import Link from 'next/link'
 import { MdLogout, MdOutlinePerson, MdOutlineSettings } from 'react-icons/md'
 
+import { ThemeSwitcher } from '@/components/shell/theme-switcher'
 import { Popover } from '@/components/ui/popover'
 import { signOut } from '@/features/auth/actions'
 import { USER_ROLE_LABELS } from '@/lib/domain/user'
 import type { SessionUser } from '@/lib/session'
 
 const ITEM =
-  'flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-neutral-950'
+  'flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-neutral-700 transition-colors hover:bg-surface-hover hover:text-neutral-950'
 
 /**
  * Menu do avatar: quem esta logado, com qual perfil e em qual ambiente, e como
@@ -35,6 +36,11 @@ export function UserMenu({ user, environmentLabel }: { user: SessionUser; enviro
             <p className="mt-1 text-xs text-neutral-600">
               {USER_ROLE_LABELS[user.role]} · Ambiente: {environmentLabel}
             </p>
+          </div>
+
+          <div className="flex items-center justify-between gap-3 border-b border-neutral-200 px-4 py-3">
+            <span className="text-sm text-neutral-700">Aparência</span>
+            <ThemeSwitcher compact />
           </div>
 
           <div className="py-1">

@@ -57,7 +57,7 @@ export default async function TemplateVersionsPage(props: PageProps<'/inspection
         ) : (
           <Table caption="Versões publicadas" head={['Versão', 'Publicada por', 'Publicada em', 'Novos agendamentos', '']}>
             {versions.map((version) => (
-              <tr key={version.id} className="hover:bg-neutral-50">
+              <tr key={version.id} className="hover:bg-surface-hover">
                 <Td className="font-medium text-neutral-900">Versão {version.versionNumber}</Td>
                 <Td>{(version.publishedBy && names.get(version.publishedBy)) ?? '—'}</Td>
                 <Td>{formatDateTime(version.publishedAt)}</Td>

@@ -82,7 +82,7 @@ export function AddSection({ templateId }: { templateId: string }) {
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? 'new-section-error' : undefined}
         onChange={() => setError(null)}
-        className="h-11 rounded-md border border-neutral-300 px-3 text-[15px] text-neutral-950 outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-100 aria-[invalid=true]:border-danger"
+        className="h-11 rounded-md border border-neutral-300 bg-input px-3 text-[15px] text-neutral-950 outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-100 aria-[invalid=true]:border-danger"
       />
       {error && (
         <p id="new-section-error" className="text-sm text-danger">

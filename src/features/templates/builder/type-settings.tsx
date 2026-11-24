@@ -85,7 +85,7 @@ export function OptionsEditor({
             placeholder={`Opção ${index + 1}`}
             aria-invalid={error ? true : undefined}
             onChange={(event) => onChange(rows.map((current, i) => (i === index ? event.target.value : current)))}
-            className="h-10 min-w-0 flex-1 rounded-md border border-neutral-300 bg-neutral-0 px-3 text-sm text-neutral-950 outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-100 aria-[invalid=true]:border-danger"
+            className="h-10 min-w-0 flex-1 rounded-md border border-neutral-300 bg-input px-3 text-sm text-neutral-950 outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-100 aria-[invalid=true]:border-danger"
           />
           <button
             type="button"

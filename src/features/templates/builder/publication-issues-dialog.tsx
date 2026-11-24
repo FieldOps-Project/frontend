@@ -54,12 +54,12 @@ export function PublicationIssuesDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div role="presentation" onClick={onClose} className="absolute inset-0 bg-neutral-900/50" />
+      <div role="presentation" onClick={onClose} className="absolute inset-0 bg-blanket" />
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="publication-issues-title"
-        className="relative flex max-h-[85dvh] w-full max-w-lg flex-col overflow-hidden rounded-lg border border-neutral-300 bg-neutral-0 shadow-xl"
+        className="relative flex max-h-[85dvh] w-full max-w-lg flex-col overflow-hidden rounded-lg border border-neutral-300 bg-surface-overlay shadow-overlay"
       >
         <header className="flex items-center justify-between gap-4 border-b border-neutral-200 px-5 py-4">
           <h2 id="publication-issues-title" className="text-lg font-semibold text-neutral-950">

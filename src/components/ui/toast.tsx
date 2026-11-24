@@ -48,7 +48,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {toasts.map((toast) => (
           <p
             key={toast.id}
-            className={`pointer-events-auto rounded-card border px-4 py-3 text-sm shadow-sm ${TONE_CLASSES[toast.tone]}`}
+            className={`pointer-events-auto rounded-card border px-4 py-3 text-sm shadow-raised ${TONE_CLASSES[toast.tone]}`}
           >
             {toast.message}
           </p>

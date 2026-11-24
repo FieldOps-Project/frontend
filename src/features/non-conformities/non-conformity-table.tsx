@@ -18,7 +18,7 @@ function CardList({ items }: { items: readonly NonConformityListItem[] }) {
     <ul className="divide-y divide-neutral-200 lg:hidden">
       {items.map((item) => (
         <li key={item.id}>
-          <Link href={detailHref(item)} className="flex items-center gap-3 px-4 py-4 hover:bg-neutral-50 sm:px-5">
+          <Link href={detailHref(item)} className="flex items-center gap-3 px-4 py-4 hover:bg-surface-hover sm:px-5">
             <span className="flex min-w-0 flex-1 flex-col gap-2">
               <span className="flex flex-wrap items-center justify-between gap-2">
                 <SeverityBadge severity={item.severity} />
@@ -72,7 +72,7 @@ export function NonConformityTable({ items }: { items: readonly NonConformityLis
           </thead>
           <tbody className="divide-y divide-neutral-200">
             {items.map((item) => (
-              <tr key={item.id} className="hover:bg-neutral-50">
+              <tr key={item.id} className="hover:bg-surface-hover">
                 <td className={CELL}>
                   <SeverityBadge severity={item.severity} />
                 </td>

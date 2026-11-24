@@ -23,7 +23,7 @@ export function ItemRow({
   handle?: ReactNode
 }) {
   return (
-    <div className="group flex items-center transition-colors hover:bg-neutral-50">
+    <div className="group flex items-center transition-colors hover:bg-surface-hover">
       {handle && <span className="flex shrink-0 pl-2 sm:pl-3">{handle}</span>}
       <button
         type="button"

@@ -30,7 +30,7 @@ export function Switch({
       >
         <span
           aria-hidden
-          className={`inline-block size-4 rounded-full bg-neutral-0 shadow transition-transform ${
+          className={`inline-block size-4 rounded-full bg-knob shadow-raised transition-transform ${
             checked ? 'translate-x-5' : 'translate-x-1'
           }`}
         />

@@ -161,7 +161,7 @@ export function InspectionNonConformities({ items }: { items: readonly NonConfor
             <li key={item.id}>
               <Link
                 href={`/non-conformities/${item.id}`}
-                className="flex items-center gap-4 px-6 py-4 transition-colors hover:bg-neutral-50"
+                className="flex items-center gap-4 px-6 py-4 transition-colors hover:bg-surface-hover"
               >
                 <span className="flex min-w-0 flex-1 flex-col gap-1">
                   <span className="text-base text-neutral-900">

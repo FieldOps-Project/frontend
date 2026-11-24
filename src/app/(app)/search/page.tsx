@@ -76,7 +76,7 @@ export default async function SearchPage(props: PageProps<'/search'>) {
                 <ul className="divide-y divide-neutral-100">
                   {group.hits.map((hit) => (
                     <li key={hit.id}>
-                      <Link href={hit.href} className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-neutral-50">
+                      <Link href={hit.href} className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-surface-hover">
                         <span className="flex min-w-0 flex-1 flex-col">
                           <span className="truncate text-sm font-medium text-neutral-900">{hit.title}</span>
                           {hit.detail && <span className="truncate text-xs text-neutral-500">{hit.detail}</span>}

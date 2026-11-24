@@ -13,7 +13,7 @@ export function HeaderSearch() {
   return (
     <>
       <Form action="/search" role="search" className="hidden w-full max-w-[25rem] sm:block">
-        <label className="flex h-10 items-center gap-3 rounded-md bg-neutral-100 px-4 text-neutral-700 transition-shadow focus-within:bg-neutral-0 focus-within:ring-2 focus-within:ring-brand-200">
+        <label className="flex h-10 items-center gap-3 rounded-md bg-neutral-100 px-4 text-neutral-700 transition-shadow focus-within:bg-input focus-within:ring-2 focus-within:ring-brand-200">
           <MdSearch aria-hidden className="size-5 shrink-0" />
           <span className="sr-only">Pesquisar em todo o painel</span>
           <input
