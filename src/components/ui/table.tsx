@@ -10,7 +10,7 @@ export function Table({ caption, head, children }: { caption: string; head: read
       <table className="w-full min-w-[640px] border-collapse text-left text-sm">
         <caption className="sr-only">{caption}</caption>
         <thead>
-          <tr className="border-b border-neutral-200 bg-neutral-50 text-xs font-medium tracking-wide text-neutral-500 uppercase">
+          <tr className="border-b border-neutral-200 bg-neutral-50 text-xs font-medium tracking-wide text-neutral-600 uppercase">
             {head.map((label, index) => (
               <th
                 key={label || index}

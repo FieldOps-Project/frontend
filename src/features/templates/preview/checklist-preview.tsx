@@ -8,7 +8,7 @@ import {
 } from '@/lib/domain/template-builder'
 
 const DISABLED_FIELD =
-  'w-full rounded-md border border-neutral-300 bg-neutral-50 px-3 py-2.5 text-sm text-neutral-500'
+  'w-full rounded-md border border-neutral-300 bg-neutral-50 px-3 py-2.5 text-sm text-neutral-600'
 
 function Choices({ labels, failure }: { labels: readonly string[]; failure?: string }) {
   return (

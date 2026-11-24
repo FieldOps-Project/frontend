@@ -2,7 +2,7 @@ import type { StatusTone } from '@/lib/domain/page'
 
 const TONES: Record<StatusTone, string> = {
   success: 'bg-success-soft text-success',
-  neutral: 'bg-neutral-100 text-neutral-600',
+  neutral: 'bg-neutral-100 text-neutral-700',
   warning: 'bg-warning-soft text-warning',
   danger: 'bg-danger-soft text-danger',
   info: 'bg-info-soft text-info',
