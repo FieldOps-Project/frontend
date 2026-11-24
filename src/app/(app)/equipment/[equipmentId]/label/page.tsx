@@ -44,7 +44,7 @@ export default async function EquipmentLabelPage(props: PageProps<'/equipment/[e
 
       <article
         id="equipment-label"
-        className="flex w-[9cm] items-center gap-4 rounded-card border-2 border-neutral-900 bg-neutral-0 p-4 text-neutral-900 print:rounded-none"
+        className="flex w-[9cm] items-center gap-4 rounded-card border-2 border-ink bg-paper p-4 text-ink print:rounded-none"
       >
         <QrCodeView value={equipment.qrCode} size={151} label={`QR Code ${equipment.qrCode}`} />
         <div className="flex min-w-0 flex-col gap-1">

@@ -32,7 +32,7 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
         }`}
       >
         <span
-          className={`absolute top-0.5 size-5 rounded-full bg-neutral-0 shadow-raised transition-transform ${
+          className={`absolute top-0.5 size-5 rounded-full bg-knob shadow-raised transition-transform ${
             checked ? 'translate-x-5.5' : 'translate-x-0.5'
           }`}
         />

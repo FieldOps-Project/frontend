@@ -116,7 +116,7 @@ export function EvidenceThumbnails({ photos, label }: { photos: readonly Evidenc
       >
         {current && openIndex !== null && (
           <div className="flex flex-col">
-            <div className="relative bg-neutral-950">
+            <div className="relative bg-media">
               <Image
                 src={evidenceSrc(current.id, 'original')}
                 alt={photoLabel(current, currentPosition)}
