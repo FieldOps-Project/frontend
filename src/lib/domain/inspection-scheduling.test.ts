@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   isInspectionPriority,
+  requiresEquipment,
   scheduledForFromDate,
   templateVersionLabel,
 } from '@/lib/domain/inspection-scheduling'
@@ -20,12 +21,25 @@ describe('contrato de agendamento', () => {
         templateTitle: 'Inspeção preventiva HVAC',
         category: 'Climatização',
         versionNumber: 3,
-        requiresEquipment: true,
       }),
     ).toBe('Inspeção preventiva HVAC · v3 (Climatização)')
   })
 
   it('converte a data prevista no inicio do dia em Sao Paulo', () => {
     expect(scheduledForFromDate('2026-10-30')).toBe('2026-10-30T00:00:00-03:00')
+  })
+})
+
+describe('requiresEquipment', () => {
+  it('dispensa o equipamento nas categorias de inspecao do local, como a API (RN-026)', () => {
+    for (const category of ['local', 'Ambiente', ' SITE ', 'Location', 'environment']) {
+      expect(requiresEquipment(category)).toBe(false)
+    }
+  })
+
+  it('exige o equipamento nas demais categorias', () => {
+    for (const category of ['Geradores', 'Climatização', 'Segurança predial', '']) {
+      expect(requiresEquipment(category)).toBe(true)
+    }
   })
 })

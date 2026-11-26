@@ -53,6 +53,7 @@ export default async function EditInspectionPlanningPage(props: PageProps<'/insp
             technicians={people.technicians}
             supervisors={people.supervisors}
             initial={{
+              title: inspection.title,
               technicianId: inspection.technicianId,
               supervisorId: inspection.supervisorId,
               scheduledDate: scheduledDateInSaoPaulo(inspection.scheduledFor),

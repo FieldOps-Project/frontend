@@ -14,6 +14,7 @@ const VALID = {
   siteId: 'site',
   equipmentId: 'equipment',
   technicianId: 'tech',
+  title: 'Inspeção preventiva',
   scheduledDate: '2026-11-03',
   priority: 'MEDIUM',
 }
@@ -23,14 +24,30 @@ describe('validateSchedule', () => {
     expect(hasScheduleErrors(validateSchedule(VALID, { requiresEquipment: true }))).toBe(false)
   })
 
-  it('exige modelo, cliente, local, tecnico e data prevista (RN-024 e RN-025)', () => {
+  it('exige modelo, cliente, local, tecnico, titulo e data prevista (RN-024 e RN-025)', () => {
     expect(validateSchedule({}, { requiresEquipment: false })).toEqual({
       templateVersionId: 'Selecione um modelo publicado.',
       clientId: 'A seleção do cliente é obrigatória.',
       siteId: 'A seleção do local é obrigatória.',
       technicianId: 'A atribuição do técnico é obrigatória.',
+      title: 'O título é obrigatório.',
       scheduledDate: 'A data prevista é obrigatória.',
     })
+  })
+
+  it('limita titulo e instrucoes ao tamanho da API', () => {
+    const errors = validateSchedule(
+      { ...VALID, title: 'a'.repeat(256), instructions: 'a'.repeat(2001) },
+      { requiresEquipment: true },
+    )
+
+    expect(errors.title).toBe('Use no máximo 255 caracteres.')
+    expect(errors.instructions).toBe('Use no máximo 2000 caracteres.')
+    expect(validateSchedule({ ...VALID, title: 'a'.repeat(255), instructions: 'a'.repeat(2000) }, { requiresEquipment: true })).toEqual({})
+  })
+
+  it('nao aceita titulo so com espacos', () => {
+    expect(validateSchedule({ ...VALID, title: '   ' }, { requiresEquipment: true }).title).toBe('O título é obrigatório.')
   })
 
   it('exige equipamento so quando o modelo inspeciona um equipamento (RN-026)', () => {
