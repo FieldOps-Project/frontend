@@ -120,30 +120,33 @@ por categoria, e a situação de cada modelo com a versão vigente ("Publicado �
 
 ## Detalhe da inspeção
 
-O `/inspections/{id}` segue a issue #18 e o documento 14.9. Clicar no código da inspeção na
-listagem abre o detalhe; o link **Revisar** continua indo direto para a revisão.
+O `/inspections/{id}` segue a issue #18 e o documento 14.9. Clicar na referência da inspeção na
+listagem abre o detalhe; o link **Revisar** continua indo direto para a revisão. A API não tem
+código de apresentação: a referência `INS-XXXXXXXX` vem do início do identificador
+(`inspectionReference`).
 
-- **Planejamento**: cliente, local, equipamento, técnico, supervisor, prioridade, prazo (com
-  atraso), modelo e instruções.
-- **Execução**: horários do dispositivo e do servidor lado a lado (RN-074), com "Aguardando
-  sincronização" quando o servidor ainda não recebeu; localização registrada com precisão e
-  horário; progresso dos itens.
-- **Linha do tempo** (autor, ação, horário do servidor e, quando houver, do dispositivo), com
-  mudanças de estado, fotografias e não conformidades (issue #24), a partir de
-  `GET /inspections/{id}/history`, e o link "Ver na auditoria". Se a API não responder, só esse
-  bloco aparece como indisponível.
+- **Montagem**: `loadInspectionDetail` lê `GET /inspections/{id}` e compõe a tela em paralelo com
+  cliente, local, equipamento, técnico, supervisor, versão do modelo e `GET /inspections/{id}/history`.
+  Nome de pessoa que a API nega ou não acha vira "—", sem derrubar a página.
+- **Histórico sem JSON**: `previousValue` e `newValue` chegam como `chave=valor;chave=valor` (ou
+  JSON, no relatório exportado). `lib/domain/audit-values.ts` lê os dois formatos; dele saem as
+  mudanças de estado, o motivo do cancelamento e os horários de início e conclusão
+  (`lib/domain/inspection-history.ts`).
+- **Planejamento**, **Execução** (horários do dispositivo e do servidor lado a lado, RN-074, e a
+  quantidade de itens do checklist) e **Linha do tempo**, com o link "Ver na auditoria".
 - **Ações conforme o estado** (documento 7.6): **Cancelar** em atribuída, em execução e
-  reprovada, com motivo obrigatório e botão desativado enquanto ele estiver vazio (RN-029);
-  aprovada nunca oferece cancelar (RN-030). **Revisar** só em enviada e em revisão. **Editar
-  planejamento** (`/inspections/{id}/edit`) só em rascunho e atribuída: técnico, supervisor, data,
-  prioridade e instruções; modelo, cliente, local e equipamento ficam bloqueados.
-- **Contrato** em `lib/domain/inspection-detail.ts`. O cancelamento usa o endpoint que já existe
-  (`POST /inspections/{id}/cancel`, `{ reason }`); detalhe, histórico e `PUT /inspections/{id}`
-  ainda não existem na API.
-- **Demonstração com memória** em `NEXT_PUBLIC_APP_ENV=development`
-  (`features/inspections/inspection-demo-store.ts`): as inspeções da listagem abrem com detalhe e
-  histórico, e cancelar ou replanejar aparece também na listagem e no dashboard até o servidor
-  reiniciar. O único ponto de troca para a API é `features/inspections/detail-data.ts`.
+  reprovada, com motivo obrigatório de até 1000 caracteres (RN-029); aprovada nunca oferece
+  cancelar (RN-030). **Revisar** só em enviada e em revisão. **Editar planejamento**
+  (`/inspections/{id}/edit`, `PUT /inspections/{id}`) só em rascunho e atribuída: título, técnico,
+  supervisor, data, prioridade e instruções; modelo, cliente, local e equipamento ficam bloqueados.
+- **Baixar relatório (PDF)**: `/api/inspections/{id}/report` repassa `GET /inspections/{id}/report.pdf`
+  com o token da sessão. Cada download grava um evento de auditoria na API, então nada chama o
+  endpoint ao abrir a página.
+- **Agendamento** (`/inspections/new`, `POST /inspections`): exige título (até 255) e aceita
+  instruções de até 2000 caracteres. O equipamento é obrigatório, como na API, exceto quando a
+  categoria do modelo é local, ambiente, site, location ou environment
+  (`requiresEquipment` em `lib/domain/inspection-scheduling.ts`). Os modelos do seletor vêm de
+  `GET /inspection-templates?status=ACTIVE` e das versões com `activeForNewInspections`.
 
 ## Não conformidades
 
