@@ -1,8 +1,10 @@
 import { NETWORK_ERROR_CODE, type ApiError } from '@/lib/api/errors'
 
+export const INACTIVE_ACCOUNT_MESSAGE = 'Sua conta está inativa ou bloqueada. Procure a administração do sistema.'
+
 const CODE_MESSAGES: Record<string, string> = {
   AUTH_INVALID_CREDENTIALS: 'E-mail ou senha incorretos.',
-  AUTH_USER_INACTIVE: 'Sua conta está inativa ou bloqueada. Procure a administração do sistema.',
+  AUTH_USER_INACTIVE: INACTIVE_ACCOUNT_MESSAGE,
   AUTH_INVALID_REFRESH_TOKEN: 'Sua sessão expirou. Entre novamente.',
   AUTH_INVALID_TOKEN: 'Sua sessão expirou. Entre novamente.',
   AUTH_AUTHENTICATION_REQUIRED: 'Sua sessão expirou. Entre novamente.',

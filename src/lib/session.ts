@@ -96,29 +96,52 @@ export async function clearSession(): Promise<void> {
   }
 }
 
-/**
- * Troca o refresh token por um novo par. Refresh tokens sao rotativos: o
- * anterior deixa de valer, entao o novo precisa ser gravado na mesma operacao.
- * Devolve `null` quando a sessao nao pode ser renovada.
- */
-export async function refreshTokens(): Promise<TokenPair | null> {
-  const refreshToken = await getRefreshToken()
-  if (!refreshToken) {
-    return null
-  }
+export type RefreshOutcome =
+  | { readonly kind: 'renewed'; readonly tokens: TokenPair }
+  | { readonly kind: 'ended'; readonly inactive: boolean }
 
+const pendingRefreshes = new Map<string, Promise<RefreshOutcome>>()
+
+async function requestNewTokens(refreshToken: string): Promise<RefreshOutcome> {
   try {
     const tokens = await apiFetch<TokenPair>('/auth/refresh', {
       method: 'POST',
       body: { refreshToken },
       token: null,
     })
-    await storeTokens(tokens)
-    return tokens
-  } catch {
-    await clearSession()
-    return null
+    return { kind: 'renewed', tokens }
+  } catch (error) {
+    if (isApiError(error) && error.status === 401) {
+      return { kind: 'ended', inactive: error.code === 'AUTH_USER_INACTIVE' }
+    }
+    throw error
   }
+}
+
+function exchange(refreshToken: string): Promise<RefreshOutcome> {
+  const pending = pendingRefreshes.get(refreshToken)
+  if (pending) {
+    return pending
+  }
+
+  const request = requestNewTokens(refreshToken).finally(() => pendingRefreshes.delete(refreshToken))
+  pendingRefreshes.set(refreshToken, request)
+  return request
+}
+
+export async function refreshTokens(): Promise<RefreshOutcome> {
+  const refreshToken = await getRefreshToken()
+  if (!refreshToken) {
+    return { kind: 'ended', inactive: false }
+  }
+
+  const outcome = await exchange(refreshToken)
+  if (outcome.kind === 'renewed') {
+    await storeTokens(outcome.tokens)
+  } else {
+    await clearSession()
+  }
+  return outcome
 }
 
 async function currentPath(): Promise<string> {

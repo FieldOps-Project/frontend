@@ -1,23 +1,32 @@
 import { redirect } from 'next/navigation'
 import type { NextRequest } from 'next/server'
 
+import { isApiError } from '@/lib/api/errors'
 import { safeRedirect } from '@/lib/redirect'
-import { markRefreshed, refreshTokens } from '@/lib/session'
+import { loginPath } from '@/lib/session-cookies'
+import { markRefreshed, refreshTokens, type RefreshOutcome } from '@/lib/session'
 
-/**
- * Renovacao da sessao.
- *
- * Server Component nao grava cookie, entao quem precisa renovar durante uma
- * navegacao passa por aqui: o refresh token vira um novo par, os cookies sao
- * regravados e a pessoa volta ao destino. Se a renovacao falhar, a sessao
- * acabou de verdade e o caminho e o login, com o destino preservado.
- */
+async function renew(): Promise<RefreshOutcome | 'unavailable'> {
+  try {
+    return await refreshTokens()
+  } catch (error) {
+    if (isApiError(error)) {
+      return 'unavailable'
+    }
+    throw error
+  }
+}
+
 export async function GET(request: NextRequest): Promise<never> {
   const destination = safeRedirect(request.nextUrl.searchParams.get('redirect'))
-  const tokens = await refreshTokens()
+  const outcome = await renew()
 
-  if (!tokens) {
-    redirect(`/login?expired=1&redirect=${encodeURIComponent(destination)}`)
+  if (outcome === 'unavailable') {
+    redirect(`/login?unavailable=1&redirect=${encodeURIComponent(destination)}`)
+  }
+
+  if (outcome.kind === 'ended') {
+    redirect(loginPath(outcome, destination))
   }
 
   await markRefreshed()
