@@ -49,5 +49,5 @@ export function isInspectionStatus(value: string): value is InspectionStatus {
 const REFERENCE_LENGTH = 8
 
 export function inspectionReference(id: string): string {
-  return `INS-${id.replaceAll('-', '').slice(0, REFERENCE_LENGTH).toUpperCase()}`
+  return `INS-${id.replaceAll('-', '').slice(-REFERENCE_LENGTH).toUpperCase()}`
 }
