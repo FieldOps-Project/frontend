@@ -1,20 +1,10 @@
 import Link from 'next/link'
 import { MdOutlineCloudDownload, MdOutlineWarningAmber } from 'react-icons/md'
 
-import { overdueDelta, overdueDeltaLabel, type DashboardSummary } from '@/lib/domain/dashboard'
-
 const NUMBER = new Intl.NumberFormat('pt-BR')
 
-/**
- * Inspecoes atrasadas (documento 14.5), pela mesma regra de atraso da listagem
- * (issue #28), com a variacao desde o fim do dia anterior.
- *
- * O vermelho so aparece quando ha atraso: alerta aceso com zero ensina a
- * ignorar o cartao justamente no dia em que ele importar.
- */
-export function DelayedInspectionsCard({ summary }: { summary: Pick<DashboardSummary, 'overdue' | 'overdueYesterday'> }) {
-  const late = summary.overdue > 0
-  const delta = overdueDelta(summary)
+export function DelayedInspectionsCard({ count }: { count: number }) {
+  const late = count > 0
 
   return (
     <Link
@@ -45,14 +35,14 @@ export function DelayedInspectionsCard({ summary }: { summary: Pick<DashboardSum
 
       <span id="delayed-count" className="relative flex flex-wrap items-center gap-x-4 gap-y-2">
         <span className={`text-[40px] leading-none font-semibold tabular-nums ${late ? 'text-danger' : 'text-neutral-950'}`}>
-          {NUMBER.format(summary.overdue)}
+          {NUMBER.format(count)}
         </span>
         <span
           className={`rounded-sm px-2.5 py-1 text-sm font-medium ${
-            delta > 0 ? 'bg-danger-soft text-danger' : 'bg-neutral-100 text-neutral-600'
+            late ? 'bg-danger-soft text-danger' : 'bg-neutral-100 text-neutral-600'
           }`}
         >
-          {overdueDeltaLabel(delta)}
+          {late ? 'Requer Atenção' : 'Nenhuma atrasada'}
         </span>
       </span>
     </Link>

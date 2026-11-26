@@ -1,61 +1,41 @@
 import { DashboardHeader } from '@/features/dashboard/dashboard-header'
-import { loadDashboardSummary, loadRecentNonConformities } from '@/features/dashboard/dashboard-data'
+import { loadDashboardSummary } from '@/features/dashboard/dashboard-data'
 import { DelayedInspectionsCard } from '@/features/dashboard/delayed-inspections-card'
 import { EmptyOperation } from '@/features/dashboard/empty-operation'
 import { PendingReviewsCard } from '@/features/dashboard/pending-reviews-card'
 import { PipelineCard } from '@/features/dashboard/pipeline-card'
-import { RecentNonConformities } from '@/features/dashboard/recent-non-conformities'
-import { UnavailableBlock } from '@/features/dashboard/unavailable-block'
+import { SeverityBreakdownCard } from '@/features/dashboard/severity-breakdown-card'
 import { requireRole } from '@/lib/dal'
-import { hasNoInspections } from '@/lib/domain/dashboard'
+import { hasNoInspections, REVIEW_SHORTCUT_ROLES } from '@/lib/domain/dashboard'
+import { FIELD_FINDINGS_ROLES } from '@/lib/domain/non-conformity'
 import { MANAGER_ROLES } from '@/lib/domain/user'
 
-/**
- * Dashboard do painel (documento 14.5 e issue #28): inspecoes por estado,
- * aguardando revisao, atrasadas, nao conformidades recentes e os atalhos para
- * revisar pendencias e criar inspecao.
- *
- * Cada numero e link para a listagem com o filtro correspondente, e os recortes
- * sao os mesmos da listagem, para que o numero e a lista nunca divirjam. Sem
- * cache: recarregar depois que o tecnico sincroniza ja mostra o novo estado.
- */
 export default async function DashboardPage() {
-  await requireRole(MANAGER_ROLES)
-
-  const [summary, recent] = await Promise.all([loadDashboardSummary(), loadRecentNonConformities()])
+  const user = await requireRole(MANAGER_ROLES)
+  const summary = await loadDashboardSummary()
+  const canReview = REVIEW_SHORTCUT_ROLES.includes(user.role)
 
   return (
     <div className="flex flex-col gap-6 lg:gap-8">
-      <DashboardHeader />
+      <DashboardHeader canReview={canReview} />
 
-      {!summary && (
-        <UnavailableBlock
-          title="Indicadores indisponíveis"
-          description="A API ainda não publica os indicadores do painel. Os totais por estado, as revisões pendentes e as atrasadas aparecem aqui assim que estiverem disponíveis."
-        />
-      )}
-
-      {summary && hasNoInspections(summary.inspectionsByStatus) && <EmptyOperation />}
-
-      {summary && !hasNoInspections(summary.inspectionsByStatus) && (
+      {hasNoInspections(summary.inspectionsByStatus) ? (
+        <EmptyOperation />
+      ) : (
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,24.5rem)]">
           <PipelineCard counts={summary.inspectionsByStatus} />
 
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-1 xl:grid-rows-2">
-            <PendingReviewsCard count={summary.awaitingReview} />
-            <DelayedInspectionsCard summary={summary} />
+            <PendingReviewsCard count={summary.awaitingReview} reviewable={canReview} />
+            <DelayedInspectionsCard count={summary.overdue} />
           </div>
         </div>
       )}
 
-      {recent ? (
-        <RecentNonConformities items={recent} />
-      ) : (
-        <UnavailableBlock
-          title="Não conformidades indisponíveis"
-          description="A API ainda não publica a listagem de não conformidades. As mais recentes aparecem aqui assim que ela estiver disponível."
-        />
-      )}
+      <SeverityBreakdownCard
+        counts={summary.nonConformitiesBySeverity}
+        linkable={FIELD_FINDINGS_ROLES.includes(user.role)}
+      />
     </div>
   )
 }

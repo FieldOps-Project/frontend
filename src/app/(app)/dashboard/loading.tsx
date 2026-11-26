@@ -1,9 +1,5 @@
 const BLOCK = 'animate-pulse rounded-md bg-neutral-200/70'
 
-/**
- * Esqueleto do dashboard com a mesma grade da tela pronta: a pagina nao pula
- * de lugar quando os numeros chegam.
- */
 export default function DashboardLoading() {
   return (
     <div role="status" aria-label="Carregando o painel" className="flex flex-col gap-6 lg:gap-8">
@@ -37,7 +33,7 @@ export default function DashboardLoading() {
         </div>
       </div>
 
-      <span className={`${BLOCK} h-80 rounded-lg`} />
+      <span className={`${BLOCK} h-48 rounded-lg`} />
       <span className="sr-only">Carregando o painel…</span>
     </div>
   )
