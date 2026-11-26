@@ -189,6 +189,24 @@ há mais tempo para a mais recente.
   administrador todas. Só o supervisor decide a revisão; o administrador vê a fila e abre o detalhe.
   Fila vazia mostra "Tudo revisado!".
 
+## Revisão da inspeção
+
+`/inspections/{id}/review` lê tudo da API, sem dado de demonstração.
+
+- **Composição** (`loadInspectionReview`, em paralelo): o detalhe da inspeção, o checklist de
+  `GET /inspections/{id}` (`itemSnapshots`, agrupado por seção), as não conformidades e as evidências
+  já usadas no detalhe e o histórico `GET /inspections/{id}/reviews` (`reviewCycle` vira `cycle`; o nome
+  de quem decidiu vem de `GET /users/{id}` e degrada para vazio). Perfil sem permissão recebe `null`
+  nesses blocos e a tela explica a ausência.
+- **Respostas do técnico**: `GET /inspections/{id}/responses` é só do técnico (403 para supervisor e
+  administrador), então a tela mostra a estrutura do checklist (seção, código, título, tipo,
+  obrigatório) e destaca os itens com não conformidade. As respostas só existem no relatório em PDF,
+  oferecido em destaque (`/api/inspections/{id}/report`).
+- **Ações do supervisor**: **Iniciar revisão** (`POST /begin-review`) com a inspeção enviada;
+  **Aprovar** e **Reprovar** (`/approve` e `/reject`) só em revisão. Motivo e comentário aceitam até
+  2000 caracteres, como a API; os itens a corrigir são ids do snapshot, e os itens com não
+  conformidade já vêm marcados. O administrador vê a tela só para leitura.
+
 ## Exportação e busca
 
 - **Exportar** da listagem (`/inspections/export`) repassa o CSV de `GET /inspections/export.csv`
@@ -293,7 +311,7 @@ build quando algum teste falha (passo "Testes" de `.github/workflows`).
 | 6 | Bloqueio de publicação inválida | `features/templates/builder/builder-actions-bar.test.tsx` e `features/templates/publication-check.test.ts` |
 | 7 | Criação de inspeção | `features/inspections/schedule-actions.test.ts` |
 | 8 | Estados de tela | `src/test/flows/screen-states.test.tsx` |
-| 9 | Aprovação | `src/test/flows/review.test.ts` |
+| 9 | Início da revisão e aprovação | `src/test/flows/review.test.ts` |
 | 10 | Motivo obrigatório na reprovação | `src/test/flows/review.test.ts` |
 | 11 | Erros da API (401, 403, 409, 422) com `fieldErrors` no campo certo | `src/test/flows/api-errors.test.ts` |
 

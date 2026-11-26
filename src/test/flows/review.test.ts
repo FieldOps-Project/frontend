@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { approveInspection, rejectInspection } from '@/features/inspections/review-actions'
+import { approveInspection, beginReview, rejectInspection } from '@/features/inspections/review-actions'
 import { fail, mockApi, server, signedInAs } from '@/test/api'
 import { outcome, withSession } from '@/test/next'
 
@@ -30,6 +30,47 @@ async function recordWrites(path: string) {
   )
   return bodies
 }
+
+async function recordCalls(path: string) {
+  const { http, HttpResponse } = await import('msw')
+  const calls: string[] = []
+  server.use(
+    http.post(`http://api.test/api/v1${path}`, () => {
+      calls.push(path)
+      return new HttpResponse(null, { status: 204 })
+    }),
+  )
+  return calls
+}
+
+describe('8. inicio da revisao', () => {
+  it('supervisor inicia a revisao de uma inspecao enviada', async () => {
+    withSession()
+    server.use(signedInAs('SUPERVISOR'))
+    const calls = await recordCalls(`/inspections/${INSPECTION_ID}/begin-review`)
+
+    expect((await outcome(() => beginReview(INSPECTION_ID))).result).toEqual({ ok: true, message: 'Revisão iniciada.' })
+    expect(calls).toHaveLength(1)
+  })
+
+  it('administrador nao inicia revisao: so o supervisor decide (RN-079)', async () => {
+    withSession()
+    server.use(signedInAs('ADMIN'))
+    const calls = await recordCalls(`/inspections/${INSPECTION_ID}/begin-review`)
+
+    expect(await outcome(() => beginReview(INSPECTION_ID))).toEqual({ redirectedTo: '/forbidden' })
+    expect(calls).toEqual([])
+  })
+
+  it('transicao recusada pela API (409) vira mensagem de negocio', async () => {
+    withSession()
+    server.use(signedInAs('SUPERVISOR'), fail('post', `/inspections/${INSPECTION_ID}/begin-review`, 409, 'INSPECTION_INVALID_TRANSITION'))
+
+    const { result } = await outcome(() => beginReview(INSPECTION_ID))
+    expect(result).toMatchObject({ ok: false })
+    expect(result?.message).toMatch(/estado atual da inspeção/)
+  })
+})
 
 describe('9. aprovacao', () => {
   it('supervisor aprova com comentario opcional (RN-081)', async () => {
@@ -83,5 +124,13 @@ describe('10. motivo obrigatorio na reprovacao', () => {
 
     expect((await outcome(() => rejectInspection(INSPECTION_ID, 'Foto ilegível.', [ITEM_ID]))).result?.ok).toBe(true)
     expect(bodies).toEqual([{ reason: 'Foto ilegível.', itemsToCorrect: [ITEM_ID] }])
+  })
+
+  it('item fora do snapshot (422) vira mensagem de negocio', async () => {
+    withSession()
+    server.use(signedInAs('SUPERVISOR'), fail('post', `/inspections/${INSPECTION_ID}/reject`, 422, 'INSPECTION_ITEM_NOT_IN_SNAPSHOT'))
+
+    const { result } = await outcome(() => rejectInspection(INSPECTION_ID, 'Motivo', [ITEM_ID]))
+    expect(result).toEqual({ ok: false, message: 'Algum item selecionado não pertence a esta inspeção.' })
   })
 })

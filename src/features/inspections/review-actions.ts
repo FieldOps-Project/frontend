@@ -2,47 +2,51 @@
 
 import { revalidatePath } from 'next/cache'
 
-import { isDemoReview } from '@/features/inspections/review-data'
 import { actionError, requireRole, send } from '@/lib/dal'
+import { REVIEW_TEXT_MAX_LENGTH } from '@/lib/domain/inspection-review'
 import type { ActionResult } from '@/lib/form-state'
 import { assertId } from '@/lib/ids'
 
-/** Mesmo limite de texto livre usado nos cadastros. */
-const TEXT_MAX_LENGTH = 1000
-
-const DEMO_NOTICE = 'Demonstração: a decisão não é enviada à API.'
-
-function clean(value: string | null | undefined): string | null {
-  const trimmed = value?.trim() ?? ''
-  return trimmed === '' ? null : trimmed.slice(0, TEXT_MAX_LENGTH)
+function revalidateReview(id: string) {
+  revalidatePath(`/inspections/${id}/review`)
+  revalidatePath(`/inspections/${id}`)
+  revalidatePath('/inspections')
+  revalidatePath('/inspections/review-queue')
+  revalidatePath('/dashboard')
 }
 
-/**
- * Aprova a inspecao. A API registra supervisor e horario (RN-081) e protege as
- * respostas contra edicao comum (RN-082); o comentario e opcional.
- */
-export async function approveInspection(id: string, comments: string | null): Promise<ActionResult> {
-  await requireRole(['SUPERVISOR'])
-  const inspectionId = assertId(id)
+function tooLong(label: string): ActionResult {
+  return { ok: false, message: `Use no máximo ${REVIEW_TEXT_MAX_LENGTH} caracteres ${label}.` }
+}
 
-  if (isDemoReview(inspectionId)) {
-    return { ok: false, message: DEMO_NOTICE }
-  }
-
+async function transition(id: string, action: string, body: object | undefined, message: string): Promise<ActionResult> {
   try {
-    await send(`/inspections/${inspectionId}/approve`, { method: 'POST', body: { comments: clean(comments) } })
+    await send(`/inspections/${id}/${action}`, { method: 'POST', body })
   } catch (error) {
     return actionError(error)
   }
 
-  revalidatePath(`/inspections/${inspectionId}/review`)
-  return { ok: true, message: 'Inspeção aprovada.' }
+  revalidateReview(id)
+  return { ok: true, message }
 }
 
-/**
- * Reprova a inspecao. Sem motivo a acao e bloqueada (RN-080 e AC-REVIEW); os
- * itens marcados voltam ao tecnico para correcao na proxima sincronizacao.
- */
+export async function beginReview(id: string): Promise<ActionResult> {
+  await requireRole(['SUPERVISOR'])
+  return transition(assertId(id), 'begin-review', undefined, 'Revisão iniciada.')
+}
+
+export async function approveInspection(id: string, comments: string | null): Promise<ActionResult> {
+  await requireRole(['SUPERVISOR'])
+  const inspectionId = assertId(id)
+  const cleanComments = comments?.trim() || null
+
+  if (cleanComments && cleanComments.length > REVIEW_TEXT_MAX_LENGTH) {
+    return tooLong('no comentário')
+  }
+
+  return transition(inspectionId, 'approve', { comments: cleanComments }, 'Inspeção aprovada.')
+}
+
 export async function rejectInspection(
   id: string,
   reason: string,
@@ -51,25 +55,19 @@ export async function rejectInspection(
   await requireRole(['SUPERVISOR'])
   const inspectionId = assertId(id)
   const items = itemsToCorrect.map(assertId)
-  const cleanReason = clean(reason)
+  const cleanReason = reason.trim()
 
-  if (!cleanReason) {
+  if (cleanReason === '') {
     return { ok: false, message: 'Informe o motivo da reprovação.' }
   }
-
-  if (isDemoReview(inspectionId)) {
-    return { ok: false, message: DEMO_NOTICE }
+  if (cleanReason.length > REVIEW_TEXT_MAX_LENGTH) {
+    return tooLong('no motivo')
   }
 
-  try {
-    await send(`/inspections/${inspectionId}/reject`, {
-      method: 'POST',
-      body: { reason: cleanReason, itemsToCorrect: items },
-    })
-  } catch (error) {
-    return actionError(error)
-  }
-
-  revalidatePath(`/inspections/${inspectionId}/review`)
-  return { ok: true, message: 'Inspeção reprovada. O técnico recebe o motivo na próxima sincronização.' }
+  return transition(
+    inspectionId,
+    'reject',
+    { reason: cleanReason, itemsToCorrect: items },
+    'Inspeção reprovada. O técnico recebe o motivo na próxima sincronização.',
+  )
 }

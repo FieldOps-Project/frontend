@@ -1,20 +1,22 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
-import { Notice } from '@/components/ui/notice'
-import { canDecide, isDemoReview, loadInspectionReview } from '@/features/inspections/review-data'
-import { ReviewDecision } from '@/features/inspections/review-decision'
+import { EvidenceGallery } from '@/features/evidence/evidence-gallery'
+import { ExecutionDetails } from '@/features/inspections/detail-view'
+import { loadInspectionReview } from '@/features/inspections/review-data'
+import { BeginReview, ReviewDecision } from '@/features/inspections/review-decision'
 import {
-  ChecklistResponses,
-  ExecutionDetails,
-  InspectionSummary,
-  LockedNotice,
-  NonConformitiesPanel,
+  ChecklistStructure,
+  ReportCallout,
   ReviewHeader,
   ReviewHistory,
+  ReviewSummary,
+  StageHint,
 } from '@/features/inspections/review-view'
+import { InspectionNonConformities } from '@/features/non-conformities/non-conformity-view'
 import { requireRole } from '@/lib/dal'
-import { reviewItems } from '@/lib/domain/inspection-review'
+import { inspectionReference } from '@/lib/domain/inspection'
+import { reviewItems, reviewStage, suggestedItemIds } from '@/lib/domain/inspection-review'
 import { MANAGER_ROLES } from '@/lib/domain/user'
 import { isId } from '@/lib/ids'
 import { param } from '@/lib/search-params'
@@ -23,13 +25,6 @@ export const metadata: Metadata = {
   title: 'Revisão da inspeção — FieldOps',
 }
 
-/**
- * Revisao da inspecao (documento 14.11, issues #22 e #23).
- *
- * Administrador e supervisor consultam; so o supervisor decide (RN-079). As
- * respostas do tecnico sao somente leitura (RN-084): a tela nao oferece nenhum
- * caminho para altera-las.
- */
 export default async function InspectionReviewPage(props: PageProps<'/inspections/[inspectionId]/review'>) {
   const user = await requireRole(MANAGER_ROLES)
   const [{ inspectionId }, searchParams] = await Promise.all([props.params, props.searchParams])
@@ -39,49 +34,46 @@ export default async function InspectionReviewPage(props: PageProps<'/inspection
   }
 
   const review = await loadInspectionReview(inspectionId)
-  const decides = canDecide(user.role, review)
+  const { inspection } = review
+  const stage = reviewStage(user.role, inspection.status)
   const items = reviewItems(review)
 
   return (
     <div className="flex flex-col gap-8">
       <ReviewHeader
-        review={review}
+        inspection={inspection}
         back={
           param(searchParams, 'from') === 'queue'
             ? { href: '/inspections/review-queue', label: 'Fila de revisão' }
-            : { href: `/inspections/${review.id}`, label: review.code }
+            : { href: `/inspections/${inspection.id}`, label: inspectionReference(inspection.id) }
         }
         actions={
-          decides ? (
+          stage === 'begin' ? (
+            <BeginReview inspectionId={inspection.id} />
+          ) : stage === 'decide' ? (
             <ReviewDecision
-              inspectionId={review.id}
+              inspectionId={inspection.id}
               correctableItems={items.map(({ id, code, title }) => ({ id, code, title }))}
-              suggestedItemIds={review.nonConformities.flatMap((nc) => (nc.itemId ? [nc.itemId] : []))}
+              suggestedItemIds={suggestedItemIds(items, review.nonConformities)}
             />
           ) : (
-            <p className="max-w-xs text-sm text-neutral-600">
-              Somente o supervisor responsável aprova ou reprova esta inspeção.
-            </p>
+            <StageHint role={user.role} />
           )
         }
       />
 
-      {isDemoReview(review.id) && (
-        <Notice tone="warning">
-          Dados de demonstração: os endpoints de inspeção ainda não existem na API, e as decisões não são enviadas.
-        </Notice>
-      )}
-
-      <LockedNotice />
+      <ReportCallout inspectionId={inspection.id} />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <ExecutionDetails review={review} />
-        <InspectionSummary review={review} />
+        <ExecutionDetails inspection={inspection} />
+        <ReviewSummary review={review} />
       </div>
 
-      <NonConformitiesPanel nonConformities={review.nonConformities} />
+      <InspectionNonConformities items={review.nonConformities} />
 
-      <ChecklistResponses review={review} />
+      <EvidenceGallery evidences={review.evidences} />
+
+      <ChecklistStructure review={review} />
 
       <ReviewHistory review={review} />
     </div>
