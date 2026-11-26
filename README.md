@@ -71,22 +71,24 @@ bootstrap para que a navegação seja verificável antes das telas ficarem pront
 ## Dashboard
 
 O `/dashboard` segue o documento 14.5 e a issue #28: total de inspeções por estado,
-revisões pendentes, inspeções atrasadas (com a variação desde ontem), não conformidades
-recentes e os atalhos **Revisar Pendências** e **Criar Inspeção**.
+revisões pendentes, inspeções atrasadas, não conformidades por criticidade e os atalhos
+**Revisar Pendências** e **Criar Inspeção**. Administrador e supervisor abrem a tela
+(a API recusa o técnico).
 
-- **Cada número é um link** para `/inspections` com o filtro correspondente
-  (`?status=`, `?review=1`, `?overdue=1`). Atraso e "aguardando revisão" usam as mesmas
-  regras da listagem (`lib/domain/inspection-list.ts`), e um teste garante que os números
-  batem.
-- **Contrato esperado da API** (`lib/domain/dashboard.ts`): `GET /dashboard/summary`
-  devolve `inspectionsByStatus`, `awaitingReview`, `overdue` e `overdueYesterday`
-  (backend#36); as recentes vêm de `GET /non-conformities?size=3&sort=reportedAt,desc`
-  (backend#23).
-- **Dados de demonstração** só com `NEXT_PUBLIC_APP_ENV=development`
-  (`features/dashboard/dashboard-fixture.ts`), derivados das mesmas inspeções de demonstração
-  da listagem. O único ponto de troca para a API é `features/dashboard/dashboard-data.ts`.
-- Em outros ambientes, enquanto a API não publica esses endpoints, só o bloco afetado avisa
-  que está indisponível; o restante da tela continua funcionando.
+- **Cada número é um link** para a listagem filtrada: `/inspections?status=`,
+  `/inspections?overdue=1`, a fila de revisão (`/inspections/review-queue`) e, para as
+  criticidades, `/non-conformities?severity=`.
+- **Quem revisa é só o supervisor** (`begin-review`, `approve` e `reject` são dele na API):
+  para o administrador o cartão de revisões pendentes é só informativo e o atalho Revisar
+  Pendências não aparece. Pelo mesmo motivo, as criticidades só viram link para o supervisor,
+  único perfil do painel que lê as não conformidades.
+- **Contrato** (`lib/domain/dashboard.ts`): `GET /dashboard/summary` devolve
+  `inspectionsByStatus` e `nonConformitiesBySeverity` como listas, `overdueInspections` e
+  `inspectionsAwaitingReview`. `toDashboardSummary` converte para totais por estado, e
+  "aguardando revisão" soma `SUBMITTED` e `UNDER_REVIEW` (o número da API conta só
+  `UNDER_REVIEW`). O supervisor vê só as inspeções dele. O filtro de período da API (`from` e
+  `to`) ainda não tem controle na tela.
+- O único ponto de leitura é `features/dashboard/dashboard-data.ts`.
 
 ## Modelos de inspeção
 
@@ -149,19 +151,24 @@ listagem abre o detalhe; o link **Revisar** continua indo direto para a revisão
 
 O `/non-conformities` segue a issue #20 e o documento 14.12. No MVP a não conformidade é
 registrada e consultada, não tratada: só existe o estado "Aberta" e a tela não oferece mudança de
-estado.
+estado. A API libera a consulta apenas a técnico e supervisor, então o item de menu e as páginas
+são do **supervisor**; o administrador que digita o endereço vai para `/forbidden`.
 
-- **Listagem** com filtros por criticidade, cliente e período (na URL), paginação e ordem padrão
-  da mais grave para a menos grave. A criticidade vai sempre escrita no selo (RN-054).
+- **Listagem** com filtros por criticidade e cliente (na URL) e paginação no servidor. A ordem é a
+  da API (da mais antiga para a mais recente, por recebimento): ela não ordena por criticidade
+  nem filtra por período. A criticidade vai sempre escrita no selo (RN-054).
 - **Detalhe** (`/non-conformities/{id}`): descrição, criticidade, a inspeção a que pertence
-  (RN-052), horários de campo e do servidor, o **item de origem** com pergunta, resposta e
-  observação do técnico (RN-053) e as evidências.
-- **Bloco no detalhe da inspeção** com as não conformidades dela, cada uma levando ao detalhe; as
-  não conformidades recentes do dashboard também abrem o detalhe.
-- **Contrato** em `lib/domain/non-conformity.ts`. A API ainda não publica
-  `GET /non-conformities` nem `/{id}` (backend #23); em `development` a tela usa a demonstração
-  ligada às inspeções de exemplo. O único ponto de troca é
-  `features/non-conformities/non-conformities-data.ts`.
+  (RN-052), horários de campo e do servidor, o **item de origem** com a pergunta do checklist
+  (RN-053) e as evidências da própria não conformidade. A resposta e a observação do técnico não
+  aparecem: `GET /inspections/{id}/responses` é só do técnico.
+- **Bloco no detalhe da inspeção** com as não conformidades dela, da mais grave para a menos
+  grave, cada uma levando ao detalhe. Para quem não é supervisor o bloco avisa que não está
+  disponível ao perfil.
+- **Contexto derivado**: a API devolve só ids. Inspeção, item, cliente, local, equipamento e
+  autor saem de `GET /inspections/{id}` (uma chamada por inspeção, sem repetir) e das listas de
+  clientes, locais, equipamentos e usuários; `describeNonConformity`
+  (`lib/domain/non-conformity.ts`) junta tudo, e o que não resolve aparece como "—".
+- O único ponto de leitura é `features/non-conformities/non-conformities-data.ts`.
 
 ## Fila de revisão
 
@@ -203,20 +210,21 @@ do sistema, do evento mais recente para o mais antigo, somente leitura (RN-088).
 
 As fotografias seguem a issue #19 e não têm URL pública.
 
-- **Imagem só com sessão válida**: o navegador pede `/api/evidence/{id}?variant=thumbnail|original`,
-  um Route Handler que confere a sessão na API (401 sem ela, 403 fora do painel) e repassa o
-  binário de `GET /evidence/{id}/file`. O escopo de cada inspeção é decidido pela API, e o 403 ou
-  404 dela é repassado. A resposta usa cache privado, nunca compartilhado entre usuários.
-- **Miniatura na lista, original só na ampliação**: as miniaturas carregam sob demanda; a
-  ampliação mostra a imagem inteira, a descrição, o horário de captura no dispositivo e as
-  coordenadas (com link para o mapa), e navega pelas setas.
-- **Galeria no detalhe da inspeção**, agrupada pelo item do checklist (RN-045). A revisão e o
-  detalhe da não conformidade usam as mesmas miniaturas junto do item.
+- **Imagem só com sessão válida**: o navegador pede `/api/evidence/{id}`, um Route Handler que
+  confere a sessão na API (401 sem ela, 403 para quem não é supervisor, como na API) e repassa o
+  binário de `GET /evidence/{id}`. O escopo de cada inspeção é decidido pela API, e o 403 ou 404
+  dela (arquivo apagado ou ainda não enviado) é repassado. A resposta usa cache privado, nunca
+  compartilhado entre usuários. A API não gera miniatura: a lista e a ampliação usam a mesma
+  imagem, a lista carregando sob demanda.
+- **Ampliação** com a descrição, o horário de captura no dispositivo e as coordenadas (com link
+  para o mapa), navegando pelas setas.
+- **Galeria no detalhe da inspeção**, agrupada pela não conformidade a que a foto pertence, com as
+  fotos sem não conformidade num grupo à parte (a API não liga a foto ao item do checklist). O
+  detalhe da não conformidade e a revisão usam as mesmas miniaturas.
 - **Arquivo pendente** (metadados recebidos, upload não confirmado) aparece como "Aguardando
   upload", sem imagem quebrada. Nenhuma tela oferece excluir evidência (RN-049).
-- **Contrato** em `lib/domain/evidence.ts`. A API ainda não publica as evidências (backend #22);
-  em `development` as imagens são desenhadas em SVG pelo próprio Route Handler. O único ponto de
-  troca da listagem é `features/evidence/evidence-data.ts`.
+- **Contrato** em `lib/domain/evidence.ts`; a listagem vem de
+  `GET /inspections/{id}/evidence`, em `features/evidence/evidence-data.ts`.
 
 O cabeçalho do painel tem a busca em todas as áreas (`/search`), notificações, ajuda
 (`/support`), o ambiente, o perfil e o menu da conta (configurações e sair).
