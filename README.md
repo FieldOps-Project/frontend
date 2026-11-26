@@ -198,20 +198,26 @@ há mais tempo para a mais recente.
 
 ## Auditoria
 
-O `/audit` segue o desenho do Stitch "Auditoria de Sistema" e a issue #24: o registro de atividades
-do sistema, do evento mais recente para o mais antigo, somente leitura (RN-088).
+A API não tem consulta global de auditoria (`GET /audit-events` não existe). A única fonte é
+`GET /inspections/{id}/history` (ADMIN, SUPERVISOR e TECHNICIAN leem), um array ascendente e sem
+paginação. Por isso o `/audit` é a **Auditoria por inspeção**, somente leitura (RN-088), para
+administrador e supervisor; o supervisor só enxerga as inspeções que a própria listagem da API lhe
+devolve.
 
-- **Filtros** de período (últimos 7 dias por padrão), usuário, entidade e tipo de ação, na URL e
-  com paginação no servidor. O filtro de entidade não está no Stitch; entra porque a issue exige.
-- **Tabela**: código do evento, data e hora com segundos (e o horário do dispositivo quando a ação
-  veio do aplicativo), usuário ou "Sistema (Auto)", ação em linguagem de negócio, entidade com link
-  e descrição. Abaixo de 1280px cada evento vira um cartão.
-- **Exportar Relatório** baixa o CSV de todos os eventos filtrados (`/audit/export`), avisando no
-  fim se o relatório foi limitado.
-- **Linha do tempo** no detalhe da inspeção: mudanças de estado, fotografias e não conformidades,
-  com o link "Ver na auditoria" filtrado pela inspeção.
-- O único ponto de troca é `features/audit/audit-data.ts` (`GET /audit-events`); em `development`
-  os eventos saem das inspeções, fotos e não conformidades de demonstração.
+- **Escolher a inspeção**: busca (`GET /inspections?search=`) com paginação, ou o link "Ver na
+  auditoria" do detalhe (`?inspectionId=`), que abre a linha do tempo direto. Inspeção que o perfil
+  não pode ler cai no tratamento padrão de acesso negado ou não encontrada.
+- **Linha do tempo**: eventos do mais recente para o mais antigo, com data e hora do servidor (e a do
+  dispositivo quando houver), usuário, ação em linguagem de negócio, registro afetado
+  (inspeção, resposta, evidência, não conformidade ou relatório) e o detalhe lido de
+  `previousValue`/`newValue` (`lib/domain/audit-values.ts`). Inspeção sem eventos diz isso.
+- **Filtros** de período, usuário, registro e ação aplicados no navegador sobre o histórico
+  carregado; as opções saem dos próprios eventos. Filtros por cliente, local, equipamento, modelo ou
+  usuário-alvo não existem porque a API não registra esses eventos por inspeção.
+- **Atividade recente** (`?scope=recent`): junta o histórico das 25 inspeções atualizadas mais
+  recentemente (`sort=updatedAt,desc`), buscado em paralelo; a tela avisa do limite.
+- **Exportar CSV** baixa, no navegador, a linha do tempo já filtrada (UTF-8 com BOM, separador `;`,
+  com neutralização de fórmulas de planilha).
 
 ## Evidências
 

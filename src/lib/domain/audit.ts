@@ -1,84 +1,46 @@
-import { HISTORY_ACTION_LABELS } from '@/lib/domain/inspection-detail'
-import type { StatusTone } from '@/lib/domain/page'
+import { INSPECTION_STATUS_LABELS } from '@/lib/domain/inspection'
+import { historyActionLabel } from '@/lib/domain/inspection-detail'
+import type { InspectionHistoryEvent } from '@/lib/domain/inspection-history'
+import { dayInSaoPaulo } from '@/lib/domain/inspection-list'
+import type { Page, StatusTone } from '@/lib/domain/page'
 
-/**
- * Evento de auditoria (documento 10.12.1 e issue #24), no formato que a area de
- * auditoria espera de `GET /audit-events` paginado. Os eventos sao somente
- * leitura (RN-088): o painel nao edita nem exclui nenhum.
- *
- * A API ainda nao publica a consulta (backend #29); este tipo e o contrato que
- * a tela pede ao backend.
- */
 export const AUDIT_ENTITY_TYPES = [
   'INSPECTION',
-  'EVIDENCE',
+  'INSPECTION_RESPONSE',
+  'INSPECTION_EVIDENCE',
   'NON_CONFORMITY',
-  'TEMPLATE',
-  'CLIENT',
-  'SITE',
-  'EQUIPMENT',
-  'USER',
-  'REPORT',
+  'INSPECTION_REPORT',
 ] as const
 
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number]
 
 export const AUDIT_ENTITY_LABELS: Record<AuditEntityType, string> = {
   INSPECTION: 'Inspeção',
-  EVIDENCE: 'Evidência',
+  INSPECTION_RESPONSE: 'Resposta',
+  INSPECTION_EVIDENCE: 'Evidência',
   NON_CONFORMITY: 'Não conformidade',
-  TEMPLATE: 'Modelo de inspeção',
-  CLIENT: 'Cliente',
-  SITE: 'Local',
-  EQUIPMENT: 'Equipamento',
-  USER: 'Usuário',
-  REPORT: 'Relatório',
+  INSPECTION_REPORT: 'Relatório',
 }
 
-/** Acoes em linguagem de negocio: `INSPECTION_SUBMITTED` cru nao diz nada a quem le. */
-export const AUDIT_ACTION_LABELS: Record<string, string> = {
-  ...HISTORY_ACTION_LABELS,
-  TEMPLATE_PUBLISHED: 'Versão de modelo publicada',
-  RECORD_UPDATED: 'Edição de registro',
-  USER_BLOCKED: 'Usuário bloqueado',
-  REPORT_GENERATED: 'Relatório gerado',
+export function auditEntityLabel(entityType: string): string {
+  return AUDIT_ENTITY_LABELS[entityType as AuditEntityType] ?? entityType
 }
 
-export function auditActionLabel(action: string): string {
-  return AUDIT_ACTION_LABELS[action] ?? action
-}
-
-/** Cor do selo da acao, como no Stitch: aprovacao azul, cancelamento vermelho, edicao cinza. */
 export function auditActionTone(action: string): StatusTone {
-  if (/CANCELED|REJECTED|BLOCKED|REMOVED/.test(action)) return 'danger'
-  if (/APPROVED|PUBLISHED/.test(action)) return 'info'
+  if (/CANCELED|REJECTED|REMOVED/.test(action)) return 'danger'
+  if (/APPROVED/.test(action)) return 'info'
   if (/NON_CONFORMITY/.test(action)) return 'warning'
-  if (/SUBMITTED|COMPLETED|GENERATED/.test(action)) return 'success'
+  if (/SUBMITTED|COMPLETED/.test(action)) return 'success'
   return 'neutral'
 }
 
-export type AuditEvent = {
-  readonly id: string
-  /** Codigo de apresentacao, como `EVT-9042`. */
-  readonly code: string
-  readonly action: string
-  /** Nulo quando a acao foi do sistema. */
-  readonly actorId: string | null
-  readonly actorName: string | null
-  readonly entityType: AuditEntityType
-  readonly entityId: string
-  /** Como a entidade e reconhecida na tela, como `INS-2023-089`. */
-  readonly entityLabel: string
-  /** Inspecao relacionada, quando houver (`inspection_id`): foto e nao conformidade tambem tem. */
-  readonly inspectionId: string | null
-  /** Horario do servidor (RN-087). */
-  readonly occurredAt: string
-  /** Horario do dispositivo, quando a acao aconteceu no aplicativo (RN-074). */
-  readonly deviceOccurredAt: string | null
-  readonly description: string
+export type AuditEvent = InspectionHistoryEvent & {
+  readonly inspectionId: string
+  readonly inspectionTitle: string
 }
 
-/** Periodos do filtro, como o "Ultimos 7 dias" do Stitch. */
+export type AuditOption = { readonly value: string; readonly label: string }
+
 export const AUDIT_PERIODS = ['today', '7d', '30d', '90d', 'all'] as const
 export type AuditPeriod = (typeof AUDIT_PERIODS)[number]
 
@@ -90,47 +52,88 @@ export const AUDIT_PERIOD_LABELS: Record<AuditPeriod, string> = {
   all: 'Todo o período',
 }
 
-export const DEFAULT_AUDIT_PERIOD: AuditPeriod = '7d'
+export const DEFAULT_AUDIT_PERIOD: AuditPeriod = 'all'
 
 export type AuditFilters = {
   readonly period: AuditPeriod
   readonly actorId?: string
   readonly entityType?: AuditEntityType
   readonly action?: string
-  /** Eventos de uma inspecao so, como no link "Ver na auditoria" do detalhe dela. */
-  readonly inspectionId?: string
 }
 
 const DAY_MS = 86_400_000
 
-/** Inicio do periodo (`AAAA-MM-DD`, no fuso da operacao), ou nulo para todo o periodo. */
 export function periodStart(period: AuditPeriod, today: string): string | null {
   const days = { today: 0, '7d': 6, '30d': 29, '90d': 89, all: null }[period]
   if (days === null) return null
   return new Date(Date.parse(`${today}T00:00:00Z`) - days * DAY_MS).toISOString().slice(0, 10)
 }
 
-/** Pagina do registro afetado, quando o painel tem uma. */
-export function entityHref(event: Pick<AuditEvent, 'entityType' | 'entityId' | 'inspectionId'>): string | null {
-  switch (event.entityType) {
-    /** A foto nao tem pagina propria: abre a galeria da inspecao. */
-    case 'EVIDENCE':
-      return event.inspectionId ? `/inspections/${event.inspectionId}#evidence-title` : null
-    case 'INSPECTION':
-      return `/inspections/${event.entityId}`
-    case 'NON_CONFORMITY':
-      return `/non-conformities/${event.entityId}`
-    case 'TEMPLATE':
-      return `/inspection-templates/${event.entityId}`
-    case 'CLIENT':
-      return `/clients/${event.entityId}`
-    case 'SITE':
-      return `/sites/${event.entityId}`
-    case 'EQUIPMENT':
-      return `/equipment/${event.entityId}`
-    case 'USER':
-      return `/users/${event.entityId}`
-    default:
-      return null
+function newestFirst(events: readonly AuditEvent[]): readonly AuditEvent[] {
+  return events.toSorted((a, b) => Date.parse(b.occurredAt) - Date.parse(a.occurredAt))
+}
+
+export function toAuditEvents(
+  inspection: { readonly id: string; readonly title: string },
+  history: readonly InspectionHistoryEvent[],
+): readonly AuditEvent[] {
+  return newestFirst(history.map((event) => ({ ...event, inspectionId: inspection.id, inspectionTitle: inspection.title })))
+}
+
+export function mergeAuditEvents(groups: readonly (readonly AuditEvent[])[]): readonly AuditEvent[] {
+  return newestFirst(groups.flat())
+}
+
+export function auditEventDetail(event: AuditEvent): string | null {
+  const transition =
+    event.previousStatus && event.newStatus
+      ? `${INSPECTION_STATUS_LABELS[event.previousStatus]} → ${INSPECTION_STATUS_LABELS[event.newStatus]}`
+      : null
+  const detail = [transition, event.note].filter((part): part is string => part !== null).join(' · ')
+  return detail === '' ? null : detail
+}
+
+export function filterAuditEvents(events: readonly AuditEvent[], filters: AuditFilters, today: string): readonly AuditEvent[] {
+  const from = periodStart(filters.period, today)
+
+  return events.filter(
+    (event) =>
+      (from === null || dayInSaoPaulo(event.occurredAt) >= from) &&
+      (!filters.actorId || event.actorId === filters.actorId) &&
+      (!filters.entityType || event.entityType === filters.entityType) &&
+      (!filters.action || event.action === filters.action),
+  )
+}
+
+function sortedOptions(entries: Iterable<readonly [string, string]>): readonly AuditOption[] {
+  return [...new Map(entries)]
+    .map(([value, label]) => ({ value, label }))
+    .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'))
+}
+
+export function auditActorOptions(events: readonly AuditEvent[]): readonly AuditOption[] {
+  return sortedOptions(events.flatMap((event) => (event.actorId && event.actorName ? [[event.actorId, event.actorName] as const] : [])))
+}
+
+export function auditEntityOptions(events: readonly AuditEvent[]): readonly AuditOption[] {
+  return sortedOptions(events.map((event) => [event.entityType, auditEntityLabel(event.entityType)] as const))
+}
+
+export function auditActionOptions(events: readonly AuditEvent[]): readonly AuditOption[] {
+  return sortedOptions(events.map((event) => [event.action, historyActionLabel(event.action)] as const))
+}
+
+export function paginateEvents(events: readonly AuditEvent[], page: number, size: number): Page<AuditEvent> {
+  const totalPages = Math.max(Math.ceil(events.length / size), 1)
+  const current = Math.min(Math.max(page, 0), totalPages - 1)
+
+  return {
+    content: events.slice(current * size, (current + 1) * size),
+    page: current,
+    size,
+    totalElements: events.length,
+    totalPages,
+    first: current === 0,
+    last: current >= totalPages - 1,
   }
 }
