@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { MdArrowForward, MdOutlineLocationOn, MdOutlinePerson, MdOutlinePersonSearch, MdOutlineSchedule } from 'react-icons/md'
 
 import { StatusBadge } from '@/components/ui/status-badge'
-import { INSPECTION_STATUS_LABELS, INSPECTION_STATUS_TONES } from '@/lib/domain/inspection'
+import { INSPECTION_STATUS_LABELS, INSPECTION_STATUS_TONES, inspectionReference } from '@/lib/domain/inspection'
 import { INSPECTION_PRIORITY_LABELS } from '@/lib/domain/inspection-scheduling'
 import { isWaitingLong, waitingLabel, type ReviewQueueItem } from '@/lib/domain/review-queue'
 import { formatDateTime } from '@/lib/format'
@@ -10,27 +10,43 @@ import { formatDateTime } from '@/lib/format'
 const HEAD = 'px-4 py-4 text-left text-[13px] font-medium tracking-wider whitespace-nowrap text-neutral-700 uppercase'
 const CELL = 'px-4 py-4 align-top'
 
-const REVIEW_BUTTON =
+const ACTION_BUTTON =
   'inline-flex h-10 items-center gap-1.5 rounded-field bg-brand-700 px-4 text-sm font-semibold whitespace-nowrap text-neutral-0 transition-colors hover:bg-brand-800'
 
 export function reviewHref(item: Pick<ReviewQueueItem, 'id'>): string {
   return `/inspections/${item.id}/review?from=queue`
 }
 
-/** Tempo de espera em linguagem natural; a data completa fica no titulo e no `<time>`. */
+function actionHref(item: ReviewQueueItem, canReview: boolean): string {
+  return canReview ? reviewHref(item) : `/inspections/${item.id}`
+}
+
+function ActionLink({ item, canReview }: { item: ReviewQueueItem; canReview: boolean }) {
+  const verb = canReview ? 'Revisar' : 'Abrir'
+  return (
+    <Link
+      href={actionHref(item, canReview)}
+      className={ACTION_BUTTON}
+      aria-label={`${verb} ${inspectionReference(item.id)}`}
+    >
+      {verb}
+      <MdArrowForward aria-hidden className="size-4" />
+    </Link>
+  )
+}
+
 function Waiting({ item, now }: { item: ReviewQueueItem; now: Date }) {
-  const long = isWaitingLong(item.submittedAtServer, now)
+  const long = isWaitingLong(item.updatedAt, now)
   return (
     <span className={`flex items-center gap-1.5 whitespace-nowrap ${long ? 'font-medium text-danger' : 'text-neutral-900'}`}>
       <MdOutlineSchedule aria-hidden className="size-4 shrink-0" />
-      <time dateTime={item.submittedAtServer} title={`Enviada em ${formatDateTime(item.submittedAtServer)}`}>
-        Enviada {waitingLabel(item.submittedAtServer, now)}
+      <time dateTime={item.updatedAt} title={`Atualizada em ${formatDateTime(item.updatedAt)}`}>
+        Atualizada {waitingLabel(item.updatedAt, now)}
       </time>
     </span>
   )
 }
 
-/** Quem ja pegou a revisao: evita dois supervisores revisando a mesma inspecao. */
 function ReviewState({ item }: { item: ReviewQueueItem }) {
   return (
     <div className="flex flex-col items-start gap-1.5 [&>span:first-child]:whitespace-nowrap">
@@ -38,7 +54,7 @@ function ReviewState({ item }: { item: ReviewQueueItem }) {
       {item.status === 'UNDER_REVIEW' ? (
         <span className="flex items-center gap-1 text-sm text-neutral-700">
           <MdOutlinePersonSearch aria-hidden className="size-4 shrink-0" />
-          {item.reviewStartedByName ? `Iniciada por ${item.reviewStartedByName}` : 'Revisão iniciada'}
+          Revisão em andamento
         </span>
       ) : (
         <span className="text-sm text-neutral-600">Aguardando revisor</span>
@@ -47,12 +63,15 @@ function ReviewState({ item }: { item: ReviewQueueItem }) {
   )
 }
 
-/**
- * Fila de revisao (issue #21), na ordem em que chega: maior espera primeiro.
- * Abaixo de 1280px cada inspecao vira um cartao, sem rolagem horizontal; o
- * botao Revisar fica em todas.
- */
-export function ReviewQueueTable({ items, now }: { items: readonly ReviewQueueItem[]; now: Date }) {
+export function ReviewQueueTable({
+  items,
+  now,
+  canReview,
+}: {
+  items: readonly ReviewQueueItem[]
+  now: Date
+  canReview: boolean
+}) {
   return (
     <>
       <ul className="divide-y divide-neutral-200 xl:hidden">
@@ -61,7 +80,7 @@ export function ReviewQueueTable({ items, now }: { items: readonly ReviewQueueIt
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="flex flex-col gap-0.5">
                 <Link href={`/inspections/${item.id}`} className="font-medium text-brand-700 hover:underline">
-                  {item.code}
+                  {inspectionReference(item.id)}
                 </Link>
                 <span className="text-sm text-neutral-600">{item.title}</span>
               </div>
@@ -72,10 +91,7 @@ export function ReviewQueueTable({ items, now }: { items: readonly ReviewQueueIt
             </span>
             <div className="flex flex-wrap items-end justify-between gap-3">
               <ReviewState item={item} />
-              <Link href={reviewHref(item)} className={REVIEW_BUTTON}>
-                Revisar
-                <MdArrowForward aria-hidden className="size-4" />
-              </Link>
+              <ActionLink item={item} canReview={canReview} />
             </div>
           </li>
         ))}
@@ -92,7 +108,7 @@ export function ReviewQueueTable({ items, now }: { items: readonly ReviewQueueIt
                 Cliente e local
               </th>
               <th scope="col" className={HEAD}>
-                Espera
+                Última atualização
               </th>
               <th scope="col" className={HEAD}>
                 Revisão
@@ -108,7 +124,7 @@ export function ReviewQueueTable({ items, now }: { items: readonly ReviewQueueIt
                 <td className={CELL}>
                   <div className="flex flex-col gap-1">
                     <Link href={`/inspections/${item.id}`} className="font-medium whitespace-nowrap text-brand-700 hover:underline">
-                      {item.code}
+                      {inspectionReference(item.id)}
                     </Link>
                     <span className="text-sm text-neutral-600">{item.title}</span>
                     <span className="text-xs text-neutral-600">
@@ -136,10 +152,7 @@ export function ReviewQueueTable({ items, now }: { items: readonly ReviewQueueIt
                   <ReviewState item={item} />
                 </td>
                 <td className={`${CELL} text-right`}>
-                  <Link href={reviewHref(item)} className={REVIEW_BUTTON} aria-label={`Revisar ${item.code}`}>
-                    Revisar
-                    <MdArrowForward aria-hidden className="size-4" />
-                  </Link>
+                  <ActionLink item={item} canReview={canReview} />
                 </td>
               </tr>
             ))}
