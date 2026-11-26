@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { inspectionReference } from '@/lib/domain/inspection'
 import {
   bySeverityDesc,
   describeNonConformity,
@@ -53,7 +54,7 @@ describe('describeNonConformity', () => {
       severity: 'MEDIUM',
       status: 'OPEN',
       inspectionId: INSPECTION.id,
-      inspectionCode: 'INS-D0000000',
+      inspectionCode: inspectionReference('d0000000-0000-4000-8000-000000000504'),
       inspectionTitle: 'Inspeção preventiva mensal',
       clientName: 'Indústria ABC',
       siteName: 'Fábrica Sorocaba',
@@ -77,7 +78,7 @@ describe('describeNonConformity', () => {
     }
 
     expect(describeNonConformity(record(), empty)).toMatchObject({
-      inspectionCode: 'INS-D0000000',
+      inspectionCode: inspectionReference('d0000000-0000-4000-8000-000000000504'),
       inspectionTitle: null,
       clientName: null,
       siteName: null,
