@@ -25,18 +25,15 @@ beforeAll(() => {
 })
 
 describe('EvidenceThumbnails', () => {
-  it('lista miniaturas e so pede o original na ampliacao', () => {
+  it('lista miniaturas preguicosas e amplia a mesma imagem', () => {
     const { container } = render(<EvidenceThumbnails photos={[UPLOADED]} label="Fotos" />)
 
     const thumbnail = container.querySelector('img')
-    expect(thumbnail?.getAttribute('src')).toBe('/api/evidence/e1?variant=thumbnail')
+    expect(thumbnail?.getAttribute('src')).toBe('/api/evidence/e1')
     expect(thumbnail?.getAttribute('loading')).toBe('lazy')
 
     fireEvent.click(screen.getByRole('button', { name: 'Ampliar Trinca lateral do alojamento' }))
-    expect(screen.getByRole('img', { name: 'Trinca lateral do alojamento' })).toHaveAttribute(
-      'src',
-      '/api/evidence/e1?variant=original',
-    )
+    expect(screen.getByRole('img', { name: 'Trinca lateral do alojamento' })).toHaveAttribute('src', '/api/evidence/e1')
   })
 
   it('mostra descricao, horario e coordenadas na ampliacao', () => {

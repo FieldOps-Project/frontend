@@ -4,9 +4,51 @@ import {
   activeTotal,
   emptyStatusCounts,
   hasNoInspections,
-  overdueDelta,
-  overdueDeltaLabel,
+  nonConformityTotal,
+  toDashboardSummary,
+  type DashboardSummaryRecord,
 } from '@/lib/domain/dashboard'
+
+const RECORD: DashboardSummaryRecord = {
+  totalInspections: 9,
+  overdueInspections: 3,
+  inspectionsAwaitingReview: 2,
+  inspectionsByStatus: [
+    { status: 'ASSIGNED', count: 1 },
+    { status: 'SUBMITTED', count: 4 },
+    { status: 'UNDER_REVIEW', count: 2 },
+    { status: 'APPROVED', count: 2 },
+  ],
+  nonConformitiesBySeverity: [
+    { severity: 'LOW', count: 1 },
+    { severity: 'CRITICAL', count: 5 },
+  ],
+}
+
+describe('toDashboardSummary', () => {
+  it('transforma a lista por estado em totais, com zero para o que a API nao devolveu', () => {
+    const { inspectionsByStatus } = toDashboardSummary(RECORD)
+
+    expect(inspectionsByStatus.ASSIGNED).toBe(1)
+    expect(inspectionsByStatus.DRAFT).toBe(0)
+    expect(Object.keys(inspectionsByStatus)).toHaveLength(8)
+  })
+
+  it('soma enviadas e em revisao em aguardando revisao, sem usar o numero da API', () => {
+    expect(toDashboardSummary(RECORD).awaitingReview).toBe(6)
+  })
+
+  it('leva as atrasadas da API', () => {
+    expect(toDashboardSummary(RECORD).overdue).toBe(3)
+  })
+
+  it('transforma a lista por criticidade em totais', () => {
+    const { nonConformitiesBySeverity } = toDashboardSummary(RECORD)
+
+    expect(nonConformitiesBySeverity).toEqual({ LOW: 1, MEDIUM: 0, HIGH: 0, CRITICAL: 5 })
+    expect(nonConformityTotal(nonConformitiesBySeverity)).toBe(6)
+  })
+})
 
 describe('totais por estado', () => {
   it('comeca com todos os estados zerados', () => {
@@ -23,18 +65,5 @@ describe('totais por estado', () => {
   it('reconhece operacao sem nenhuma inspecao', () => {
     expect(hasNoInspections(emptyStatusCounts())).toBe(true)
     expect(hasNoInspections({ ...emptyStatusCounts(), CANCELED: 1 })).toBe(false)
-  })
-})
-
-describe('variacao das atrasadas', () => {
-  it('compara com o fim do dia anterior', () => {
-    expect(overdueDelta({ overdue: 18, overdueYesterday: 15 })).toBe(3)
-    expect(overdueDelta({ overdue: 4, overdueYesterday: 6 })).toBe(-2)
-  })
-
-  it('escreve o sinal e o caso sem variacao', () => {
-    expect(overdueDeltaLabel(3)).toBe('+3 desde ontem')
-    expect(overdueDeltaLabel(-2)).toBe('−2 desde ontem')
-    expect(overdueDeltaLabel(0)).toBe('Sem variação desde ontem')
   })
 })

@@ -3,11 +3,12 @@ import { describe, expect, it } from 'vitest'
 
 import {
   InspectionNonConformities,
+  NonConformityContext,
   NonConformityEvidences,
   NonConformityHeader,
   NonConformityOrigin,
 } from '@/features/non-conformities/non-conformity-view'
-import type { NonConformityDetail } from '@/lib/domain/non-conformity'
+import type { InspectionFinding, NonConformityDetail } from '@/lib/domain/non-conformity'
 
 const DETAIL: NonConformityDetail = {
   id: '9c000000-0000-4000-8000-000000000004',
@@ -16,24 +17,17 @@ const DETAIL: NonConformityDetail = {
   severity: 'CRITICAL',
   status: 'OPEN',
   inspectionId: 'c0000000-0000-4000-8000-000000000094',
-  inspectionCode: 'INS-2023-094',
-  clientId: 'b0000000-0000-4000-8000-000000000001',
+  inspectionCode: 'INS-C0000000',
+  inspectionTitle: 'Inspeção da caldeira',
   clientName: 'Indústria Alpha',
   siteName: 'Galpão 1',
   equipmentName: 'Caldeira CB-2',
   itemCode: '2.3',
   itemTitle: 'Pressão de trabalho (bar)',
+  itemQuestion: 'Qual a pressão de trabalho medida?',
   createdByName: 'Carlos Silva',
   createdAtDevice: '2026-11-14T16:45:00Z',
   serverReceivedAt: '2026-11-14T19:30:00Z',
-  origin: {
-    itemId: '9c000000-0000-4000-8000-100000000004',
-    itemCode: '2.3',
-    question: 'Pressão de trabalho (bar)',
-    responseType: 'NUMBER',
-    answer: '11,2 bar',
-    observation: 'Válvula de segurança não atuou durante o teste.',
-  },
   evidences: [
     {
       id: '9e000000-0000-4000-8000-000004000001',
@@ -55,16 +49,25 @@ describe('detalhe da nao conformidade', () => {
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
   })
 
-  it('mostra a pergunta, a resposta e a observacao de origem (RN-053)', () => {
+  it('mostra a inspecao, o local e o autor, com traco quando nao ha nome', () => {
+    const { rerender } = render(<NonConformityContext item={DETAIL} />)
+    expect(screen.getByRole('link', { name: 'INS-C0000000' })).toHaveAttribute('href', `/inspections/${DETAIL.inspectionId}`)
+    expect(screen.getByText('Carlos Silva')).toBeInTheDocument()
+
+    rerender(<NonConformityContext item={{ ...DETAIL, createdByName: null, clientName: null }} />)
+    expect(screen.getAllByText('—')).toHaveLength(2)
+  })
+
+  it('mostra o item e a pergunta de origem (RN-053), sem resposta que o supervisor nao le', () => {
     render(<NonConformityOrigin item={DETAIL} />)
 
-    expect(screen.getByText('Pressão de trabalho (bar)')).toBeInTheDocument()
-    expect(screen.getByText('11,2 bar')).toBeInTheDocument()
-    expect(screen.getByText('Válvula de segurança não atuou durante o teste.')).toBeInTheDocument()
+    expect(screen.getByText('Pressão de trabalho (bar)', { exact: false })).toBeInTheDocument()
+    expect(screen.getByText('Qual a pressão de trabalho medida?')).toBeInTheDocument()
+    expect(screen.queryByText('Resposta do técnico')).not.toBeInTheDocument()
   })
 
   it('explica quando o achado nao tem item especifico', () => {
-    render(<NonConformityOrigin item={{ ...DETAIL, origin: null }} />)
+    render(<NonConformityOrigin item={{ ...DETAIL, itemCode: null, itemTitle: null, itemQuestion: null }} />)
     expect(screen.getByText(/sem item específico/)).toBeInTheDocument()
   })
 
@@ -78,18 +81,26 @@ describe('detalhe da nao conformidade', () => {
 })
 
 describe('bloco do detalhe da inspecao', () => {
+  const finding: InspectionFinding = {
+    id: DETAIL.id,
+    title: DETAIL.title,
+    description: DETAIL.description,
+    severity: DETAIL.severity,
+    itemCode: DETAIL.itemCode,
+  }
+
   it('leva cada nao conformidade ao seu detalhe', () => {
-    render(<InspectionNonConformities items={[DETAIL]} />)
+    render(<InspectionNonConformities items={[finding]} />)
 
     expect(screen.getByRole('link', { name: /Pressão da caldeira/ })).toHaveAttribute('href', `/non-conformities/${DETAIL.id}`)
     expect(screen.getByText('1 registrada')).toBeInTheDocument()
   })
 
-  it('trata vazio e API indisponivel', () => {
+  it('trata vazio e perfil sem acesso', () => {
     const { rerender } = render(<InspectionNonConformities items={[]} />)
     expect(screen.getByText('Nenhuma não conformidade registrada nesta inspeção.')).toBeInTheDocument()
 
     rerender(<InspectionNonConformities items={null} />)
-    expect(screen.getByText(/indisponíveis no momento/)).toBeInTheDocument()
+    expect(screen.getByText(/indisponíveis para o seu perfil/)).toBeInTheDocument()
   })
 })

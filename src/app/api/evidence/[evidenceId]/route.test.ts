@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { GET } from '@/app/api/evidence/[evidenceId]/route'
-import { demoReviewPhotoId } from '@/features/inspections/review-fixture'
 import { ApiError } from '@/lib/api/errors'
 
 vi.mock('server-only', () => ({}))
@@ -16,77 +15,72 @@ vi.mock('@/lib/api/client', () => ({
   apiFetchFile: (path: string, request: unknown) => apiFetchFile(path, request),
 }))
 
-const UPLOADED = demoReviewPhotoId(1)
-const PENDING = demoReviewPhotoId(3)
-const API_ID = '3d8dc050-54f4-4d3b-9e5d-5fdb29ae3ed5'
+const ID = '3d8dc050-54f4-4d3b-9e5d-5fdb29ae3ed5'
 
-function call(id: string, variant?: string) {
-  const url = `http://localhost/api/evidence/${id}${variant ? `?variant=${variant}` : ''}`
-  return GET(new Request(url), { params: Promise.resolve({ evidenceId: id }) })
+function call(id: string) {
+  return GET(new Request(`http://localhost/api/evidence/${id}`), { params: Promise.resolve({ evidenceId: id }) })
 }
 
 beforeEach(() => {
   getAccessToken.mockResolvedValue('token')
   apiFetch.mockResolvedValue({ id: 'u1', name: 'Mariana', email: 'm@x', role: 'SUPERVISOR' })
-  vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'development')
 })
 
 afterEach(() => {
   vi.clearAllMocks()
-  vi.unstubAllEnvs()
 })
 
 describe('GET /api/evidence/[id]', () => {
   it('nao entrega imagem sem sessao valida', async () => {
     getAccessToken.mockResolvedValue(null)
-    expect((await call(UPLOADED)).status).toBe(401)
+    expect((await call(ID)).status).toBe(401)
 
     getAccessToken.mockResolvedValue('expirado')
     apiFetch.mockRejectedValue(new ApiError({ status: 401, code: 'UNAUTHORIZED', message: '' }))
-    expect((await call(UPLOADED)).status).toBe(401)
+    expect((await call(ID)).status).toBe(401)
   })
 
-  it('nao entrega imagem a perfil fora do painel', async () => {
-    apiFetch.mockResolvedValue({ id: 'u2', name: 'Técnico', email: 't@x', role: 'TECHNICIAN' })
-    expect((await call(UPLOADED)).status).toBe(403)
+  it.each(['ADMIN', 'TECHNICIAN'])('nao entrega imagem ao perfil %s, que a API tambem recusa', async (role) => {
+    apiFetch.mockResolvedValue({ id: 'u2', name: 'Fulano', email: 'f@x', role })
+
+    expect((await call(ID)).status).toBe(403)
+    expect(apiFetchFile).not.toHaveBeenCalled()
   })
 
   it('recusa identificador que nao e UUID', async () => {
     expect((await call('../users')).status).toBe(404)
+    expect(apiFetchFile).not.toHaveBeenCalled()
   })
 
-  it('na demonstracao, desenha a miniatura e o original', async () => {
-    const thumbnail = await call(UPLOADED)
-    expect(thumbnail.headers.get('Content-Type')).toContain('image/svg+xml')
-    expect(await thumbnail.text()).toContain('width="320"')
-
-    expect(await (await call(UPLOADED, 'original')).text()).toContain('width="1600"')
-  })
-
-  it('responde 404 para o arquivo que ainda nao chegou', async () => {
-    expect((await call(PENDING)).status).toBe(404)
-  })
-
-  it('fora da demonstracao, repassa o binario da API com o token', async () => {
-    vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'production')
+  it('repassa o binario de GET /evidence/{id} com o token, sem variante', async () => {
     apiFetchFile.mockResolvedValue(new Response('jpeg', { headers: { 'Content-Type': 'image/jpeg' } }))
 
-    const response = await call(API_ID, 'original')
-    expect(apiFetchFile).toHaveBeenCalledWith(`/evidence/${API_ID}/file`, { token: 'token', query: { variant: 'original' } })
+    const response = await call(ID)
+
+    expect(apiFetchFile).toHaveBeenCalledWith(`/evidence/${ID}`, { token: 'token' })
+    expect(await response.text()).toBe('jpeg')
     expect(response.headers.get('Content-Type')).toBe('image/jpeg')
     expect(response.headers.get('Cache-Control')).toBe('private, no-cache')
     expect(response.headers.get('X-Content-Type-Options')).toBe('nosniff')
   })
 
   it('nao repassa arquivo que nao e foto comum, como SVG com script', async () => {
-    vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'production')
     apiFetchFile.mockResolvedValue(new Response('<svg onload="alert(1)"/>', { headers: { 'Content-Type': 'image/svg+xml' } }))
-    expect((await call(API_ID)).status).toBe(502)
+    expect((await call(ID)).status).toBe(502)
+  })
+
+  it('repassa o 404 do arquivo apagado ou ainda nao enviado', async () => {
+    apiFetchFile.mockRejectedValue(new ApiError({ status: 404, code: 'NOT_FOUND', message: '' }))
+    expect((await call(ID)).status).toBe(404)
   })
 
   it('repassa o 403 da API para quem esta fora do escopo da inspecao', async () => {
-    vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'production')
     apiFetchFile.mockRejectedValue(new ApiError({ status: 403, code: 'FORBIDDEN', message: '' }))
-    expect((await call(API_ID)).status).toBe(403)
+    expect((await call(ID)).status).toBe(403)
+  })
+
+  it('devolve 502 quando a API falha', async () => {
+    apiFetchFile.mockRejectedValue(new ApiError({ status: 500, code: 'INTERNAL', message: '' }))
+    expect((await call(ID)).status).toBe(502)
   })
 })

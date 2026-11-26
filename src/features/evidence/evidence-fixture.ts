@@ -3,7 +3,17 @@ import 'server-only'
 import { demoInspectionDetail } from '@/features/inspections/detail-fixture'
 import { DEMO_REVIEW, DEMO_REVIEW_ID } from '@/features/inspections/review-fixture'
 import { demoNonConformities, demoNonConformityId } from '@/features/non-conformities/non-conformity-fixture'
-import type { Evidence, EvidenceVariant } from '@/lib/domain/evidence'
+import type { EvidencePhoto } from '@/lib/domain/evidence'
+
+export type DemoEvidence = EvidencePhoto & {
+  readonly inspectionId: string
+  readonly responseId: string | null
+  readonly nonConformityId: string | null
+  readonly itemId: string | null
+  readonly itemCode: string | null
+  readonly itemTitle: string | null
+  readonly serverReceivedAt: string | null
+}
 
 /**
  * Evidencias de demonstracao, servidas so em `NEXT_PUBLIC_APP_ENV=development`
@@ -31,7 +41,7 @@ function shiftToExecution(value: string | null, now: Date): string | null {
   return new Date(Date.parse(started) + offset).toISOString()
 }
 
-function reviewEvidences(now: Date): Evidence[] {
+function reviewEvidences(now: Date): DemoEvidence[] {
   const submitted = demoInspectionDetail(DEMO_REVIEW_ID, now)?.submittedAtServer ?? null
   return DEMO_REVIEW.sections.flatMap((section) =>
     section.items.flatMap((item) =>
@@ -51,7 +61,7 @@ function reviewEvidences(now: Date): Evidence[] {
   )
 }
 
-function nonConformityEvidences(now: Date): Evidence[] {
+function nonConformityEvidences(now: Date): DemoEvidence[] {
   return demoNonConformities(now)
     .filter((nc) => nc.inspectionId !== DEMO_REVIEW_ID)
     .flatMap((nc) =>
@@ -68,43 +78,6 @@ function nonConformityEvidences(now: Date): Evidence[] {
     )
 }
 
-export function demoEvidences(now: Date = new Date()): readonly Evidence[] {
+export function demoEvidences(now: Date = new Date()): readonly DemoEvidence[] {
   return [...reviewEvidences(now), ...nonConformityEvidences(now)]
-}
-
-export function demoEvidence(id: string, now: Date = new Date()): Evidence | undefined {
-  return demoEvidences(now).find((evidence) => evidence.id === id)
-}
-
-/** Cor estavel por foto, para cada miniatura ser reconhecivel na ampliacao. */
-function hue(id: string): number {
-  let hash = 0
-  for (const char of id) hash = (hash * 31 + char.charCodeAt(0)) % 360
-  return hash
-}
-
-function escapeXml(value: string): string {
-  return value.replace(/[<>&'"]/g, (char) => `&#${char.charCodeAt(0)};`)
-}
-
-/**
- * Imagem de demonstracao: um quadro com a descricao e o item. A miniatura sai
- * em 320x240 e o original em 1600x1200, como a API entregaria.
- */
-export function demoEvidenceSvg(evidence: Evidence, variant: EvidenceVariant): string {
-  const [width, height] = variant === 'thumbnail' ? [320, 240] : [1600, 1200]
-  const color = hue(evidence.id)
-  const title = escapeXml(evidence.description ?? 'Fotografia')
-  const item = escapeXml(evidence.itemCode ? `Item ${evidence.itemCode}` : 'Inspeção')
-
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 320 240">
-  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0" stop-color="hsl(${color} 35% 42%)"/><stop offset="1" stop-color="hsl(${(color + 40) % 360} 30% 22%)"/>
-  </linearGradient></defs>
-  <rect width="320" height="240" fill="url(#g)"/>
-  <circle cx="250" cy="62" r="26" fill="hsl(${color} 60% 80% / .35)"/>
-  <path d="M0 190 L80 120 L140 170 L210 100 L320 196 L320 240 L0 240 Z" fill="hsl(${color} 25% 14% / .55)"/>
-  <text x="16" y="28" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="600" fill="#fff">${item}</text>
-  <text x="16" y="222" font-family="Inter, Arial, sans-serif" font-size="12" fill="#fff">${title}</text>
-</svg>`
 }
