@@ -45,6 +45,20 @@ As variáveis ficam em `.env.local`, criado a partir de `.env.example`. O `.env.
 A `API_BASE_URL` precisa ser alcançável **a partir do servidor do Next**, e não do navegador
 do usuário. Se a API estiver em rede privada, o painel precisa estar na mesma rede.
 
+## Rodando contra o backend de demonstração
+
+O painel não usa dados de exemplo: todas as telas leem a API. Para ver dados, suba o backend com o
+profile `demo` (veja o README do repositório `backend`) e aponte `API_BASE_URL` para ele.
+
+| E-mail                      | Perfil     | Senha       |
+| --------------------------- | ---------- | ----------- |
+| `admin@fieldops.local`      | ADMIN      | `Demo@1234` |
+| `supervisor@fieldops.local` | SUPERVISOR | `Demo@1234` |
+
+O perfil `TECHNICIAN` usa o aplicativo, não o painel. Os perfis enxergam áreas diferentes, como a API
+define: não conformidades, evidências e decisões de revisão são do supervisor; o administrador acompanha
+inspeções, cadastros, modelos e auditoria.
+
 ## Estrutura
 
 ```text
