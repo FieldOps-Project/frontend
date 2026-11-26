@@ -170,22 +170,28 @@ são do **supervisor**; o administrador que digita o endereço vai para `/forbid
 
 ## Fila de revisão
 
-O `/inspections/review-queue` segue a issue #21: as inspeções enviadas e em revisão, da que espera
+O `/inspections/review-queue` segue a issue #21: as inspeções enviadas e em revisão, da atualizada
 há mais tempo para a mais recente.
 
-- **Tempo de espera** desde o envio confirmado pelo servidor, em linguagem natural ("enviada há 2
-  dias"), com a data completa no título; mais de um dia fica em destaque.
-- **Quem iniciou a revisão** aparece nas inspeções em revisão, para dois supervisores não
-  revisarem a mesma em paralelo.
-- **Navegação**: chega-se pelos atalhos do dashboard (Revisar Pendências e o cartão de revisões
-  pendentes) e pelo botão "Fila de revisão" da listagem, que mostra quantas aguardam. O botão
-  **Revisar** de cada linha abre a revisão com o link de volta para a fila; quem chega à revisão
-  pelo detalhe volta para o detalhe.
+- **Última atualização** em linguagem natural ("atualizada há 2 dias"), com a data completa no
+  título; mais de um dia fica em destaque. A listagem da API não traz o horário do envio, então a
+  espera é medida por `updatedAt`.
+- **Fila** montada com duas consultas a `GET /inspections` (`status=SUBMITTED` e
+  `status=UNDER_REVIEW`, até 100 de cada), unidas e ordenadas no cliente; o botão "Fila de revisão"
+  da listagem soma os `totalElements` das duas.
+- **Navegação**: chega-se pelos atalhos do dashboard e pelo botão da listagem. O botão **Revisar**
+  abre a revisão com o link de volta para a fila; quem chega à revisão pelo detalhe volta para o
+  detalhe.
 - **Escopo** (RN-005): a API devolve ao supervisor as inspeções sob sua responsabilidade e ao
-  administrador todas. Fila vazia mostra "Tudo revisado!".
-- O único ponto de troca é `features/inspections/review-queue-data.ts`
-  (`GET /inspections?review=1&sort=submittedAtServer,asc`); em `development` a fila usa as
-  inspeções de demonstração.
+  administrador todas. Só o supervisor decide a revisão; o administrador vê a fila e abre o detalhe.
+  Fila vazia mostra "Tudo revisado!".
+
+## Exportação e busca
+
+- **Exportar** da listagem (`/inspections/export`) repassa o CSV de `GET /inspections/export.csv`
+  com os mesmos filtros e a mesma ordem da tela (UTF-8 com BOM, separador `;`).
+- **Busca global** (`/search`) usa o filtro `search` da listagem; cada inspeção encontrada abre o
+  detalhe.
 
 ## Auditoria
 

@@ -2,16 +2,15 @@ import 'server-only'
 
 import { loadInspectionPage } from '@/features/inspections/list-data'
 import { load } from '@/lib/dal'
+import { inspectionReference } from '@/lib/domain/inspection'
 import type { Client } from '@/lib/domain/client'
 import type { Equipment } from '@/lib/domain/equipment'
 import type { Page } from '@/lib/domain/page'
 import type { Site } from '@/lib/domain/site'
 import type { User, UserRole } from '@/lib/domain/user'
 
-/** Resultados por area mostrados de cada vez; o restante fica a um clique, na listagem. */
 export const SEARCH_LIMIT = 5
 
-/** Menos que isso devolve meio cadastro e nao ajuda a achar nada. */
 export const SEARCH_MIN_LENGTH = 2
 
 export type SearchHit = {
@@ -26,7 +25,6 @@ export type SearchGroup = {
   readonly label: string
   readonly hits: readonly SearchHit[]
   readonly total: number
-  /** Listagem completa com o mesmo termo. */
   readonly moreHref: string
 }
 
@@ -35,18 +33,12 @@ function joined(...parts: readonly (string | null | undefined)[]): string | null
   return text === '' ? null : text
 }
 
-/**
- * Busca no painel inteiro: cada area pelo filtro de texto que a propria
- * listagem ja usa (`q` nas inspecoes, `search` nos cadastros e `name` nos
- * usuarios), em paralelo. Usuarios so para o administrador, unico perfil que
- * enxerga essa area (documento 5.2).
- */
 export async function searchWorkspace(term: string, role: UserRole): Promise<readonly SearchGroup[]> {
   const query = encodeURIComponent(term)
   const page = { size: SEARCH_LIMIT }
 
   const [inspections, clients, sites, equipment, users] = await Promise.all([
-    loadInspectionPage({ q: term }, 0, SEARCH_LIMIT),
+    loadInspectionPage({ search: term }, 0, SEARCH_LIMIT),
     load<Page<Client>>('/clients', { search: term, ...page, sort: 'name,asc' }),
     load<Page<Site>>('/sites', { search: term, ...page, sort: 'name,asc' }),
     load<Page<Equipment>>('/equipment', { search: term, ...page, sort: 'name,asc' }),
@@ -58,12 +50,12 @@ export async function searchWorkspace(term: string, role: UserRole): Promise<rea
       key: 'inspections',
       label: 'Inspeções',
       total: inspections.totalElements,
-      moreHref: `/inspections?q=${query}`,
+      moreHref: `/inspections?search=${query}`,
       hits: inspections.content.map((item) => ({
         id: item.id,
-        title: `${item.code} · ${item.title}`,
+        title: `${inspectionReference(item.id)} · ${item.title}`,
         detail: joined(item.clientName, item.siteName),
-        href: `/inspections?q=${encodeURIComponent(item.code)}`,
+        href: `/inspections/${item.id}`,
       })),
     },
     {
