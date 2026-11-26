@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { createTemplate } from '@/features/templates/actions'
+import { changeVersionAvailability, createTemplate } from '@/features/templates/actions'
 import { publishTemplate } from '@/features/templates/builder-actions'
 import { capture, fail, mockApi, ok, recordRequests, server, signedInAs } from '@/test/api'
 import { form, outcome, withSession } from '@/test/next'
@@ -60,7 +60,6 @@ const TEMPLATE = {
 }
 
 beforeEach(() => {
-  vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'production')
   withSession()
 })
 
@@ -88,6 +87,58 @@ describe('5. criacao de modelo', () => {
       createTemplate({ status: 'idle' }, form({ title: 'Inspeção de caldeiras', category: 'Equipamentos' })),
     )
     expect(result).toMatchObject({ status: 'error', fieldErrors: { title: 'Já existe um modelo com este título.' } })
+  })
+})
+
+describe('disponibilidade da versao para novos agendamentos', () => {
+  const VERSION_ID = 'e3000000-0000-4000-8000-000000000001'
+
+  it('envia o corpo do contrato e confirma a mudanca', async () => {
+    const patched = capture('patch', `/inspection-template-versions/${VERSION_ID}/availability`, {
+      id: VERSION_ID,
+      activeForNewInspections: false,
+    })
+    server.use(signedInAs('SUPERVISOR'), patched.handler)
+
+    const { result } = await outcome(() => changeVersionAvailability(VERSION_ID, false))
+
+    expect(patched.bodies).toEqual([{ activeForNewInspections: false }])
+    expect(result).toMatchObject({ ok: true })
+  })
+
+  it.each([
+    ['TEMPLATE_VERSION_NOT_PUBLISHED', 'Só versões publicadas podem ser liberadas para novas inspeções.'],
+    ['INVALID_TEMPLATE_STATUS', 'Situação inválida: o modelo só pode ficar ativo ou inativo.'],
+  ])('%s chega em portugues', async (code, message) => {
+    server.use(
+      signedInAs('ADMIN'),
+      fail('patch', `/inspection-template-versions/${VERSION_ID}/availability`, 422, code),
+    )
+
+    const { result } = await outcome(() => changeVersionAvailability(VERSION_ID, true))
+
+    expect(result).toEqual({ ok: false, message })
+  })
+
+  it('versao inexistente (404) vira mensagem de registro nao encontrado', async () => {
+    server.use(
+      signedInAs('ADMIN'),
+      fail('patch', `/inspection-template-versions/${VERSION_ID}/availability`, 404, 'TEMPLATE_VERSION_NOT_FOUND'),
+    )
+
+    const { result } = await outcome(() => changeVersionAvailability(VERSION_ID, true))
+
+    expect(result).toEqual({ ok: false, message: 'Registro não encontrado. Ele pode ter sido removido.' })
+  })
+
+  it('tecnico nem chega a chamar a API', async () => {
+    server.use(signedInAs('TECHNICIAN'))
+    const received = recordRequests()
+
+    const { redirectedTo } = await outcome(() => changeVersionAvailability(VERSION_ID, true))
+
+    expect(redirectedTo).toBe('/api/auth/denied')
+    expect(received.some((request) => request.method === 'PATCH')).toBe(false)
   })
 })
 

@@ -14,6 +14,7 @@ import {
 } from '@/lib/domain/template-builder'
 
 const ITEM: ItemInput = {
+  code: null,
   title: 'Condição dos pneus',
   description: null,
   responseType: 'CONFORMITY',
@@ -62,6 +63,12 @@ describe('troca de tipo', () => {
       'Bom',
       'Ruim',
     ])
+  })
+})
+
+describe('codigo do item', () => {
+  it('atravessa a normalizacao para a edicao nao apagar o codigo', () => {
+    expect(normalizeItemForType({ ...ITEM, code: 'GER-GER-002', responseType: 'NUMBER' }).code).toBe('GER-GER-002')
   })
 })
 

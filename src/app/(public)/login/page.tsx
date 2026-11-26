@@ -3,6 +3,7 @@ import { IoShieldCheckmarkOutline } from 'react-icons/io5'
 
 import { EnvironmentBadge } from '@/components/shell/environment-badge'
 import { BrandMark } from '@/components/ui/brand-mark'
+import { INACTIVE_ACCOUNT_MESSAGE } from '@/lib/api/messages'
 import { LoginForm } from '@/features/auth/login-form'
 import { safeRedirect } from '@/lib/redirect'
 import { param } from '@/lib/search-params'
@@ -11,26 +12,25 @@ export const metadata: Metadata = {
   title: 'Entrar — FieldOps',
 }
 
-/** Aviso acima do formulario: perfil recusado tem precedencia sobre sessao expirada. */
-function noticeFor({ denied, expired }: { denied: boolean; expired: boolean }): string | undefined {
+type LoginReason = { denied: boolean; inactive: boolean; unavailable: boolean; expired: boolean }
+
+function noticeFor({ denied, inactive, unavailable, expired }: LoginReason): string | undefined {
   if (denied) return 'Seu perfil não tem acesso ao painel administrativo. Técnicos usam o aplicativo de campo.'
+  if (inactive) return INACTIVE_ACCOUNT_MESSAGE
+  if (unavailable) return 'Não foi possível renovar a sessão porque a API está fora do ar. Tente novamente em instantes.'
   if (expired) return 'Sua sessão expirou. Entre novamente para continuar.'
   return undefined
 }
 
-/**
- * Tela de acesso. Unica rota publica do painel: autentica contra a API e a
- * sessao fica em cookie `httpOnly`, gravado pelo servidor do Next.
- *
- * Composicao: marca e titulo, cartao com o formulario e a nota de seguranca.
- * O conjunto cabe numa tela de notebook mesmo com o alerta de erro aberto --
- * rolagem numa tela de tres campos parece pagina quebrada.
- */
 export default async function LoginPage(props: PageProps<'/login'>) {
   const searchParams = await props.searchParams
   const redirectTo = safeRedirect(param(searchParams, 'redirect'))
-  const expired = param(searchParams, 'expired') === '1'
-  const denied = param(searchParams, 'denied') === '1'
+  const reason: LoginReason = {
+    denied: param(searchParams, 'denied') === '1',
+    inactive: param(searchParams, 'inactive') === '1',
+    unavailable: param(searchParams, 'unavailable') === '1',
+    expired: param(searchParams, 'expired') === '1',
+  }
 
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center bg-neutral-50 px-4 py-6">
@@ -48,10 +48,7 @@ export default async function LoginPage(props: PageProps<'/login'>) {
           aria-label="Entrar no painel"
           className="rounded-card border border-neutral-200 bg-neutral-0 p-6 shadow-raised sm:p-7"
         >
-          <LoginForm
-            redirectTo={redirectTo}
-            notice={noticeFor({ denied, expired })}
-          />
+          <LoginForm redirectTo={redirectTo} notice={noticeFor(reason)} />
         </section>
 
         <p className="flex items-center justify-center gap-1.5 text-xs font-medium text-neutral-600">

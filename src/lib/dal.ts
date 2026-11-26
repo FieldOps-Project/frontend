@@ -7,6 +7,7 @@ import { isApiError } from '@/lib/api/errors'
 import { fieldErrorsFor, messageFor } from '@/lib/api/messages'
 import type { UserRole } from '@/lib/domain/user'
 import type { ActionResult, FormState } from '@/lib/form-state'
+import { loginPath } from '@/lib/session-cookies'
 import {
   getAccessToken,
   getSessionUser,
@@ -15,16 +16,8 @@ import {
   type SessionUser,
 } from '@/lib/session'
 
-/**
- * Camada de acesso a dados (documento 14.13).
- *
- * E a barreira real do painel: o `proxy.ts` so olha se existe cookie. Cada
- * Server Component, Server Action e Route Handler e um ponto de entrada
- * independente e invocavel diretamente, entao todos passam por aqui.
- */
 export const verifySession = getSessionUser
 
-/** Perfil fora da lista vai para `/forbidden` -- 403 nao e 401. */
 export async function requireRole(roles: readonly UserRole[]): Promise<SessionUser> {
   const user = await verifySession()
 
@@ -35,18 +28,16 @@ export async function requireRole(roles: readonly UserRole[]): Promise<SessionUs
   return user
 }
 
-/**
- * Leitura para Server Components. 401 leva a renovacao da sessao, 403 a
- * pagina de acesso negado e 404 ao `not-found` da rota; o restante sobe para o
- * `error.tsx` mais proximo.
- */
-export async function load<T>(path: string, query?: Readonly<Record<string, QueryValue>>): Promise<T> {
+type Query = Readonly<Record<string, QueryValue>>
+
+async function read<T>(path: string, query: Query | undefined, nullOn: readonly number[]): Promise<T | null> {
   const token = await getAccessToken()
 
   try {
     return await apiFetch<T>(path, { token, query })
   } catch (error) {
     if (isApiError(error)) {
+      if (nullOn.includes(error.status)) return null
       if (error.status === 401) return handleExpiredSession()
       if (error.status === 403) redirect('/forbidden')
       if (error.status === 404) notFound()
@@ -55,31 +46,18 @@ export async function load<T>(path: string, query?: Readonly<Record<string, Quer
   }
 }
 
-/**
- * Leitura de endpoint que a API ainda pode nao publicar: 404 e 501 viram
- * `null`, para a tela mostrar "indisponivel" naquele bloco em vez de trocar a
- * pagina inteira pelo `not-found`. Os demais erros seguem como em `load`.
- */
-export async function loadOptional<T>(path: string, query?: Readonly<Record<string, QueryValue>>): Promise<T | null> {
-  const token = await getAccessToken()
-
-  try {
-    return await apiFetch<T>(path, { token, query })
-  } catch (error) {
-    if (isApiError(error)) {
-      if (error.status === 404 || error.status === 501) return null
-      if (error.status === 401) return handleExpiredSession()
-      if (error.status === 403) redirect('/forbidden')
-    }
-    throw error
-  }
+export async function load<T>(path: string, query?: Query): Promise<T> {
+  return (await read<T>(path, query, [])) as T
 }
 
-/**
- * Chamada de escrita para Server Actions. Se o access token expirou, renova a
- * sessao e repete a operacao **uma unica vez** -- sem esse limite, um 401
- * persistente vira laco infinito.
- */
+export function loadOptional<T>(path: string, query?: Query): Promise<T | null> {
+  return read<T>(path, query, [404, 501])
+}
+
+export function loadIfPermitted<T>(path: string, query?: Query): Promise<T | null> {
+  return read<T>(path, query, [403, 404])
+}
+
 export async function send<T>(path: string, request: Omit<ApiRequest, 'token'>): Promise<T> {
   const token = await getAccessToken()
 
@@ -94,14 +72,13 @@ export async function send<T>(path: string, request: Omit<ApiRequest, 'token'>):
   }
 
   const renewed = await refreshTokens()
-  if (!renewed) {
-    redirect('/login?expired=1')
+  if (renewed.kind === 'ended') {
+    redirect(loginPath(renewed))
   }
 
-  return apiFetch<T>(path, { ...request, token: renewed.accessToken })
+  return apiFetch<T>(path, { ...request, token: renewed.tokens.accessToken })
 }
 
-/** Converte erro da API em estado de formulario, com a mensagem no campo certo. */
 export function formError(error: unknown, values: Record<string, string>): FormState {
   if (!isApiError(error)) {
     throw error

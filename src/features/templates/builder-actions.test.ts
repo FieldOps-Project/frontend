@@ -1,16 +1,13 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
   createItem,
   createSection,
-  deleteItem,
   publishTemplate,
   reorderItems,
-  reorderSections,
+  updateItem,
   updateTemplateInfo,
 } from '@/features/templates/builder-actions'
-import { demoTemplateId, findDemoTemplate, resetDemoTemplates } from '@/features/templates/template-demo-store'
-import { demoDraftSections, resetDemoDrafts } from '@/features/templates/template-draft-demo-store'
 import { ApiError } from '@/lib/api/errors'
 import type { ItemInput } from '@/lib/domain/template-builder'
 
@@ -28,8 +25,12 @@ vi.mock('@/lib/dal', () => ({
 }))
 vi.mock('@/features/catalog/lookups', () => ({ loadActiveUsers: async () => [], loadClients: async () => [] }))
 
-const MACHINES = demoTemplateId(4)
+const MACHINES = 'e0000000-0000-4000-8000-000000000004'
+const SECTION = 'f1000000-0000-4000-8000-000000000001'
+const ITEM_ID = 'f2000000-0000-4000-8000-000000000001'
+
 const ITEM: ItemInput = {
+  code: null,
   title: ' Buzina funcionando? ',
   description: '  ',
   responseType: 'NUMBER',
@@ -48,87 +49,30 @@ function form(values: Record<string, string>) {
 afterEach(() => {
   send.mockReset()
   load.mockReset()
-  vi.unstubAllEnvs()
 })
 
-describe('em desenvolvimento', () => {
-  beforeEach(() => {
-    vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'development')
-    resetDemoTemplates()
-    resetDemoDrafts()
-  })
+describe('updateTemplateInfo', () => {
+  it('envia titulo, descricao e categoria pelo PUT do modelo', async () => {
+    send.mockResolvedValueOnce({})
 
-  it('salva a configuracao do modelo', async () => {
     const state = await updateTemplateInfo(MACHINES, { status: 'idle' }, form({ title: 'Máquinas', category: 'Frota' }))
 
     expect(state).toEqual({ status: 'success', message: 'Dados do modelo salvos.' })
-    expect(findDemoTemplate(MACHINES)).toMatchObject({ title: 'Máquinas', category: 'Frota', description: null })
+    expect(send).toHaveBeenCalledWith(`/inspection-templates/${MACHINES}`, {
+      method: 'PUT',
+      body: { title: 'Máquinas', description: null, category: 'Frota' },
+    })
   })
 
-  it('recusa configuracao sem titulo com erro no campo', async () => {
+  it('recusa configuracao sem titulo com erro no campo, sem chamar a API', async () => {
     const state = await updateTemplateInfo(MACHINES, { status: 'idle' }, form({ title: '', category: 'Frota' }))
+
     expect(state).toMatchObject({ status: 'error', fieldErrors: { title: 'O título do modelo é obrigatório.' } })
-  })
-
-  it('adiciona secao no fim e item limpo para o tipo', async () => {
-    const section = await createSection(MACHINES, { title: ' Freios ' })
-    expect(section).toMatchObject({ ok: true, message: 'Seção “Freios” adicionada.' })
-    if (!section.ok) return
-
-    const item = await createItem(MACHINES, section.data.id, ITEM)
-    expect(item).toMatchObject({
-      ok: true,
-      data: {
-        title: 'Buzina funcionando?',
-        description: null,
-        observationRequiredOnFailure: false,
-        options: [],
-        displayOrder: 1,
-      },
-    })
-  })
-
-  it('devolve os erros por campo do item sem salvar', async () => {
-    const [section] = demoDraftSections(MACHINES)
-    const result = await createItem(MACHINES, section!.id, { ...ITEM, responseType: 'SINGLE_CHOICE', options: ['Bom'] })
-
-    expect(result).toMatchObject({
-      ok: false,
-      fieldErrors: { options: 'Informe ao menos 2 opções, sem deixar opção em branco.' },
-    })
-    expect(demoDraftSections(MACHINES)[0]?.items).toHaveLength(2)
-  })
-
-  it('exclui e reordena com a lista completa', async () => {
-    const [first, second, third] = demoDraftSections(MACHINES)
-    await deleteItem(MACHINES, first!.items[0]!.id)
-    expect(demoDraftSections(MACHINES)[0]?.items).toHaveLength(1)
-
-    await expect(reorderSections(MACHINES, [third!.id, second!.id, first!.id])).resolves.toMatchObject({ ok: true })
-    expect(demoDraftSections(MACHINES).map((section) => section.title)).toEqual([
-      'Segurança e Cabine',
-      'Sistema Hidráulico',
-      'Identificação do Equipamento',
-    ])
-  })
-
-  it('transforma a recusa da demonstracao em mensagem', async () => {
-    const [section] = demoDraftSections(MACHINES)
-    await expect(reorderItems(MACHINES, section!.id, [section!.items[0]!.id])).resolves.toEqual({
-      ok: false,
-      message: 'A nova ordem precisa conter todos os itens da seção, sem repetir.',
-      fieldErrors: {},
-    })
+    expect(send).not.toHaveBeenCalled()
   })
 })
 
-describe('com a API', () => {
-  const SECTION = 'f1000000-0000-4000-8000-000000000001'
-
-  beforeEach(() => {
-    vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'production')
-  })
-
+describe('rascunho', () => {
   it('usa os endpoints de rascunho com o corpo do contrato', async () => {
     send.mockResolvedValue({ id: SECTION, title: 'Freios' })
 
@@ -145,6 +89,65 @@ describe('com a API', () => {
     })
   })
 
+  it('limpa o item para o tipo antes de enviar e mantem o codigo informado', async () => {
+    send.mockResolvedValueOnce({ id: ITEM_ID })
+
+    await createItem(MACHINES, SECTION, { ...ITEM, code: ' EXT-03 ' })
+
+    expect(send).toHaveBeenCalledWith(`/inspection-templates/${MACHINES}/sections/${SECTION}/items`, {
+      method: 'POST',
+      body: {
+        code: 'EXT-03',
+        title: 'Buzina funcionando?',
+        description: null,
+        responseType: 'NUMBER',
+        required: true,
+        observationRequiredOnFailure: false,
+        evidenceRequiredOnFailure: false,
+        options: [],
+      },
+    })
+  })
+
+  it('editar o item reenvia o codigo para a API nao apaga-lo', async () => {
+    send.mockResolvedValueOnce({ id: ITEM_ID })
+
+    await updateItem(MACHINES, ITEM_ID, { ...ITEM, code: 'GER-GER-002' })
+
+    expect(send).toHaveBeenCalledWith(
+      `/inspection-templates/${MACHINES}/items/${ITEM_ID}`,
+      expect.objectContaining({ method: 'PUT', body: expect.objectContaining({ code: 'GER-GER-002' }) }),
+    )
+  })
+
+  it('codigo em branco vira nulo', async () => {
+    send.mockResolvedValueOnce({ id: ITEM_ID })
+
+    await updateItem(MACHINES, ITEM_ID, { ...ITEM, code: '   ' })
+
+    expect(send).toHaveBeenCalledWith(
+      `/inspection-templates/${MACHINES}/items/${ITEM_ID}`,
+      expect.objectContaining({ body: expect.objectContaining({ code: null }) }),
+    )
+  })
+
+  it('codigo acima de 50 caracteres volta como erro no campo, sem chamar a API', async () => {
+    const result = await createItem(MACHINES, SECTION, { ...ITEM, code: 'x'.repeat(51) })
+
+    expect(result).toMatchObject({ ok: false, fieldErrors: { code: 'Use no máximo 50 caracteres.' } })
+    expect(send).not.toHaveBeenCalled()
+  })
+
+  it('devolve os erros por campo do item sem chamar a API', async () => {
+    const result = await createItem(MACHINES, SECTION, { ...ITEM, responseType: 'SINGLE_CHOICE', options: ['Bom'] })
+
+    expect(result).toMatchObject({
+      ok: false,
+      fieldErrors: { options: 'Informe ao menos 2 opções, sem deixar opção em branco.' },
+    })
+    expect(send).not.toHaveBeenCalled()
+  })
+
   it('leva a recusa da API ao campo do item', async () => {
     send.mockRejectedValueOnce(new ApiError({ status: 400, code: 'TEMPLATE_ITEM_OPTIONS_DUPLICATED', message: 'dup' }))
 
@@ -156,51 +159,93 @@ describe('com a API', () => {
       fieldErrors: { options: 'As opções da escolha única não podem se repetir.' },
     })
   })
+
+  it('junta os erros indexados das opcoes e o erro do codigo vindos da API', async () => {
+    send.mockRejectedValueOnce(
+      new ApiError({
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        message: 'invalid',
+        fieldErrors: [
+          { field: 'options[1]', message: 'must not be blank' },
+          { field: 'code', message: 'size must be between 0 and 50' },
+        ],
+      }),
+    )
+
+    const result = await createItem(MACHINES, SECTION, { ...ITEM, responseType: 'SINGLE_CHOICE', options: ['Bom', 'Ruim'] })
+
+    expect(result).toMatchObject({
+      ok: false,
+      fieldErrors: { options: 'Campo obrigatório.', code: 'Use no máximo 50 caracteres.' },
+    })
+  })
 })
 
 describe('publishTemplate', () => {
-  it('em desenvolvimento publica o rascunho pronto e informa o numero', async () => {
-    vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'development')
-    resetDemoTemplates()
-    resetDemoDrafts()
-
-    await expect(publishTemplate(MACHINES)).resolves.toEqual({ ok: true, message: 'Versão 3 publicada.', versionNumber: 3 })
-    expect(findDemoTemplate(MACHINES)?.currentVersion).toBe(3)
-  })
+  const READY = {
+    id: MACHINES,
+    title: 'Máquinas',
+    category: 'Frota',
+    currentVersion: 1,
+    sections: [
+      {
+        id: 's1',
+        title: 'Freios',
+        description: null,
+        displayOrder: 1,
+        items: [
+          {
+            id: 'i1',
+            sectionId: 's1',
+            code: null,
+            title: 'Pastilhas',
+            description: null,
+            responseType: 'CONFORMITY',
+            required: true,
+            observationRequiredOnFailure: false,
+            evidenceRequiredOnFailure: false,
+            options: [],
+            displayOrder: 1,
+          },
+        ],
+      },
+    ],
+  }
 
   it('devolve as pendencias locais sem publicar', async () => {
-    vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'development')
-    resetDemoTemplates()
-    resetDemoDrafts()
-    await createSection(MACHINES, { title: 'Vazia' })
+    load.mockResolvedValueOnce({
+      ...READY,
+      sections: [...READY.sections, { id: 's2', title: 'Vazia', description: null, displayOrder: 2, items: [] }],
+    })
 
     const result = await publishTemplate(MACHINES)
 
-    expect(result).toMatchObject({ ok: false, issues: [{ message: 'A seção 4 “Vazia” não tem itens.' }] })
-    expect(findDemoTemplate(MACHINES)?.currentVersion).toBe(2)
+    expect(result).toMatchObject({ ok: false, issues: [{ message: 'A seção 2 “Vazia” não tem itens.' }] })
+    expect(send).not.toHaveBeenCalled()
   })
 
-  it('com a API mostra as pendencias que ela devolver', async () => {
-    vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'production')
-    load.mockResolvedValueOnce({
-      id: MACHINES,
-      title: 'Máquinas',
-      category: 'Frota',
-      currentVersion: 1,
-      sections: [{ id: 's1', title: 'Freios', description: null, displayOrder: 1, items: [{ id: 'i1', sectionId: 's1', code: null, title: 'Pastilhas', description: null, responseType: 'CONFORMITY', required: true, observationRequiredOnFailure: false, evidenceRequiredOnFailure: false, options: [], displayOrder: 1 }] }],
-    })
+  it('publica o rascunho pronto e informa o numero da versao', async () => {
+    load.mockResolvedValueOnce(READY)
+    send.mockResolvedValueOnce({ versionNumber: 2 })
+
+    await expect(publishTemplate(MACHINES)).resolves.toEqual({ ok: true, message: 'Versão 2 publicada.', versionNumber: 2 })
+    expect(send).toHaveBeenCalledWith(`/inspection-templates/${MACHINES}/publish`, { method: 'POST' })
+  })
+
+  it('mostra as pendencias que a API devolver', async () => {
+    load.mockResolvedValueOnce(READY)
     send.mockRejectedValueOnce(
       new ApiError({
         status: 422,
         code: 'TEMPLATE_PUBLISH_INVALID',
         message: 'pending',
-        fieldErrors: [{ field: 'sections[0].items[0].responseType', message: 'not supported' }],
+        fieldErrors: [{ field: 'sections[0].items[0].responseType', message: 'Response type PHOTO is not supported by the mobile app' }],
       }),
     )
 
     const result = await publishTemplate(MACHINES)
 
-    expect(send).toHaveBeenCalledWith(`/inspection-templates/${MACHINES}/publish`, { method: 'POST' })
     expect(result).toEqual({
       ok: false,
       message: 'O modelo tem pendências que impedem a publicação.',

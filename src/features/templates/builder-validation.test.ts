@@ -19,6 +19,14 @@ describe('item', () => {
     })
   })
 
+  it('limita o codigo a 50 caracteres e o deixa opcional', () => {
+    expect(validateItem({ title: 'Horímetro', responseType: 'NUMBER', code: 'a'.repeat(51) }).code).toBe(
+      'Use no máximo 50 caracteres.',
+    )
+    expect(validateItem({ title: 'Horímetro', responseType: 'NUMBER', code: 'GER-GER-002' })).toEqual({})
+    expect(validateItem({ title: 'Horímetro', responseType: 'NUMBER', code: null })).toEqual({})
+  })
+
   it('aceita tipos sem opcoes sem pedir opcoes', () => {
     expect(validateItem({ title: 'Horímetro', responseType: 'NUMBER' })).toEqual({})
   })

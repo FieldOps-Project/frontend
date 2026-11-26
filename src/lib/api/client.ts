@@ -74,13 +74,16 @@ export async function apiFetch<T>(path: string, request: ApiRequest): Promise<T>
 }
 
 /**
- * Leitura de arquivo (imagem de evidencia) para Route Handlers. Devolve a
+ * Leitura de arquivo (imagem de evidencia por padrao, ou outro tipo via `accept`) para Route Handlers. Devolve a
  * `Response` da API para o binario ser repassado em fluxo, sem carregar a
  * imagem inteira na memoria do servidor do Next. Erros viram `ApiError`, como
  * em `apiFetch`.
  */
-export async function apiFetchFile(path: string, request: Omit<ApiRequest, 'method' | 'body'>): Promise<Response> {
-  const headers: Record<string, string> = { Accept: 'image/*' }
+export async function apiFetchFile(
+  path: string,
+  request: Omit<ApiRequest, 'method' | 'body'> & { readonly accept?: string },
+): Promise<Response> {
+  const headers: Record<string, string> = { Accept: request.accept ?? 'image/*' }
   if (request.token) {
     headers.Authorization = `Bearer ${request.token}`
   }

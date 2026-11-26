@@ -1,13 +1,10 @@
 import { NETWORK_ERROR_CODE, type ApiError } from '@/lib/api/errors'
 
-/**
- * Traducao dos codigos da API para linguagem de negocio (documento 14, item
- * 8.3). O usuario le "Este e-mail ja esta cadastrado", nunca
- * `EMAIL_ALREADY_EXISTS` nem "Request failed with status code 409".
- */
+export const INACTIVE_ACCOUNT_MESSAGE = 'Sua conta está inativa ou bloqueada. Procure a administração do sistema.'
+
 const CODE_MESSAGES: Record<string, string> = {
   AUTH_INVALID_CREDENTIALS: 'E-mail ou senha incorretos.',
-  AUTH_USER_INACTIVE: 'Sua conta está inativa ou bloqueada. Procure a administração do sistema.',
+  AUTH_USER_INACTIVE: INACTIVE_ACCOUNT_MESSAGE,
   AUTH_INVALID_REFRESH_TOKEN: 'Sua sessão expirou. Entre novamente.',
   AUTH_INVALID_TOKEN: 'Sua sessão expirou. Entre novamente.',
   AUTH_AUTHENTICATION_REQUIRED: 'Sua sessão expirou. Entre novamente.',
@@ -25,6 +22,10 @@ const CODE_MESSAGES: Record<string, string> = {
   INVALID_COORDINATES:
     'Coordenadas inválidas: informe latitude e longitude juntas, dentro dos limites permitidos.',
   INVALID_SORT: 'Ordenação inválida.',
+  INVALID_PERIOD: 'O início do período não pode ser depois do fim.',
+  INVALID_TEMPLATE_STATUS: 'Situação inválida: o modelo só pode ficar ativo ou inativo.',
+  EXPORT_SCOPE_UNSUPPORTED: 'Seu perfil não pode exportar este tipo de dado.',
+  METHOD_NOT_ALLOWED: 'Esta operação não é aceita pela API.',
   TEMPLATE_TITLE_ALREADY_EXISTS: 'Já existe um modelo com este título.',
   TEMPLATE_NOT_PUBLISHED: 'Publique o modelo antes de mudar a situação dele.',
   TEMPLATE_ITEM_RESPONSE_TYPE_REQUIRED: 'Escolha o tipo de resposta do item.',
@@ -35,9 +36,14 @@ const CODE_MESSAGES: Record<string, string> = {
   TEMPLATE_ITEM_OPTIONS_DUPLICATED: 'As opções da escolha única não podem se repetir.',
   TEMPLATE_REORDER_MISMATCH: 'A ordem mudou em outra tela. Recarregue a página e tente de novo.',
   TEMPLATE_VERSION_PUBLISHED: 'Esta versão já foi publicada e não pode ser alterada.',
+  TEMPLATE_VERSION_NOT_PUBLISHED: 'Só versões publicadas podem ser liberadas para novas inspeções.',
   TEMPLATE_PUBLISH_INVALID: 'O modelo tem pendências que impedem a publicação.',
   DATA_CONFLICT: 'Outra alteração foi salva ao mesmo tempo. Recarregue a página e tente de novo.',
   TECHNICIAN_NOT_ELIGIBLE: 'Somente técnico ativo pode receber a inspeção.',
+  INVALID_TECHNICIAN: 'Escolha um técnico ativo.',
+  INVALID_SUPERVISOR: 'Escolha um supervisor ativo.',
+  EQUIPMENT_REQUIRED: 'Este modelo exige um equipamento. Escolha o equipamento da inspeção.',
+  SCHEDULED_FOR_REQUIRED: 'Informe a data prevista da inspeção.',
   TEMPLATE_VERSION_UNAVAILABLE: 'Esta versão do modelo não está disponível para novas inspeções.',
   EQUIPMENT_INACTIVE: 'O equipamento está inativo e não pode receber novas inspeções.',
   SITE_CLIENT_MISMATCH: 'O local não pertence ao cliente selecionado.',
@@ -45,18 +51,16 @@ const CODE_MESSAGES: Record<string, string> = {
   INSPECTION_INVALID_TRANSITION: 'Esta ação não é possível no estado atual da inspeção. Recarregue a página para ver o estado atualizado.',
   INSPECTION_NOT_EDITABLE: 'O planejamento não pode mais ser alterado: a execução já foi iniciada.',
   INSPECTION_CANCEL_REASON_REQUIRED: 'Informe o motivo do cancelamento.',
+  INSPECTION_REJECTION_REASON_REQUIRED: 'Informe o motivo da rejeição.',
+  INSPECTION_ITEM_NOT_IN_SNAPSHOT: 'Algum item selecionado não pertence a esta inspeção.',
   INSPECTION_APPROVED_READ_ONLY: 'Inspeção aprovada é somente leitura.',
   INSPECTION_RESPONSES_LOCKED: 'As respostas desta inspeção estão bloqueadas para edição.',
   EVIDENCE_READ_ONLY: 'Esta evidência é somente leitura.',
+  NON_CONFORMITY_STATUS_UNSUPPORTED: 'Por enquanto só a situação “Aberta” está disponível para não conformidades.',
   [NETWORK_ERROR_CODE]: 'Não foi possível falar com a API. Verifique se ela está no ar e tente de novo.',
   INTERNAL_ERROR: 'A API encontrou um erro inesperado. Tente novamente em instantes.',
 }
 
-/**
- * Erros de regra que a API devolve sem `fieldErrors`, mas que pertencem a um
- * campo especifico. O 409 de e-mail duplicado precisa aparecer no campo de
- * e-mail, e o QR duplicado no campo do QR.
- */
 const CODE_FIELDS: Record<string, string> = {
   EMAIL_ALREADY_EXISTS: 'email',
   EQUIPMENT_QR_CODE_ALREADY_EXISTS: 'qrCode',
@@ -71,25 +75,27 @@ const CODE_FIELDS: Record<string, string> = {
   TEMPLATE_ITEM_OPTIONS_DUPLICATED: 'options',
   TEMPLATE_ITEM_OPTIONS_NOT_ALLOWED: 'options',
   TECHNICIAN_NOT_ELIGIBLE: 'technicianId',
+  INVALID_TECHNICIAN: 'technicianId',
+  INVALID_SUPERVISOR: 'supervisorId',
+  EQUIPMENT_REQUIRED: 'equipmentId',
+  SCHEDULED_FOR_REQUIRED: 'scheduledFor',
+  INSPECTION_REJECTION_REASON_REQUIRED: 'reason',
   TEMPLATE_VERSION_UNAVAILABLE: 'templateVersionId',
   EQUIPMENT_INACTIVE: 'equipmentId',
   SITE_CLIENT_MISMATCH: 'siteId',
   EQUIPMENT_SITE_MISMATCH: 'equipmentId',
 }
 
-/** Mensagens do Bean Validation, que a API devolve em ingles. */
 const FIELD_MESSAGE_PATTERNS: readonly (readonly [RegExp, (match: RegExpMatchArray) => string])[] = [
   [/must not be (blank|null|empty)/i, () => 'Campo obrigatório.'],
   [/well-formed email/i, () => 'Informe um e-mail válido.'],
+  [/size must be between 0 and (\d+)/i, (m) => `Use no máximo ${m[1]} caracteres.`],
   [/size must be between (\d+) and (\d+)/i, (m) => `Use entre ${m[1]} e ${m[2]} caracteres.`],
+  [/must be a CPF or CNPJ/i, () => 'Documento inválido: informe um CPF (11 dígitos) ou CNPJ (14 dígitos).'],
   [/must be greater than or equal to (-?[\d.]+)/i, (m) => `O valor mínimo é ${m[1]}.`],
   [/must be less than or equal to (-?[\d.]+)/i, (m) => `O valor máximo é ${m[1]}.`],
 ]
 
-/**
- * Mensagem de campo que o painel nao conhece vem do Bean Validation, em ingles:
- * nunca vai para a tela. Fica uma orientacao generica no proprio campo.
- */
 const UNKNOWN_FIELD_MESSAGE = 'Valor não aceito. Revise este campo.'
 
 export function translateFieldMessage(message: string): string {
@@ -113,10 +119,6 @@ export function messageFor(error: ApiError): string {
   if (error.status >= 500) {
     return CODE_MESSAGES.INTERNAL_ERROR as string
   }
-  /*
-   * Codigo que o painel ainda nao conhece: a mensagem da API e tecnica e em
-   * ingles, entao nunca vai para a tela. Fica a explicacao pelo tipo de recusa.
-   */
   return STATUS_MESSAGES[error.status] ?? 'Não foi possível concluir a ação. Tente novamente.'
 }
 
@@ -128,16 +130,20 @@ const STATUS_MESSAGES: Record<number, string> = {
   422: 'Algum dado enviado não foi aceito. Revise e tente de novo.',
 }
 
+function collapseIndexes(field: string): string {
+  return field.replace(/\[\d+\]/g, '')
+}
+
 export function fieldErrorsFor(error: ApiError): Record<string, string> {
   const fields: Record<string, string> = {}
 
-  for (const item of error.fieldErrors) {
-    fields[item.field] ??= translateFieldMessage(item.message)
+  const codeField = CODE_FIELDS[error.code]
+  if (codeField) {
+    fields[codeField] = messageFor(error)
   }
 
-  const codeField = CODE_FIELDS[error.code]
-  if (codeField && !fields[codeField]) {
-    fields[codeField] = messageFor(error)
+  for (const item of error.fieldErrors) {
+    fields[collapseIndexes(item.field)] ??= translateFieldMessage(item.message)
   }
 
   return fields

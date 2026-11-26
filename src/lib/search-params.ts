@@ -1,3 +1,5 @@
+import { isId } from '@/lib/ids'
+
 /**
  * Filtros vivem na URL (documento 14, item 8.5): a tela vira link
  * compartilhavel, sobrevive ao recarregamento e o Server Component busca so a
@@ -9,6 +11,11 @@ export function param(params: RawSearchParams, key: string): string | undefined 
   const value = params[key]
   const first = Array.isArray(value) ? value[0] : value
   return first && first.trim() !== '' ? first.trim() : undefined
+}
+
+export function idParam(params: RawSearchParams, key: string): string | undefined {
+  const value = param(params, key)
+  return isId(value) ? value : undefined
 }
 
 export function pageParam(params: RawSearchParams): number {

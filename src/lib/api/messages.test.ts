@@ -71,9 +71,9 @@ describe('fieldErrorsFor', () => {
       status: 422,
       code: 'VALIDATION_ERROR',
       message: 'invalid',
-      fieldErrors: [{ field: 'document', message: 'must be a valid CPF or CNPJ' }],
+      fieldErrors: [{ field: 'name', message: 'Something only the backend understands' }],
     })
-    expect(fieldErrorsFor(error)).toEqual({ document: 'Valor não aceito. Revise este campo.' })
+    expect(fieldErrorsFor(error)).toEqual({ name: 'Valor não aceito. Revise este campo.' })
   })
 
   it('traduz as mensagens de validacao por campo', () => {
@@ -88,6 +88,101 @@ describe('fieldErrorsFor', () => {
     })
 
     expect(fieldErrorsFor(error)).toEqual({ name: 'Campo obrigatório.', email: 'Informe um e-mail válido.' })
+  })
+})
+
+describe('fieldErrorsFor com regras da API', () => {
+  it('prefere a mensagem do codigo conhecido ao texto em ingles do campo', () => {
+    const error = new ApiError({
+      status: 422,
+      code: 'SITE_CLIENT_MISMATCH',
+      message: 'x',
+      fieldErrors: [{ field: 'siteId', message: 'Site must belong to clientId' }],
+    })
+
+    expect(fieldErrorsFor(error)).toEqual({ siteId: 'O local não pertence ao cliente selecionado.' })
+  })
+
+  it('traduz documento de cliente invalido', () => {
+    const error = new ApiError({
+      status: 400,
+      code: 'VALIDATION_ERROR',
+      message: 'x',
+      fieldErrors: [{ field: 'document', message: 'must be a CPF or CNPJ with a valid format' }],
+    })
+
+    expect(fieldErrorsFor(error)).toEqual({
+      document: 'Documento inválido: informe um CPF (11 dígitos) ou CNPJ (14 dígitos).',
+    })
+  })
+
+  it('pede no maximo N caracteres quando o minimo e zero', () => {
+    const error = new ApiError({
+      status: 400,
+      code: 'VALIDATION_ERROR',
+      message: 'x',
+      fieldErrors: [
+        { field: 'name', message: 'size must be between 0 and 255' },
+        { field: 'code', message: 'size must be between 1 and 50' },
+      ],
+    })
+
+    expect(fieldErrorsFor(error)).toEqual({ name: 'Use no máximo 255 caracteres.', code: 'Use entre 1 e 50 caracteres.' })
+  })
+
+  it('junta os erros indexados de opcoes no campo de opcoes', () => {
+    const error = new ApiError({
+      status: 400,
+      code: 'VALIDATION_ERROR',
+      message: 'x',
+      fieldErrors: [
+        { field: 'options[1]', message: 'must not be blank' },
+        { field: 'options[3]', message: 'size must be between 0 and 100' },
+      ],
+    })
+
+    expect(fieldErrorsFor(error)).toEqual({ options: 'Campo obrigatório.' })
+  })
+
+  it('leva a recusa do motivo de rejeicao ao campo do motivo', () => {
+    const error = new ApiError({
+      status: 422,
+      code: 'INSPECTION_REJECTION_REASON_REQUIRED',
+      message: 'x',
+      fieldErrors: [{ field: 'reason', message: 'must not be blank' }],
+    })
+
+    expect(fieldErrorsFor(error)).toEqual({ reason: 'Informe o motivo da rejeição.' })
+  })
+
+  it('traduz os codigos novos do agendamento e dos modelos', () => {
+    const cases = [
+      ['INVALID_TECHNICIAN', 'technicianId'],
+      ['INVALID_SUPERVISOR', 'supervisorId'],
+      ['EQUIPMENT_REQUIRED', 'equipmentId'],
+      ['SCHEDULED_FOR_REQUIRED', 'scheduledFor'],
+    ] as const
+    for (const [code, field] of cases) {
+      const fields = fieldErrorsFor(new ApiError({ status: 422, code, message: 'technical' }))
+      expect(Object.keys(fields)).toEqual([field])
+      expect(fields[field]).not.toMatch(/Valor não aceito/)
+    }
+  })
+
+  it.each([
+    'INVALID_PERIOD',
+    'INVALID_SORT',
+    'INVALID_TEMPLATE_STATUS',
+    'INSPECTION_NOT_EDITABLE',
+    'INSPECTION_INVALID_TRANSITION',
+    'INSPECTION_ITEM_NOT_IN_SNAPSHOT',
+    'NON_CONFORMITY_STATUS_UNSUPPORTED',
+    'TEMPLATE_VERSION_NOT_PUBLISHED',
+    'TEMPLATE_ITEM_FAILURE_RULES_NOT_ALLOWED',
+  ])('%s tem mensagem propria em portugues', (code) => {
+    const message = messageFor(new ApiError({ status: 400, code, message: 'technical english' }))
+
+    expect(message).not.toMatch(/technical english|Algum dado enviado/)
   })
 })
 

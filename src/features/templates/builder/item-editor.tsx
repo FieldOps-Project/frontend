@@ -27,6 +27,7 @@ const FIELD =
 
 function initialInput(item: TemplateItem | undefined): ItemInput {
   return {
+    code: item?.code ?? null,
     title: item?.title ?? '',
     description: item?.description ?? null,
     responseType: item?.responseType ?? 'CONFORMITY',
@@ -37,13 +38,13 @@ function initialInput(item: TemplateItem | undefined): ItemInput {
   }
 }
 
-/**
- * Item em edicao, como o 1.2 do desenho do construtor: pergunta, tipo de
- * resposta, instrucao adicional e regras, com "Cancelar" e "Salvar Item".
- *
- * Valida no navegador com as regras da API e salva so este item; o aviso de
- * sucesso confirma que a alteracao foi persistida (issue #14).
- */
+function firstInvalidField(errors: ItemErrors): string {
+  if (errors.title) return 'title'
+  if (errors.responseType) return 'type'
+  if (errors.code) return 'code'
+  return 'options'
+}
+
 export function ItemEditor({
   templateId,
   sectionId,
@@ -78,10 +79,6 @@ export function ItemEditor({
     setMessage(null)
   }
 
-  /**
-   * Trocar para um tipo que nao aceita a configuracao ja feita avisa antes o
-   * que sera descartado (issue #14), e so entao limpa.
-   */
   async function changeType(next: ResponseType) {
     const lost = settingsLostOnTypeChange(input, next)
     if (lost.length > 0) {
@@ -106,7 +103,7 @@ export function ItemEditor({
     const found = validateItem(input)
     if (hasErrors(found)) {
       setErrors(found)
-      document.getElementById(`${prefix}-${found.title ? 'title' : found.responseType ? 'type' : 'options'}`)?.focus()
+      document.getElementById(`${prefix}-${firstInvalidField(found)}`)?.focus()
       return
     }
 
@@ -171,6 +168,22 @@ export function ItemEditor({
       </div>
 
       {errors.title && <p className="-mt-2 text-sm text-danger sm:pl-14">{errors.title}</p>}
+
+      <div className="flex flex-col gap-1 sm:pl-14">
+        <label htmlFor={`${prefix}-code`} className="text-xs font-medium text-neutral-600">
+          Código (opcional)
+        </label>
+        <input
+          id={`${prefix}-code`}
+          value={input.code ?? ''}
+          maxLength={BUILDER_LIMITS.itemCode}
+          placeholder="Ex.: GER-001"
+          aria-invalid={errors.code ? true : undefined}
+          onChange={(event) => change({ code: event.target.value })}
+          className={`${FIELD} w-full font-mono sm:w-60`}
+        />
+        {errors.code && <p className="text-sm text-danger">{errors.code}</p>}
+      </div>
 
       <div className="sm:pl-14">
         <label htmlFor={`${prefix}-description`} className="sr-only">

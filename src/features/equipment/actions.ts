@@ -9,6 +9,8 @@ import {
   EQUIPMENT_STATUS_LABELS,
   EQUIPMENT_STATUSES,
   generateQrCode,
+  isValidQrCode,
+  QR_CODE_FORMAT_MESSAGE,
   type Equipment,
   type EquipmentStatus,
 } from '@/lib/domain/equipment'
@@ -30,6 +32,19 @@ function payload(formData: FormData) {
   }
 }
 
+function invalidQrCode(formData: FormData): FormState | null {
+  const qrCode = text(formData, 'qrCode')
+  if (qrCode === null || isValidQrCode(qrCode)) {
+    return null
+  }
+  return {
+    status: 'error',
+    message: 'Revise os campos destacados.',
+    fieldErrors: { qrCode: QR_CODE_FORMAT_MESSAGE },
+    values: submittedValues(formData),
+  }
+}
+
 export async function createEquipment(_previous: FormState, formData: FormData): Promise<FormState> {
   await requireRole(MANAGER_ROLES)
   const siteId = text(formData, 'siteId')
@@ -41,6 +56,11 @@ export async function createEquipment(_previous: FormState, formData: FormData):
       fieldErrors: { siteId: 'Selecione o local.' },
       values: submittedValues(formData),
     }
+  }
+
+  const invalid = invalidQrCode(formData)
+  if (invalid) {
+    return invalid
   }
 
   let created: Equipment
@@ -59,6 +79,11 @@ export async function createEquipment(_previous: FormState, formData: FormData):
 export async function updateEquipment(id: string, _previous: FormState, formData: FormData): Promise<FormState> {
   await requireRole(MANAGER_ROLES)
   const equipmentId = assertId(id)
+
+  const invalid = invalidQrCode(formData)
+  if (invalid) {
+    return invalid
+  }
 
   try {
     await send(`/equipment/${equipmentId}`, { method: 'PUT', body: payload(formData) })
@@ -88,16 +113,16 @@ export async function changeEquipmentStatus(id: string, status: EquipmentStatus)
 
 export type QrLookupState = { readonly error?: string; readonly code?: string }
 
-/**
- * Mesma consulta que o aplicativo faz ao ler a etiqueta. Serve para conferir,
- * no painel, que o valor impresso aponta para o equipamento certo.
- */
 export async function findEquipmentByQr(_previous: QrLookupState, formData: FormData): Promise<QrLookupState> {
   await requireRole(MANAGER_ROLES)
   const code = text(formData, 'qrCode')
 
   if (!code) {
     return { error: 'Informe o valor do QR Code.' }
+  }
+
+  if (!isValidQrCode(code)) {
+    return { error: QR_CODE_FORMAT_MESSAGE, code }
   }
 
   let found: Equipment
