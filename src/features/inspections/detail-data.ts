@@ -1,16 +1,16 @@
 import 'server-only'
 
-import { notFound } from 'next/navigation'
+import { cache } from 'react'
 
-import { demoInspectionTimeline } from '@/features/audit/audit-fixture'
 import { loadActiveUsers } from '@/features/catalog/lookups'
+import { load, loadIfPermitted } from '@/lib/dal'
 import {
-  demoInspectionDetail,
-  demoPlanningPeople,
-  isDemoInspectionId,
-} from '@/features/inspections/detail-fixture'
-import { load, loadOptional } from '@/lib/dal'
-import type { InspectionDetail, InspectionHistoryEvent } from '@/lib/domain/inspection-detail'
+  composeInspectionDetail,
+  type InspectionDetail,
+  type InspectionRecord,
+  type TemplateVersionRecord,
+} from '@/lib/domain/inspection-detail'
+import { toHistoryEvent, type InspectionHistoryEntry, type InspectionHistoryEvent } from '@/lib/domain/inspection-history'
 
 export type PlanningPerson = { readonly id: string; readonly name: string }
 
@@ -19,45 +19,53 @@ export type PlanningPeople = {
   readonly supervisors: readonly PlanningPerson[]
 }
 
-/** Inspecao de demonstracao, servida so em desenvolvimento. */
-export function isDemoInspection(id: string): boolean {
-  return process.env.NEXT_PUBLIC_APP_ENV === 'development' && isDemoInspectionId(id)
+type Named = { readonly name: string }
+
+const loadHistoryEntries = cache((id: string) => load<readonly InspectionHistoryEntry[]>(`/inspections/${id}/history`))
+
+export function loadInspectionRecord(id: string): Promise<InspectionRecord> {
+  return load<InspectionRecord>(`/inspections/${id}`)
 }
 
-/**
- * Detalhe da inspecao. Ponto unico de troca para a API: hoje ela nao publica
- * `GET /inspections/{id}`, entao em desenvolvimento as inspecoes de
- * demonstracao respondem daqui; qualquer outro identificador segue para a API,
- * e o 404 dela leva ao `not-found` da rota.
- */
+async function nameOf(collection: string, id: string | null): Promise<string | null> {
+  if (id === null) return null
+  const record = await loadIfPermitted<Named>(`/${collection}/${id}`)
+  return record?.name ?? null
+}
+
 export async function loadInspectionDetail(id: string): Promise<InspectionDetail> {
-  if (isDemoInspection(id)) {
-    return demoInspectionDetail(id) ?? notFound()
-  }
-  return load<InspectionDetail>(`/inspections/${id}`)
+  const inspection = await loadInspectionRecord(id)
+
+  const [template, client, site, equipmentName, technicianName, supervisorName, history] = await Promise.all([
+    load<TemplateVersionRecord>(`/inspection-template-versions/${inspection.templateVersionId}`),
+    load<Named>(`/clients/${inspection.clientId}`),
+    load<Named>(`/sites/${inspection.siteId}`),
+    nameOf('equipment', inspection.equipmentId),
+    nameOf('users', inspection.technicianId),
+    nameOf('users', inspection.supervisorId),
+    loadHistoryEntries(id),
+  ])
+
+  return composeInspectionDetail({
+    inspection,
+    template,
+    clientName: client.name,
+    siteName: site.name,
+    equipmentName,
+    technicianName,
+    supervisorName,
+    history,
+  })
 }
 
-/**
- * Linha do tempo a partir da auditoria (`GET /inspections/{id}/history`):
- * mudancas de estado, fotografias e nao conformidades (issue #24). Enquanto a
- * API nao publica o endpoint, devolve `null` e a tela mostra o bloco como
- * indisponivel, sem derrubar o restante do detalhe.
- */
-export async function loadInspectionHistory(id: string): Promise<readonly InspectionHistoryEvent[] | null> {
-  if (isDemoInspection(id)) {
-    return demoInspectionTimeline(id)
-  }
-  return loadOptional<readonly InspectionHistoryEvent[]>(`/inspections/${id}/history`)
+export async function loadInspectionHistory(id: string): Promise<readonly InspectionHistoryEvent[]> {
+  return (await loadHistoryEntries(id)).map(toHistoryEvent)
 }
 
-/** Tecnicos e supervisores ativos que a edicao do planejamento oferece (RN-027). */
-export async function loadPlanningPeople(id: string): Promise<PlanningPeople> {
-  if (isDemoInspection(id)) {
-    return demoPlanningPeople()
-  }
+export async function loadPlanningPeople(): Promise<PlanningPeople> {
   const [technicians, supervisors] = await Promise.all([loadActiveUsers('TECHNICIAN'), loadActiveUsers('SUPERVISOR')])
   return {
-    technicians: technicians.map(({ id: userId, name }) => ({ id: userId, name })),
-    supervisors: supervisors.map(({ id: userId, name }) => ({ id: userId, name })),
+    technicians: technicians.map(({ id, name }) => ({ id, name })),
+    supervisors: supervisors.map(({ id, name }) => ({ id, name })),
   }
 }

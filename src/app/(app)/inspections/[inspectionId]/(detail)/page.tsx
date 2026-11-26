@@ -3,11 +3,11 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { IoCreateOutline, IoEyeOutline } from 'react-icons/io5'
 
-import { FlashNotice, Notice } from '@/components/ui/notice'
+import { FlashNotice } from '@/components/ui/notice'
 import { loadInspectionEvidences } from '@/features/evidence/evidence-data'
 import { EvidenceGallery } from '@/features/evidence/evidence-gallery'
 import { CancelInspection } from '@/features/inspections/cancel-inspection'
-import { isDemoInspection, loadInspectionDetail, loadInspectionHistory } from '@/features/inspections/detail-data'
+import { loadInspectionDetail, loadInspectionHistory } from '@/features/inspections/detail-data'
 import {
   CancellationNotice,
   DetailHeader,
@@ -19,6 +19,7 @@ import { loadInspectionNonConformities } from '@/features/non-conformities/non-c
 import { InspectionNonConformities } from '@/features/non-conformities/non-conformity-view'
 import { requireRole } from '@/lib/dal'
 import { canCancel, canEditPlanning, canOpenReview } from '@/lib/domain/inspection-detail'
+import { inspectionReference } from '@/lib/domain/inspection'
 import { dayInSaoPaulo } from '@/lib/domain/inspection-list'
 import { MANAGER_ROLES } from '@/lib/domain/user'
 import { isId } from '@/lib/ids'
@@ -34,13 +35,6 @@ const REVIEW_BUTTON =
 const EDIT_LINK =
   'inline-flex h-9 items-center gap-1.5 rounded-field border border-neutral-200 px-3 text-sm font-medium text-brand-700 transition-colors hover:bg-neutral-100'
 
-/**
- * Detalhe administrativo da inspecao (documento 14.9, issue #18).
- *
- * Administrador e supervisor consultam e cancelam (matriz 5.2). Cada acao so
- * aparece no estado que a aceita (documento 7.6): botao que aparece e depois
- * falha com 409 e pior do que botao ausente.
- */
 export default async function InspectionDetailPage(props: PageProps<'/inspections/[inspectionId]'>) {
   const user = await requireRole(MANAGER_ROLES)
   const [{ inspectionId }, searchParams] = await Promise.all([props.params, props.searchParams])
@@ -65,28 +59,19 @@ export default async function InspectionDetailPage(props: PageProps<'/inspection
       <DetailHeader
         inspection={inspection}
         actions={
-          (reviewable || cancelable) && (
-            <div className="flex shrink-0 flex-wrap gap-3">
-              {cancelable && <CancelInspection inspectionId={inspection.id} code={inspection.code} />}
-              {reviewable && (
-                <Link href={`/inspections/${inspection.id}/review`} className={REVIEW_BUTTON}>
-                  <IoEyeOutline aria-hidden className="size-5" />
-                  {user.role === 'SUPERVISOR' ? 'Revisar' : 'Ver revisão'}
-                </Link>
-              )}
-            </div>
-          )
+          <div className="flex shrink-0 flex-wrap gap-3">
+            {cancelable && <CancelInspection inspectionId={inspection.id} reference={inspectionReference(inspection.id)} />}
+            {reviewable && (
+              <Link href={`/inspections/${inspection.id}/review`} className={REVIEW_BUTTON}>
+                <IoEyeOutline aria-hidden className="size-5" />
+                {user.role === 'SUPERVISOR' ? 'Revisar' : 'Ver revisão'}
+              </Link>
+            )}
+          </div>
         }
       />
 
       <FlashNotice code={param(searchParams, 'notice')} />
-
-      {isDemoInspection(inspection.id) && (
-        <Notice tone="warning">
-          Dados de demonstração: a API ainda não publica o detalhe, o histórico nem a edição da inspeção. Cancelamentos
-          e alterações ficam guardados até reiniciar o servidor.
-        </Notice>
-      )}
 
       <CancellationNotice inspection={inspection} />
 

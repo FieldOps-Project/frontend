@@ -1,17 +1,12 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { cancelInspection } from '@/features/inspections/detail-actions'
-import { loadInspectionDetail, loadInspectionHistory } from '@/features/inspections/detail-data'
-import { resetDemoInspections } from '@/features/inspections/inspection-demo-store'
+import { CANCEL_REASON_MAX_LENGTH } from '@/lib/domain/inspection-detail'
 
 vi.mock('server-only', () => ({}))
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
-vi.mock('next/navigation', () => ({
-  notFound: () => {
-    throw new Error('not found')
-  },
-}))
-vi.mock('@/features/catalog/lookups', () => ({ loadActiveUsers: async () => [] }))
+
+const revalidatePath = vi.fn()
+vi.mock('next/cache', () => ({ revalidatePath: (path: string) => revalidatePath(path) }))
 
 const send = vi.fn()
 
@@ -19,73 +14,55 @@ vi.mock('@/lib/dal', () => ({
   requireRole: async () => ({ id: 'u1', name: 'Mariana Costa', email: 'm@fieldops.dev', role: 'SUPERVISOR' }),
   send: (path: string, request: unknown) => send(path, request),
   actionError: (error: Error) => ({ ok: false, message: error.message }),
-  load: vi.fn(),
-  loadOptional: vi.fn(),
 }))
 
-const ASSIGNED_ID = 'c0000000-0000-4000-8000-000000000089'
-const APPROVED_ID = 'c0000000-0000-4000-8000-000000000095'
-const API_ID = '3d8dc050-54f4-4d3b-9e5d-5fdb29ae3ed5'
-
-beforeEach(() => {
-  resetDemoInspections()
-  vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'development')
-})
+const ID = '3d8dc050-54f4-4d3b-9e5d-5fdb29ae3ed5'
 
 afterEach(() => {
   send.mockReset()
-  vi.unstubAllEnvs()
+  revalidatePath.mockReset()
 })
 
 describe('cancelInspection', () => {
   it('exige justificativa (RN-029)', async () => {
-    const result = await cancelInspection(ASSIGNED_ID, '   ')
+    const result = await cancelInspection(ID, '   ')
+
     expect(result).toEqual({ ok: false, message: 'Informe o motivo do cancelamento.' })
     expect(send).not.toHaveBeenCalled()
   })
 
-  it('envia o motivo no contrato da API (backend #65)', async () => {
-    vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'production')
-    send.mockResolvedValue({ id: API_ID, status: 'CANCELED' })
+  it('recusa justificativa maior que o limite da API', async () => {
+    const result = await cancelInspection(ID, 'a'.repeat(CANCEL_REASON_MAX_LENGTH + 1))
 
-    const result = await cancelInspection(API_ID, '  Cliente pediu reagendamento.  ')
+    expect(result.ok).toBe(false)
+    expect(send).not.toHaveBeenCalled()
+  })
 
-    expect(result.ok).toBe(true)
-    expect(send).toHaveBeenCalledWith(`/inspections/${API_ID}/cancel`, {
+  it('envia o motivo no contrato da API e atualiza as telas que mostram a inspecao', async () => {
+    send.mockResolvedValue({ id: ID, status: 'CANCELED' })
+
+    const result = await cancelInspection(ID, '  Cliente pediu reagendamento.  ')
+
+    expect(result).toEqual({ ok: true, message: 'Inspeção cancelada.' })
+    expect(send).toHaveBeenCalledWith(`/inspections/${ID}/cancel`, {
       method: 'POST',
       body: { reason: 'Cliente pediu reagendamento.' },
     })
+    expect(revalidatePath).toHaveBeenCalledWith(`/inspections/${ID}`)
+    expect(revalidatePath).toHaveBeenCalledWith('/inspections')
   })
 
   it('devolve a mensagem da API quando ela recusa a transicao (RN-089)', async () => {
-    vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'production')
-    send.mockRejectedValue(new Error('A inspeção não pode ser cancelada no estado atual.'))
+    send.mockRejectedValue(new Error('Esta ação não é possível no estado atual da inspeção.'))
 
-    const result = await cancelInspection(API_ID, 'Motivo')
-    expect(result).toEqual({ ok: false, message: 'A inspeção não pode ser cancelada no estado atual.' })
+    const result = await cancelInspection(ID, 'Motivo')
+
+    expect(result).toEqual({ ok: false, message: 'Esta ação não é possível no estado atual da inspeção.' })
+    expect(revalidatePath).not.toHaveBeenCalled()
   })
 
-  it('na demonstracao, cancela e registra usuario, data e motivo no historico', async () => {
-    const result = await cancelInspection(ASSIGNED_ID, 'Área interditada.')
-
-    expect(result.ok).toBe(true)
+  it('recusa identificador que nao e UUID antes de chamar a API', async () => {
+    await expect(cancelInspection('../users', 'Motivo')).rejects.toThrow('Identificador invalido.')
     expect(send).not.toHaveBeenCalled()
-    expect(await loadInspectionDetail(ASSIGNED_ID)).toMatchObject({
-      status: 'CANCELED',
-      canceledByName: 'Mariana Costa',
-      canceledReason: 'Área interditada.',
-    })
-    expect((await loadInspectionHistory(ASSIGNED_ID))?.at(-1)).toMatchObject({
-      action: 'INSPECTION_CANCELED',
-      actorName: 'Mariana Costa',
-      previousStatus: 'ASSIGNED',
-      note: 'Área interditada.',
-    })
-  })
-
-  it('na demonstracao, recusa cancelar inspecao aprovada (RN-030)', async () => {
-    const result = await cancelInspection(APPROVED_ID, 'Motivo')
-    expect(result.ok).toBe(false)
-    expect((await loadInspectionDetail(APPROVED_ID)).status).toBe('APPROVED')
   })
 })

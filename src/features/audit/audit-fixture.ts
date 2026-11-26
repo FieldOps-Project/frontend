@@ -6,7 +6,7 @@ import { demoInspections } from '@/features/inspections/list-fixture'
 import { demoNonConformities } from '@/features/non-conformities/non-conformity-fixture'
 import { demoTemplateId } from '@/features/templates/template-demo-store'
 import type { AuditEvent } from '@/lib/domain/audit'
-import type { InspectionHistoryEvent } from '@/lib/domain/inspection-detail'
+import type { InspectionHistoryEvent } from '@/lib/domain/inspection-history'
 
 /**
  * Eventos de auditoria de demonstracao, servidos so em
@@ -167,6 +167,8 @@ export function demoInspectionTimeline(inspectionId: string, now: Date = new Dat
     .map((event, index) => ({
       id: `${inspectionId}-timeline-${index + 1}`,
       action: event.action,
+      entityType: event.entityType,
+      actorId: event.actorId,
       actorName: event.actorName,
       occurredAt: event.occurredAt,
       deviceOccurredAt: event.deviceOccurredAt,
