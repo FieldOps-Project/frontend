@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { GET } from '@/app/api/inspections/[inspectionId]/report/route'
 import { ApiError } from '@/lib/api/errors'
+import { inspectionReference } from '@/lib/domain/inspection'
 
 vi.mock('server-only', () => ({}))
 
@@ -44,7 +45,7 @@ describe('GET /api/inspections/[id]/report', () => {
     expect(apiFetchFile).toHaveBeenCalledWith(`/inspections/${ID}/report.pdf`, { token: 'token', accept: 'application/pdf' })
     expect(response.status).toBe(200)
     expect(response.headers.get('Content-Type')).toBe('application/pdf')
-    expect(response.headers.get('Content-Disposition')).toBe('attachment; filename="relatorio-INS-D0000000.pdf"')
+    expect(response.headers.get('Content-Disposition')).toBe(`attachment; filename="relatorio-${inspectionReference(ID)}.pdf"`)
     expect(await response.text()).toBe('%PDF-1.7')
   })
 

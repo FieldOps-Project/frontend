@@ -8,6 +8,7 @@ import {
   PlanningDetails,
   StatusHistory,
 } from '@/features/inspections/detail-view'
+import { inspectionReference } from '@/lib/domain/inspection'
 import type { InspectionDetail } from '@/lib/domain/inspection-detail'
 import type { InspectionHistoryEvent } from '@/lib/domain/inspection-history'
 
@@ -63,7 +64,7 @@ describe('DetailHeader', () => {
   it('mostra a referencia derivada do identificador e o estado', () => {
     render(<DetailHeader inspection={DETAIL} actions={null} />)
 
-    expect(screen.getByRole('heading', { level: 1, name: 'INS-D0000000' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: inspectionReference('d0000000-0000-4000-8000-000000000501') })).toBeInTheDocument()
     expect(screen.getByText('Atribuída')).toBeInTheDocument()
   })
 })

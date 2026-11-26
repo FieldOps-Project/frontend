@@ -1,4 +1,4 @@
-import type { Evidence, EvidencePhoto } from '@/lib/domain/evidence'
+import type { Evidence } from '@/lib/domain/evidence'
 import type { InspectionStatus } from '@/lib/domain/inspection'
 import type { InspectionDetail } from '@/lib/domain/inspection-detail'
 import type { InspectionFinding } from '@/lib/domain/non-conformity'
@@ -14,16 +14,6 @@ export const SEVERITY_LABELS: Record<Severity, string> = {
   HIGH: 'Alta',
   CRITICAL: 'Crítica',
 }
-
-export type Conformity = 'CONFORMING' | 'NON_CONFORMING' | 'NOT_APPLICABLE'
-
-export const CONFORMITY_LABELS: Record<Conformity, string> = {
-  CONFORMING: 'Conforme',
-  NON_CONFORMING: 'Não Conforme',
-  NOT_APPLICABLE: 'Não se aplica',
-}
-
-export type ReviewPhoto = EvidencePhoto
 
 export const REVIEW_TEXT_MAX_LENGTH = 2000
 
