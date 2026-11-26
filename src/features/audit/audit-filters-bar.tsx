@@ -4,23 +4,19 @@ import { useRouter } from 'next/navigation'
 import { useTransition, type ReactNode } from 'react'
 import { MdOutlineCalendarToday, MdOutlineCategory, MdOutlineFilterList, MdOutlinePerson } from 'react-icons/md'
 
-import { auditFilterParams, hasActiveAuditFilters } from '@/features/audit/audit-filters'
+import { auditFilterParams, hasActiveAuditFilters, type UrlParams } from '@/features/audit/audit-filters'
 import {
-  AUDIT_ENTITY_LABELS,
-  AUDIT_ENTITY_TYPES,
   AUDIT_PERIOD_LABELS,
   AUDIT_PERIODS,
   DEFAULT_AUDIT_PERIOD,
   type AuditFilters,
+  type AuditOption,
 } from '@/lib/domain/audit'
 import { withParams } from '@/lib/search-params'
-
-type Option = { readonly value: string; readonly label: string }
 
 const SELECT =
   'h-11 w-full appearance-none rounded-field border border-input-border bg-input pr-9 pl-10 text-base text-neutral-900 focus:border-brand-600 focus:ring-2 focus:ring-brand-100 focus:outline-none'
 
-/** Seletor com icone a esquerda e seta a direita, como os campos do Stitch. */
 function Field({
   id,
   label,
@@ -60,36 +56,31 @@ function Field({
   )
 }
 
-/**
- * Filtros da auditoria (Stitch "Auditoria de Sistema" e issue #24): periodo,
- * usuario e tipo de acao, mais a entidade, que a issue exige e o Stitch nao
- * tem. Cada mudanca vai para a URL e volta a primeira pagina.
- */
 export function AuditFiltersBar({
   filters,
+  baseParams,
   actors,
+  entities,
   actions,
 }: {
   filters: AuditFilters
-  actors: readonly Option[]
-  actions: readonly Option[]
+  baseParams: UrlParams
+  actors: readonly AuditOption[]
+  entities: readonly AuditOption[]
+  actions: readonly AuditOption[]
 }) {
   const router = useRouter()
   const [, startTransition] = useTransition()
 
   function update(patch: Partial<AuditFilters>) {
     startTransition(() => {
-      router.push(withParams('/audit', auditFilterParams({ ...filters, ...patch })), { scroll: false })
+      router.push(withParams('/audit', { ...baseParams, ...auditFilterParams({ ...filters, ...patch }) }), { scroll: false })
     })
   }
 
   return (
     <section aria-label="Filtros" role="search" className="rounded-card border border-neutral-200 bg-neutral-0 p-5">
-      {/*
-        Uma linha so em telas largas, como no Stitch, com mais espaco para usuario e acao, que tem os textos
-        mais longos; abaixo disso, duas colunas.
-      */}
-      <div className="grid items-end gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)_minmax(0,0.6fr)_minmax(0,1.15fr)_auto]">
+      <div className="grid items-end gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)_minmax(0,1fr)_minmax(0,1.15fr)_auto]">
         <Field
           id="audit-period"
           label="Período"
@@ -119,15 +110,15 @@ export function AuditFiltersBar({
         </Field>
         <Field
           id="audit-entity"
-          label="Entidade"
+          label="Registro"
           icon={<MdOutlineCategory />}
           value={filters.entityType ?? ''}
           onChange={(value) => update({ entityType: (value || undefined) as AuditFilters['entityType'] })}
         >
-          <option value="">Todas</option>
-          {AUDIT_ENTITY_TYPES.map((type) => (
-            <option key={type} value={type}>
-              {AUDIT_ENTITY_LABELS[type]}
+          <option value="">Todos</option>
+          {entities.map((entity) => (
+            <option key={entity.value} value={entity.value}>
+              {entity.label}
             </option>
           ))}
         </Field>
@@ -147,9 +138,9 @@ export function AuditFiltersBar({
         </Field>
         <button
           type="button"
-          onClick={() => update({ period: DEFAULT_AUDIT_PERIOD, actorId: undefined, entityType: undefined, action: undefined, inspectionId: undefined })}
+          onClick={() => update({ period: DEFAULT_AUDIT_PERIOD, actorId: undefined, entityType: undefined, action: undefined })}
           disabled={!hasActiveAuditFilters(filters)}
-          className="h-11 shrink-0 justify-self-end rounded-field border sm:col-span-2 xl:col-span-1 border-neutral-300 bg-neutral-100 px-5 text-base font-semibold text-neutral-900 transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-11 shrink-0 justify-self-end rounded-field border border-neutral-300 bg-neutral-100 px-5 text-base font-semibold text-neutral-900 transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-2 xl:col-span-1"
         >
           Limpar
         </button>
