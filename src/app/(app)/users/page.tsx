@@ -20,6 +20,7 @@ import {
   type User,
 } from '@/lib/domain/user'
 import { formatDateTime } from '@/lib/format'
+import { redirectPastLastPage } from '@/lib/page-range'
 import { oneOf, pageParam, param } from '@/lib/search-params'
 
 export default async function UsersPage(props: PageProps<'/users'>) {
@@ -39,6 +40,7 @@ export default async function UsersPage(props: PageProps<'/users'>) {
     size: DEFAULT_PAGE_SIZE,
     sort: 'name,asc',
   })
+  redirectPastLastPage(page, '/users', filters)
 
   return (
     <div className="flex flex-col gap-6">

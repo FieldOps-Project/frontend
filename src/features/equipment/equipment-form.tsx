@@ -6,7 +6,12 @@ import { IoRefreshOutline } from 'react-icons/io5'
 import { FormAlert, FormFooter } from '@/components/ui/form-actions'
 import { FormSection, SelectField, TextAreaField, TextField, type SelectGroup } from '@/components/ui/form-fields'
 import { BUTTON_SECONDARY } from '@/components/ui/styles'
-import { generateQrCode, type Equipment } from '@/lib/domain/equipment'
+import {
+  generateQrCode,
+  QR_CODE_FORMAT_MESSAGE,
+  QR_CODE_INPUT_PATTERN,
+  type Equipment,
+} from '@/lib/domain/equipment'
 import { errorOf, IDLE, valueOf, type FormState } from '@/lib/form-state'
 
 export function EquipmentForm({
@@ -160,6 +165,8 @@ function QrInput({
         id="field-qrCode"
         name="qrCode"
         maxLength={255}
+        pattern={QR_CODE_INPUT_PATTERN}
+        title={QR_CODE_FORMAT_MESSAGE}
         required={required}
         defaultValue={defaultValue}
         placeholder="Gerado automaticamente se ficar em branco"

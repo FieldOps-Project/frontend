@@ -57,3 +57,13 @@ export function generateQrCode(): string {
   const random = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('').toUpperCase()
   return `EQP-${random}`
 }
+
+export const QR_CODE_PATTERN = /^[^/\\?#%\s]+$/
+
+export const QR_CODE_INPUT_PATTERN = String.raw`[^\/\\?#%\s]+`
+
+export const QR_CODE_FORMAT_MESSAGE = 'O QR Code não pode ter espaços nem os caracteres / \\ ? # %.'
+
+export function isValidQrCode(value: string): boolean {
+  return QR_CODE_PATTERN.test(value)
+}

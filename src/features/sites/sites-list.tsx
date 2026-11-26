@@ -11,12 +11,9 @@ import { load } from '@/lib/dal'
 import { DEFAULT_PAGE_SIZE, type Page } from '@/lib/domain/page'
 import { SITE_STATUS_LABELS, SITE_STATUS_TONES, SITE_STATUSES, type Site } from '@/lib/domain/site'
 import { formatDateTime, orDash } from '@/lib/format'
-import { oneOf, pageParam, param, type RawSearchParams } from '@/lib/search-params'
+import { redirectPastLastPage } from '@/lib/page-range'
+import { idParam, oneOf, pageParam, param, type RawSearchParams } from '@/lib/search-params'
 
-/**
- * Listagem de locais, servida em `/sites` e em `/clients/[id]/sites`. A rota
- * aninhada e a mesma tela com o filtro de cliente fixado pela URL.
- */
 export async function SitesList({
   searchParams,
   pathname,
@@ -29,7 +26,7 @@ export async function SitesList({
   const filters = {
     search: param(searchParams, 'search'),
     status: oneOf(searchParams, 'status', SITE_STATUSES),
-    clientId: clientId ? undefined : param(searchParams, 'clientId'),
+    clientId: clientId ? undefined : idParam(searchParams, 'clientId'),
   }
 
   const [page, clients] = await Promise.all([
@@ -41,12 +38,13 @@ export async function SitesList({
     }),
     loadClients(),
   ])
+  redirectPastLastPage(page, pathname, filters)
   const clientsById = byId(clients)
 
   return (
     <section className={CARD}>
       <FilterBar pathname={pathname}>
-        <FilterSearch label="Buscar" defaultValue={filters.search} placeholder="Nome do local" />
+        <FilterSearch label="Buscar" defaultValue={filters.search} placeholder="Nome, descrição, cidade ou UF" />
         {!clientId && (
           <FilterSelect
             name="clientId"
