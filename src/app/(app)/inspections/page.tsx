@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { IoAddOutline, IoDownloadOutline, IoListOutline } from 'react-icons/io5'
 
 import { EmptyState } from '@/components/ui/empty-state'
-import { FlashNotice, Notice } from '@/components/ui/notice'
+import { FlashNotice } from '@/components/ui/notice'
 import { NumberedPagination } from '@/components/ui/numbered-pagination'
 import { CARD } from '@/components/ui/styles'
 import { InspectionFilters } from '@/features/inspections/inspection-filters'
@@ -21,14 +21,8 @@ const OUTLINE =
 const PRIMARY =
   'inline-flex h-12 items-center gap-2 rounded-field bg-brand-700 px-5 text-base font-semibold text-neutral-0 transition-colors hover:bg-brand-800'
 
-/**
- * Acompanhamento de inspecoes (issue #17 e documento 14.10).
- *
- * Filtros e pagina vivem na URL e a paginacao acontece no servidor. Sem cache:
- * recarregar depois que o tecnico sincroniza ja mostra o novo estado.
- */
 export default async function InspectionsPage(props: PageProps<'/inspections'>) {
-  await requireRole(MANAGER_ROLES)
+  const user = await requireRole(MANAGER_ROLES)
   const searchParams = await props.searchParams
   const filters = parseInspectionFilters(searchParams)
 
@@ -70,13 +64,6 @@ export default async function InspectionsPage(props: PageProps<'/inspections'>) 
 
       <FlashNotice code={param(searchParams, 'notice')} />
 
-      {process.env.NEXT_PUBLIC_APP_ENV === 'development' && (
-        <Notice tone="warning">
-          Dados de demonstração: a API ainda não publica a listagem paginada de inspeções. Filtros, atraso, progresso e
-          paginação já funcionam sobre estas inspeções de exemplo.
-        </Notice>
-      )}
-
       <InspectionFilters
         pathname="/inspections"
         filters={filters}
@@ -94,7 +81,7 @@ export default async function InspectionsPage(props: PageProps<'/inspections'>) 
           />
         ) : (
           <>
-            <InspectionTable items={page.content} today={dayInSaoPaulo(new Date())} />
+            <InspectionTable items={page.content} today={dayInSaoPaulo(new Date())} canReview={user.role === 'SUPERVISOR'} />
             <NumberedPagination page={page} pathname="/inspections" params={filterParams(filters)} />
           </>
         )}

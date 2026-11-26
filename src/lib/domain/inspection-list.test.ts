@@ -2,44 +2,41 @@ import { describe, expect, it } from 'vitest'
 
 import {
   dayInSaoPaulo,
-  daysOverdue,
+  dayRangeInSaoPaulo,
   dueLabel,
   initials,
   isAwaitingReview,
-  isOverdue,
   progressPercent,
 } from '@/lib/domain/inspection-list'
 
 const TODAY = '2026-10-23'
 
-describe('atraso', () => {
-  it('conta os dias de atraso de inspecao ainda com o tecnico', () => {
-    expect(daysOverdue({ status: 'ASSIGNED', scheduledFor: '2026-10-21T12:00:00-03:00' }, TODAY)).toBe(2)
-    expect(isOverdue({ status: 'IN_PROGRESS', scheduledFor: '2026-10-22T09:00:00-03:00' }, TODAY)).toBe(true)
-  })
-
-  it('nao considera atrasada a inspecao do dia nem a ja enviada ou aprovada', () => {
-    expect(isOverdue({ status: 'ASSIGNED', scheduledFor: '2026-10-23T08:00:00-03:00' }, TODAY)).toBe(false)
-    expect(isOverdue({ status: 'SUBMITTED', scheduledFor: '2026-10-01T08:00:00-03:00' }, TODAY)).toBe(false)
-    expect(isOverdue({ status: 'APPROVED', scheduledFor: '2026-10-01T08:00:00-03:00' }, TODAY)).toBe(false)
-  })
-
+describe('dia de Sao Paulo', () => {
   it('usa o dia de Sao Paulo, nao o de UTC', () => {
     expect(dayInSaoPaulo('2026-10-24T01:30:00Z')).toBe('2026-10-23')
+  })
+
+  it('cobre o dia inteiro com instantes no fuso de Sao Paulo', () => {
+    expect(dayRangeInSaoPaulo('2026-11-23')).toEqual({
+      from: '2026-11-23T00:00:00-03:00',
+      to: '2026-11-23T23:59:59.999-03:00',
+    })
   })
 })
 
 describe('dueLabel', () => {
-  it('descreve atraso, hoje, amanha e dias restantes', () => {
-    expect(dueLabel({ status: 'ASSIGNED', scheduledFor: '2026-10-21T09:00:00-03:00' }, TODAY)).toBe('Atrasado (2 dias)')
-    expect(dueLabel({ status: 'ASSIGNED', scheduledFor: '2026-10-22T09:00:00-03:00' }, TODAY)).toBe('Atrasado (1 dia)')
-    expect(dueLabel({ status: 'ASSIGNED', scheduledFor: '2026-10-23T14:00:00-03:00' }, TODAY)).toBe('Hoje, 14:00')
-    expect(dueLabel({ status: 'ASSIGNED', scheduledFor: '2026-10-24T09:00:00-03:00' }, TODAY)).toBe('Amanhã')
-    expect(dueLabel({ status: 'ASSIGNED', scheduledFor: '2026-10-26T09:00:00-03:00' }, TODAY)).toBe('Em 3 dias')
+  it('marca atrasada sem contar dias quando a API sinaliza atraso', () => {
+    expect(dueLabel({ scheduledFor: '2026-10-21T09:00:00-03:00', overdue: true }, TODAY)).toBe('Atrasada')
   })
 
-  it('nao complementa data passada de inspecao que ja saiu do tecnico', () => {
-    expect(dueLabel({ status: 'APPROVED', scheduledFor: '2026-10-01T09:00:00-03:00' }, TODAY)).toBeNull()
+  it('descreve hoje, amanha e dias restantes', () => {
+    expect(dueLabel({ scheduledFor: '2026-10-23T14:00:00-03:00', overdue: false }, TODAY)).toBe('Hoje, 14:00')
+    expect(dueLabel({ scheduledFor: '2026-10-24T09:00:00-03:00', overdue: false }, TODAY)).toBe('Amanhã')
+    expect(dueLabel({ scheduledFor: '2026-10-26T09:00:00-03:00', overdue: false }, TODAY)).toBe('Em 3 dias')
+  })
+
+  it('nao complementa data passada que a API nao considera atrasada', () => {
+    expect(dueLabel({ scheduledFor: '2026-10-01T09:00:00-03:00', overdue: false }, TODAY)).toBeNull()
   })
 })
 

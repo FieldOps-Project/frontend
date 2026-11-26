@@ -24,11 +24,11 @@ afterEach(() => {
 
 describe('InspectionFilters', () => {
   it('aplica o seletor na hora, voltando a primeira pagina', () => {
-    renderFilters({ review: true })
+    renderFilters({ overdue: true })
 
     fireEvent.change(screen.getByLabelText('Cliente'), { target: { value: 'c1' } })
 
-    expect(push).toHaveBeenCalledWith('/inspections?clientId=c1&review=1', { scroll: false })
+    expect(push).toHaveBeenCalledWith('/inspections?clientId=c1&overdue=1', { scroll: false })
   })
 
   it('liga e desliga os atalhos pela URL', () => {
@@ -44,13 +44,13 @@ describe('InspectionFilters', () => {
   it('espera parar de digitar para buscar', () => {
     renderFilters()
 
-    fireEvent.change(screen.getByPlaceholderText('Buscar por ID, título, cliente...'), { target: { value: 'alpha' } })
+    fireEvent.change(screen.getByPlaceholderText('Buscar por título, cliente, local...'), { target: { value: 'alpha' } })
     expect(push).not.toHaveBeenCalled()
 
     act(() => {
       vi.advanceTimersByTime(400)
     })
-    expect(push).toHaveBeenCalledWith('/inspections?q=alpha', { scroll: false })
+    expect(push).toHaveBeenCalledWith('/inspections?search=alpha', { scroll: false })
   })
 
   it('mostra os filtros ativos com nome legivel e remove um por vez', () => {
@@ -69,6 +69,12 @@ describe('InspectionFilters', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Limpar todos' }))
 
     expect(push).toHaveBeenCalledWith('/inspections', { scroll: false })
+  })
+
+  it('nao oferece mais o atalho de aguardando revisao', () => {
+    renderFilters()
+
+    expect(screen.queryByRole('switch', { name: 'Aguardando revisão' })).not.toBeInTheDocument()
   })
 
   it('esconde a faixa de filtros ativos quando nao ha filtro', () => {
