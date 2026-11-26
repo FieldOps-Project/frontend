@@ -10,6 +10,7 @@ import { Notice } from '@/components/ui/notice'
 import { createInspection } from '@/features/inspections/schedule-actions'
 import {
   INSTRUCTIONS_MAX_LENGTH,
+  TITLE_MAX_LENGTH,
   firstInvalidField,
   hasScheduleErrors,
   isPastDate,
@@ -21,6 +22,7 @@ import {
   DEFAULT_INSPECTION_PRIORITY,
   INSPECTION_PRIORITIES,
   INSPECTION_PRIORITY_LABELS,
+  requiresEquipment,
   templateVersionLabel,
   type PublishedTemplateVersion,
 } from '@/lib/domain/inspection-scheduling'
@@ -52,18 +54,6 @@ function Section({ icon, title, children }: { icon: ReactNode; title: string; ch
   )
 }
 
-/**
- * Agendamento de inspecao (issue #16 e documento 14.9).
- *
- * Cliente, local e equipamento sao encadeados: trocar o cliente limpa local e
- * equipamento, trocar o local limpa o equipamento -- sem isso o formulario
- * manteria um equipamento de outro local e a API recusaria com um erro sem
- * sentido para quem esta agendando. So registros ativos chegam aos seletores.
- * O equipamento passa a ser obrigatorio quando o modelo inspeciona um (RN-026).
- *
- * O seletor dependente fica desabilitado ate o pai ser escolhido, e avisa
- * quando o pai nao tem registros ativos, em vez de abrir uma lista vazia.
- */
 export function ScheduleForm({ catalog, today }: { catalog: ScheduleCatalog; today: string }) {
   const [state, action] = useActionState(createInspection, IDLE)
   const [clientErrors, setClientErrors] = useState<ScheduleErrors | null>(null)
@@ -75,7 +65,7 @@ export function ScheduleForm({ catalog, today }: { catalog: ScheduleCatalog; tod
   const formRef = useRef<HTMLFormElement>(null)
 
   const template = catalog.templates.find((candidate) => candidate.versionId === templateId)
-  const requiresEquipment = template?.requiresEquipment ?? false
+  const equipmentRequired = template ? requiresEquipment(template.category) : false
   const sites = catalog.sites.filter((site) => site.clientId === clientId)
   const equipment = catalog.equipment.filter((item) => item.siteId === siteId)
 
@@ -102,7 +92,7 @@ export function ScheduleForm({ catalog, today }: { catalog: ScheduleCatalog; tod
     const values = Object.fromEntries(
       [...data.entries()].filter(([, value]) => typeof value === 'string') as [string, string][],
     )
-    const found = validateSchedule(values, { requiresEquipment })
+    const found = validateSchedule(values, { requiresEquipment: equipmentRequired })
 
     if (hasScheduleErrors(found)) {
       event.preventDefault()
@@ -180,8 +170,8 @@ export function ScheduleForm({ catalog, today }: { catalog: ScheduleCatalog; tod
         <SelectField
           name="equipmentId"
           label="Equipamento"
-          labelNote={requiresEquipment ? undefined : '(Opcional para inspeções gerais do local)'}
-          required={requiresEquipment}
+          labelNote={equipmentRequired ? undefined : '(Opcional para inspeções gerais do local)'}
+          required={equipmentRequired}
           placeholder="Selecione o equipamento (filtrado pelo local)"
           options={equipment.map((item) => ({
             value: item.id,
@@ -223,6 +213,16 @@ export function ScheduleForm({ catalog, today }: { catalog: ScheduleCatalog; tod
       </Section>
 
       <Section icon={<IoInformationCircleOutline />} title="Detalhes da execução">
+        <TextField
+          name="title"
+          label="Título"
+          required
+          maxLength={TITLE_MAX_LENGTH}
+          placeholder="Ex.: Inspeção preventiva mensal do gerador GD-001"
+          defaultValue={valueOf(state, 'title', '')}
+          onChange={() => clearError('title')}
+          error={errorFor('title')}
+        />
         <div className="grid gap-6 md:grid-cols-2">
           <div className="flex flex-col gap-1.5">
             <TextField

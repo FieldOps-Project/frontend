@@ -24,6 +24,11 @@ describe('mapa de navegacao', () => {
     expect(supervisor).toContain('/clients')
   })
 
+  it('mostra as nao conformidades so ao supervisor, unico perfil do painel que a API deixa consulta-las', () => {
+    expect(navigationFor('SUPERVISOR').map((item) => item.href)).toContain('/non-conformities')
+    expect(navigationFor('ADMIN').map((item) => item.href)).not.toContain('/non-conformities')
+  })
+
   it('nao oferece area administrativa ao tecnico', () => {
     expect(navigationFor('TECHNICIAN')).toHaveLength(0)
   })

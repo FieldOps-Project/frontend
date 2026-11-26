@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import { evidenceSrc, groupByItem, isPendingUpload, type Evidence } from '@/lib/domain/evidence'
+import { evidenceSrc, groupByNonConformity, isPendingUpload, type Evidence } from '@/lib/domain/evidence'
 
-function evidence(id: string, itemCode: string | null, capturedAtDevice: string): Evidence {
+function evidence(id: string, nonConformityId: string | null, capturedAtDevice: string, title: string | null = null): Evidence {
   return {
     id,
     description: null,
@@ -12,31 +12,30 @@ function evidence(id: string, itemCode: string | null, capturedAtDevice: string)
     uploadedAt: '2026-11-18T12:00:00Z',
     inspectionId: 'i1',
     responseId: null,
-    nonConformityId: null,
-    itemId: itemCode ? `item-${itemCode}` : null,
-    itemCode,
-    itemTitle: itemCode ? `Pergunta ${itemCode}` : null,
-    serverReceivedAt: null,
+    nonConformityId,
+    nonConformityTitle: title,
+    serverReceivedAt: '2026-11-18T12:00:00Z',
   }
 }
 
-describe('groupByItem', () => {
-  it('agrupa pelo item na ordem do checklist, com as sem item no fim (RN-045)', () => {
-    const groups = groupByItem([
-      evidence('a', '1.10', '2026-11-18T10:00:00Z'),
-      evidence('b', null, '2026-11-18T10:01:00Z'),
-      evidence('c', '1.9', '2026-11-18T10:05:00Z'),
-      evidence('d', '1.9', '2026-11-18T10:02:00Z'),
+describe('groupByNonConformity', () => {
+  it('agrupa pela nao conformidade, da captura mais antiga a mais nova, com as soltas no fim', () => {
+    const groups = groupByNonConformity([
+      evidence('a', 'nc-2', '2026-11-18T10:30:00Z', 'Segundo achado'),
+      evidence('b', null, '2026-11-18T10:00:00Z'),
+      evidence('c', 'nc-1', '2026-11-18T10:05:00Z', 'Primeiro achado'),
+      evidence('d', 'nc-1', '2026-11-18T10:02:00Z', 'Primeiro achado'),
     ])
 
-    expect(groups.map((group) => group.itemCode)).toEqual(['1.9', '1.10', null])
+    expect(groups.map((group) => group.title)).toEqual(['Primeiro achado', 'Segundo achado', null])
     expect(groups[0]?.evidences.map((item) => item.id)).toEqual(['d', 'c'])
+    expect(groups[2]?.nonConformityId).toBeNull()
   })
 })
 
 describe('evidencias', () => {
-  it('pede miniatura ou original ao Route Handler, nunca a API direto', () => {
-    expect(evidenceSrc('e1', 'thumbnail')).toBe('/api/evidence/e1?variant=thumbnail')
+  it('pede a imagem ao Route Handler, nunca a API direto', () => {
+    expect(evidenceSrc('e1')).toBe('/api/evidence/e1')
   })
 
   it('reconhece o arquivo ainda nao enviado', () => {

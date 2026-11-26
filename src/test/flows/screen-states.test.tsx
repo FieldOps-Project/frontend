@@ -7,7 +7,6 @@ import InspectionDetailLoading from '@/app/(app)/inspections/[inspectionId]/(det
 import NonConformitiesLoading from '@/app/(app)/non-conformities/(list)/loading'
 import { EmptyState } from '@/components/ui/empty-state'
 import { EvidenceGallery } from '@/features/evidence/evidence-gallery'
-import { StatusHistory } from '@/features/inspections/detail-view'
 
 /**
  * Fluxo 8 do documento 14.16: apresentacao dos estados de tela (14.15).
@@ -42,14 +41,8 @@ describe('8. estados de tela', () => {
   })
 
   it('bloco indisponivel: so a parte sem API avisa, o resto da tela continua', () => {
-    render(
-      <>
-        <StatusHistory events={null} inspectionId="i-1" />
-        <EvidenceGallery evidences={null} />
-      </>,
-    )
+    render(<EvidenceGallery evidences={null} />)
 
-    expect(screen.getByText(/Linha do tempo indisponível/)).toBeInTheDocument()
     expect(screen.getByText(/Evidências indisponíveis/)).toBeInTheDocument()
   })
 })

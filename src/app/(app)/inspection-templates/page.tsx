@@ -3,13 +3,13 @@ import { IoAddOutline } from 'react-icons/io5'
 
 import { EmptyState } from '@/components/ui/empty-state'
 import { FilterBar, FilterSearch, FilterSelect } from '@/components/ui/filter-bar'
-import { FlashNotice, Notice } from '@/components/ui/notice'
+import { FlashNotice } from '@/components/ui/notice'
 import { NumberedPagination } from '@/components/ui/numbered-pagination'
 import { CARD } from '@/components/ui/styles'
 import { Table, Td } from '@/components/ui/table'
 import { TemplateStatusActions } from '@/features/templates/template-status-actions'
 import { TemplateStatusBadge } from '@/features/templates/template-status-badge'
-import { loadTemplateCategories, loadTemplatePage, usesDemoTemplates } from '@/features/templates/templates-data'
+import { loadTemplateCategories, loadTemplatePage } from '@/features/templates/templates-data'
 import { requireRole } from '@/lib/dal'
 import {
   canChangeTemplateStatus,
@@ -19,14 +19,9 @@ import {
 } from '@/lib/domain/inspection-template'
 import { MANAGER_ROLES } from '@/lib/domain/user'
 import { formatDateTime } from '@/lib/format'
+import { redirectPastLastPage } from '@/lib/page-range'
 import { oneOf, pageParam, param } from '@/lib/search-params'
 
-/**
- * Modelos de inspecao (issue #13 e documento 14.8): busca, filtro por situacao
- * e por categoria, com a situacao e a versao vigente de cada modelo.
- *
- * Filtros e pagina vivem na URL e a paginacao acontece no servidor.
- */
 export default async function InspectionTemplatesPage(props: PageProps<'/inspection-templates'>) {
   await requireRole(MANAGER_ROLES)
   const searchParams = await props.searchParams
@@ -38,6 +33,7 @@ export default async function InspectionTemplatesPage(props: PageProps<'/inspect
     category: oneOf(searchParams, 'category', categories),
   }
   const page = await loadTemplatePage(filters, pageParam(searchParams))
+  redirectPastLastPage(page, '/inspection-templates', filters)
   const filtered = Boolean(filters.search || filters.status || filters.category)
 
   return (
@@ -57,13 +53,6 @@ export default async function InspectionTemplatesPage(props: PageProps<'/inspect
       </header>
 
       <FlashNotice code={param(searchParams, 'notice')} />
-
-      {usesDemoTemplates() && (
-        <Notice tone="warning">
-          Dados de demonstração: a API local ainda não tem os modelos de inspeção. O que você criar ou alterar fica
-          guardado até o servidor de desenvolvimento reiniciar.
-        </Notice>
-      )}
 
       <section aria-label="Modelos" className={`${CARD} overflow-hidden`}>
         <FilterBar pathname="/inspection-templates">

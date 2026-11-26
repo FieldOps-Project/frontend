@@ -1,61 +1,105 @@
 import type { InspectionStatus } from '@/lib/domain/inspection'
-import type { GeoPoint } from '@/lib/domain/inspection-review'
+import {
+  cancellationOf,
+  executionTimesOf,
+  type Cancellation,
+  type ExecutionTimes,
+  type InspectionHistoryEntry,
+} from '@/lib/domain/inspection-history'
 import type { InspectionPriority } from '@/lib/domain/inspection-scheduling'
 
-/**
- * Detalhe administrativo da inspecao (documento 14.9, issue #18), no formato do
- * modelo de dados (10.8.1) com os nomes ja resolvidos para a tela.
- *
- * A API ainda nao publica `GET /inspections/{id}` nem `/history`; estes tipos
- * sao o contrato que a tela pede ao backend. O cancelamento ja existe
- * (`POST /inspections/{id}/cancel`, backend #65) e segue a resposta real.
- */
-
-/** Localizacao registrada pelo dispositivo, com o horario da captura (RN-061/062). */
-export type RecordedLocation = GeoPoint & {
-  readonly capturedAtDevice: string
-}
-
-export type InspectionDetail = {
+export type InspectionRecord = {
   readonly id: string
-  /** Codigo de apresentacao, como `INS-2023-089`. */
-  readonly code: string
-  readonly title: string
-  readonly status: InspectionStatus
-  readonly priority: InspectionPriority
   readonly templateVersionId: string
-  readonly templateTitle: string
-  readonly templateVersionNumber: number
   readonly clientId: string
-  readonly clientName: string
   readonly siteId: string
-  readonly siteName: string
   readonly equipmentId: string | null
-  readonly equipmentName: string | null
   readonly technicianId: string | null
-  readonly technicianName: string | null
   readonly supervisorId: string | null
-  readonly supervisorName: string | null
-  readonly scheduledFor: string
+  readonly title: string
   readonly instructions: string | null
-  /** Horarios do dispositivo e do servidor ficam separados (RN-074). */
-  readonly startedAtDevice: string | null
-  readonly startedAtServer: string | null
-  readonly completedAtDevice: string | null
-  readonly submittedAtServer: string | null
-  readonly startLocation: RecordedLocation | null
-  /** Progresso: itens respondidos sobre itens aplicaveis (RN-040). */
-  readonly answeredItems: number
-  readonly applicableItems: number
-  /** Cancelamento registra usuario, data e justificativa (RN-029). */
-  readonly canceledByName: string | null
-  readonly canceledAt: string | null
-  readonly canceledReason: string | null
+  readonly priority: InspectionPriority
+  readonly status: InspectionStatus
+  readonly scheduledFor: string
   readonly createdAt: string
   readonly updatedAt: string
+  readonly itemSnapshots: readonly { readonly id: string }[]
 }
 
-/** Acoes de auditoria que aparecem no historico da inspecao (documento 10.12.1). */
+export type TemplateVersionRecord = {
+  readonly title: string
+  readonly versionNumber: number
+}
+
+export type InspectionDetail = ExecutionTimes &
+  Cancellation & {
+    readonly id: string
+    readonly title: string
+    readonly status: InspectionStatus
+    readonly priority: InspectionPriority
+    readonly templateVersionId: string
+    readonly templateTitle: string
+    readonly templateVersionNumber: number
+    readonly clientId: string
+    readonly clientName: string
+    readonly siteId: string
+    readonly siteName: string
+    readonly equipmentId: string | null
+    readonly equipmentName: string | null
+    readonly technicianId: string | null
+    readonly technicianName: string | null
+    readonly supervisorId: string | null
+    readonly supervisorName: string | null
+    readonly scheduledFor: string
+    readonly instructions: string | null
+    readonly applicableItems: number
+    readonly createdAt: string
+    readonly updatedAt: string
+  }
+
+export type InspectionDetailParts = {
+  readonly inspection: InspectionRecord
+  readonly template: TemplateVersionRecord
+  readonly clientName: string
+  readonly siteName: string
+  readonly equipmentName: string | null
+  readonly technicianName: string | null
+  readonly supervisorName: string | null
+  readonly history: readonly InspectionHistoryEntry[]
+}
+
+export function composeInspectionDetail(parts: InspectionDetailParts): InspectionDetail {
+  const { inspection, template, history } = parts
+  const canceled = inspection.status === 'CANCELED'
+
+  return {
+    id: inspection.id,
+    title: inspection.title,
+    status: inspection.status,
+    priority: inspection.priority,
+    templateVersionId: inspection.templateVersionId,
+    templateTitle: template.title,
+    templateVersionNumber: template.versionNumber,
+    clientId: inspection.clientId,
+    clientName: parts.clientName,
+    siteId: inspection.siteId,
+    siteName: parts.siteName,
+    equipmentId: inspection.equipmentId,
+    equipmentName: parts.equipmentName,
+    technicianId: inspection.technicianId,
+    technicianName: parts.technicianName,
+    supervisorId: inspection.supervisorId,
+    supervisorName: parts.supervisorName,
+    scheduledFor: inspection.scheduledFor,
+    instructions: inspection.instructions,
+    applicableItems: inspection.itemSnapshots.length,
+    ...executionTimesOf(history),
+    ...(canceled ? cancellationOf(history) : { canceledByName: null, canceledAt: null, canceledReason: null }),
+    createdAt: inspection.createdAt,
+    updatedAt: inspection.updatedAt,
+  }
+}
+
 export const HISTORY_ACTION_LABELS: Record<string, string> = {
   INSPECTION_CREATED: 'Inspeção criada',
   INSPECTION_ASSIGNED: 'Inspeção atribuída ao técnico',
@@ -68,39 +112,23 @@ export const HISTORY_ACTION_LABELS: Record<string, string> = {
   INSPECTION_REJECTED: 'Supervisor solicitou correção',
   INSPECTION_REOPENED: 'Reaberta para correção',
   INSPECTION_CANCELED: 'Inspeção cancelada',
+  INSPECTION_REPORT_EXPORTED: 'Relatório exportado',
   RESPONSE_CREATED: 'Resposta registrada',
   RESPONSE_UPDATED: 'Resposta alterada',
   EVIDENCE_ADDED: 'Fotografia capturada',
   EVIDENCE_REMOVED: 'Fotografia removida',
   NON_CONFORMITY_CREATED: 'Não conformidade criada',
-}
-
-/** Evento do historico, vindo da auditoria (`GET /inspections/{id}/history`). */
-export type InspectionHistoryEvent = {
-  readonly id: string
-  readonly action: string
-  /** Nulo quando a acao foi do sistema. */
-  readonly actorName: string | null
-  /** Horario do servidor (RN-087). */
-  readonly occurredAt: string
-  /** Horario do dispositivo, quando a acao aconteceu no aplicativo (RN-074). */
-  readonly deviceOccurredAt: string | null
-  readonly previousStatus: InspectionStatus | null
-  readonly newStatus: InspectionStatus | null
-  /** Justificativa ou observacao do evento, como o motivo do cancelamento. */
-  readonly note: string | null
+  NON_CONFORMITY_UPDATED: 'Não conformidade atualizada',
 }
 
 export function historyActionLabel(action: string): string {
   return HISTORY_ACTION_LABELS[action] ?? action
 }
 
-/** Corpo de `POST /inspections/{id}/cancel` (backend #65). */
 export type CancelInspectionRequest = {
   readonly reason: string
 }
 
-/** Resposta de `POST /inspections/{id}/cancel` (backend #65). */
 export type InspectionTransitionResponse = {
   readonly id: string
   readonly previousStatus: InspectionStatus
@@ -111,29 +139,24 @@ export type InspectionTransitionResponse = {
   readonly canceledReason: string | null
 }
 
-/** Corpo de `PUT /inspections/{id}`: os dados de planejamento que podem mudar. */
 export type UpdateInspectionPlanningRequest = {
+  readonly clientId: string
+  readonly siteId: string
+  readonly equipmentId: string | null
   readonly technicianId: string
   readonly supervisorId: string | null
-  readonly scheduledFor: string
-  readonly priority: InspectionPriority
+  readonly title: string
   readonly instructions: string | null
+  readonly priority: InspectionPriority
+  readonly scheduledFor: string
 }
 
-/** Limite da justificativa, o mesmo da API (`@Size(max = 1000)`). */
 export const CANCEL_REASON_MAX_LENGTH = 1000
 
-/**
- * Estados que aceitam cancelamento (documento 7.6): atribuida, em execucao e
- * reprovada. Aprovada nao cancela pelo fluxo comum (RN-030); rascunho nao tem
- * transicao de cancelamento no MVP.
- */
 const CANCELABLE: readonly InspectionStatus[] = ['ASSIGNED', 'IN_PROGRESS', 'REJECTED']
 
-/** Revisao so existe com a inspecao enviada ou ja em revisao (documento 7.6). */
 const REVIEWABLE: readonly InspectionStatus[] = ['SUBMITTED', 'UNDER_REVIEW']
 
-/** Planejamento so muda antes de o tecnico iniciar a execucao (issue #18). */
 const PLANNING_EDITABLE: readonly InspectionStatus[] = ['DRAFT', 'ASSIGNED']
 
 export function canCancel(status: InspectionStatus): boolean {
@@ -148,7 +171,6 @@ export function canEditPlanning(status: InspectionStatus): boolean {
   return PLANNING_EDITABLE.includes(status)
 }
 
-/** Data prevista (`AAAA-MM-DD`) no fuso da operacao, para o campo de data. */
 export function scheduledDateInSaoPaulo(scheduledFor: string): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date(scheduledFor))
 }

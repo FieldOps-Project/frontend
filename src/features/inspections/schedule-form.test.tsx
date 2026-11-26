@@ -15,8 +15,8 @@ afterEach(() => {
 
 const CATALOG: ScheduleCatalog = {
   templates: [
-    { versionId: 'tpl-equipment', templateTitle: 'HVAC', category: 'Climatização', versionNumber: 3, requiresEquipment: true },
-    { versionId: 'tpl-site', templateTitle: 'Geral', category: 'Predial', versionNumber: 1, requiresEquipment: false },
+    { versionId: 'tpl-equipment', templateTitle: 'HVAC', category: 'Climatização', versionNumber: 3 },
+    { versionId: 'tpl-site', templateTitle: 'Geral', category: 'Local', versionNumber: 1 },
   ],
   clients: [
     { id: 'c1', name: 'Indústria Alfa' },
@@ -70,6 +70,7 @@ describe('ScheduleForm', () => {
     expect(screen.getByText('A seleção do cliente é obrigatória.')).toBeInTheDocument()
     expect(screen.getByText('A seleção do local é obrigatória.')).toBeInTheDocument()
     expect(screen.getByText('A atribuição do técnico é obrigatória.')).toBeInTheDocument()
+    expect(screen.getByText('O título é obrigatório.')).toBeInTheDocument()
     expect(screen.getByText('A data prevista é obrigatória.')).toBeInTheDocument()
     expect(select(/^Modelo de inspeção/)).toHaveFocus()
   })
@@ -83,6 +84,17 @@ describe('ScheduleForm', () => {
 
     expect(screen.queryByText('(Opcional para inspeções gerais do local)')).not.toBeInTheDocument()
     expect(select(/^Equipamento/)).toBeRequired()
+
+    fireEvent.change(select(/^Modelo de inspeção/), { target: { value: 'tpl-site' } })
+
+    expect(screen.getByText('(Opcional para inspeções gerais do local)')).toBeInTheDocument()
+    expect(select(/^Equipamento/)).not.toBeRequired()
+  })
+
+  it('limita o titulo ao tamanho aceito pela API', () => {
+    renderForm()
+
+    expect(screen.getByLabelText(/^Título/)).toHaveAttribute('maxlength', '255')
   })
 
   it('avisa sobre data passada sem bloquear', () => {

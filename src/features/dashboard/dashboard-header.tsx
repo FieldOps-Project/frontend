@@ -7,11 +7,7 @@ const OUTLINE =
 const PRIMARY =
   'inline-flex h-11 items-center justify-center gap-2.5 rounded-md bg-brand-700 px-5 text-[15px] font-medium text-neutral-0 transition-colors hover:bg-brand-800'
 
-/**
- * Titulo do dashboard com os atalhos do documento 14.5: revisar pendencias
- * (a listagem ja filtrada por "aguardando revisao") e criar inspecao.
- */
-export function DashboardHeader() {
+export function DashboardHeader({ canReview }: { canReview: boolean }) {
   return (
     <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
       <div className="flex min-w-0 flex-col gap-2">
@@ -24,10 +20,12 @@ export function DashboardHeader() {
       </div>
 
       <div className="grid shrink-0 grid-cols-1 gap-3 min-[420px]:grid-cols-2 md:flex">
-        <Link href="/inspections/review-queue" className={OUTLINE}>
-          <MdOutlineChecklistRtl aria-hidden className="size-5" />
-          Revisar Pendências
-        </Link>
+        {canReview && (
+          <Link href="/inspections/review-queue" className={OUTLINE}>
+            <MdOutlineChecklistRtl aria-hidden className="size-5" />
+            Revisar Pendências
+          </Link>
+        )}
         <Link href="/inspections/new" className={PRIMARY}>
           <MdAddCircleOutline aria-hidden className="size-5" />
           Criar Inspeção

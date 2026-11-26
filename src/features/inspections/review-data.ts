@@ -1,35 +1,56 @@
 import 'server-only'
 
-import { notFound } from 'next/navigation'
+import { loadInspectionEvidences } from '@/features/evidence/evidence-data'
+import { loadInspectionDetail } from '@/features/inspections/detail-data'
+import { loadInspectionNonConformities } from '@/features/non-conformities/non-conformities-data'
+import { load, loadIfPermitted } from '@/lib/dal'
+import {
+  buildAnswers,
+  buildSections,
+  describeReview,
+  reviewItems,
+  type InspectionReview,
+  type ItemSnapshotRecord,
+  type ResponseApiRecord,
+  type ReviewApiRecord,
+  type ReviewRecord,
+  type ReviewSection,
+} from '@/lib/domain/inspection-review'
 
-import { DEMO_REVIEW, DEMO_REVIEW_ID } from '@/features/inspections/review-fixture'
-import type { InspectionReview } from '@/lib/domain/inspection-review'
-import type { UserRole } from '@/lib/domain/user'
+type Named = { readonly name: string }
 
-export function isDemoReview(id: string): boolean {
-  return id === DEMO_REVIEW_ID && process.env.NEXT_PUBLIC_APP_ENV === 'development'
+async function reviewerNames(records: readonly ReviewApiRecord[]): Promise<ReadonlyMap<string, string | null>> {
+  const ids = [...new Set(records.map((record) => record.reviewerId))]
+  const names = await Promise.all(ids.map(async (id) => (await loadIfPermitted<Named>(`/users/${id}`))?.name ?? null))
+  return new Map(ids.map((id, index) => [id, names[index] ?? null]))
 }
 
-/**
- * Inspecao com respostas, evidencias, nao conformidades e revisoes anteriores.
- *
- * Os endpoints de inspecao ainda nao existem na API: ate eles chegarem, so a
- * demonstracao de desenvolvimento e servida e qualquer outro identificador
- * responde 404. A integracao troca este corpo pelas leituras de
- * `GET /inspections/{id}`, `/responses`, `/non-conformities` e `/history`
- * (documento 12), mantendo o tipo de retorno.
- */
+async function describeReviews(
+  records: readonly ReviewApiRecord[],
+  sections: readonly ReviewSection[],
+): Promise<readonly ReviewRecord[]> {
+  const names = await reviewerNames(records)
+  const items = reviewItems({ sections })
+  return records
+    .toSorted((a, b) => a.reviewCycle - b.reviewCycle)
+    .map((record) => describeReview(record, names.get(record.reviewerId) ?? null, items))
+}
+
+async function loadSections(inspectionId: string): Promise<readonly ReviewSection[]> {
+  const record = await load<{ readonly itemSnapshots: readonly ItemSnapshotRecord[] }>(`/inspections/${inspectionId}`)
+  return buildSections(record.itemSnapshots)
+}
+
 export async function loadInspectionReview(id: string): Promise<InspectionReview> {
-  if (isDemoReview(id)) {
-    return DEMO_REVIEW
-  }
-  notFound()
-}
+  const [inspection, sections, nonConformities, evidences, records, responses] = await Promise.all([
+    loadInspectionDetail(id),
+    loadSections(id),
+    loadInspectionNonConformities(id),
+    loadInspectionEvidences(id),
+    loadIfPermitted<readonly ReviewApiRecord[]>(`/inspections/${id}/reviews`),
+    loadIfPermitted<readonly ResponseApiRecord[]>(`/inspections/${id}/responses`),
+  ])
+  const reviews = records === null ? null : await describeReviews(records, sections)
 
-/**
- * Quem decide: so o supervisor revisa, aprova e reprova (RN-079 e matriz 5.2),
- * e so com a inspecao em revisao. O administrador acompanha em modo leitura.
- */
-export function canDecide(role: UserRole, review: InspectionReview): boolean {
-  return role === 'SUPERVISOR' && review.status === 'UNDER_REVIEW'
+  return { inspection, sections, nonConformities, evidences, reviews, answers: responses === null ? null : buildAnswers(responses) }
 }

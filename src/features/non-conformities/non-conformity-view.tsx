@@ -6,8 +6,8 @@ import { SeverityBadge } from '@/features/dashboard/severity-badge'
 import { EvidenceThumbnails } from '@/features/evidence/evidence-viewer'
 import {
   NON_CONFORMITY_STATUS_LABELS,
+  type InspectionFinding,
   type NonConformityDetail,
-  type NonConformityListItem,
 } from '@/lib/domain/non-conformity'
 import { formatDateTime, orDash } from '@/lib/format'
 
@@ -34,7 +34,6 @@ function SectionTitle({ id, icon, children }: { id: string; icon: ReactNode; chi
   )
 }
 
-/** Cabecalho: titulo, criticidade escrita (RN-054) e o unico estado do MVP. */
 export function NonConformityHeader({ item }: { item: NonConformityDetail }) {
   return (
     <header className="flex flex-col gap-4 border-b border-neutral-200 pb-6">
@@ -57,7 +56,6 @@ export function NonConformityHeader({ item }: { item: NonConformityDetail }) {
   )
 }
 
-/** Onde e quando o achado foi registrado: inspecao (RN-052), local e horarios de campo e do servidor. */
 export function NonConformityContext({ item }: { item: NonConformityDetail }) {
   return (
     <section aria-labelledby="nc-context-title" className={`${CARD} flex flex-col gap-6 p-6`}>
@@ -69,45 +67,31 @@ export function NonConformityContext({ item }: { item: NonConformityDetail }) {
           <Link href={`/inspections/${item.inspectionId}`} className="font-medium text-brand-700 hover:underline">
             {item.inspectionCode}
           </Link>
+          {item.inspectionTitle && <span className="block text-sm text-neutral-600">{item.inspectionTitle}</span>}
         </Detail>
-        <Detail label="Cliente">{item.clientName}</Detail>
-        <Detail label="Local">{item.siteName}</Detail>
+        <Detail label="Cliente">{orDash(item.clientName)}</Detail>
+        <Detail label="Local">{orDash(item.siteName)}</Detail>
         <Detail label="Equipamento">{item.equipmentName ?? 'Inspeção geral do local'}</Detail>
-        <Detail label="Registrada por">{item.createdByName}</Detail>
+        <Detail label="Registrada por">{orDash(item.createdByName)}</Detail>
         <Detail label="Horário do dispositivo">{formatDateTime(item.createdAtDevice)}</Detail>
-        <Detail label="Recebida pelo servidor">
-          {item.serverReceivedAt ? formatDateTime(item.serverReceivedAt) : <span className="text-warning">Aguardando sincronização</span>}
-        </Detail>
+        <Detail label="Recebida pelo servidor">{formatDateTime(item.serverReceivedAt)}</Detail>
       </dl>
     </section>
   )
 }
 
-/**
- * Pergunta, resposta e observacao que originaram o achado (RN-053, issue #20):
- * sem esse encadeamento o supervisor teria de procurar o item no checklist.
- */
 export function NonConformityOrigin({ item }: { item: NonConformityDetail }) {
-  const origin = item.origin
-
   return (
     <section aria-labelledby="nc-origin-title" className={`${CARD} flex flex-col gap-5 p-6`}>
       <SectionTitle id="nc-origin-title" icon={<MdOutlineChecklist />}>
         Item de origem
       </SectionTitle>
-      {origin ? (
+      {item.itemCode ? (
         <dl className="flex flex-col gap-5">
-          <Detail label="Pergunta">
-            <span className="font-medium">{origin.itemCode}</span> {origin.question}
+          <Detail label="Item">
+            <span className="font-medium">{item.itemCode}</span> {item.itemTitle}
           </Detail>
-          <Detail label="Resposta do técnico">
-            <span className="inline-flex rounded-field border border-danger/30 bg-danger-soft px-3 py-1 font-medium text-danger">
-              {orDash(origin.answer)}
-            </span>
-          </Detail>
-          <Detail label="Observação">
-            {origin.observation ?? <span className="text-neutral-600">O técnico não deixou observação.</span>}
-          </Detail>
+          <Detail label="Pergunta">{orDash(item.itemQuestion)}</Detail>
         </dl>
       ) : (
         <p className="text-sm text-neutral-600">
@@ -118,7 +102,6 @@ export function NonConformityOrigin({ item }: { item: NonConformityDetail }) {
   )
 }
 
-/** Evidencias da nao conformidade, com miniatura e ampliacao (issue #19). */
 export function NonConformityEvidences({ item }: { item: NonConformityDetail }) {
   return (
     <section aria-labelledby="nc-evidence-title" className={`${CARD} flex flex-col gap-5 p-6`}>
@@ -135,8 +118,7 @@ export function NonConformityEvidences({ item }: { item: NonConformityDetail }) 
   )
 }
 
-/** Bloco do detalhe da inspecao (issue #20): achados da inspecao, do mais grave para o menos grave. */
-export function InspectionNonConformities({ items }: { items: readonly NonConformityListItem[] | null }) {
+export function InspectionNonConformities({ items }: { items: readonly InspectionFinding[] | null }) {
   return (
     <section aria-labelledby="inspection-nc-title" className={`${CARD} flex flex-col gap-4 overflow-hidden`}>
       <div className="flex flex-wrap items-center justify-between gap-3 px-6 pt-6">
@@ -151,7 +133,7 @@ export function InspectionNonConformities({ items }: { items: readonly NonConfor
       </div>
       {items === null ? (
         <p className="px-6 pb-6 text-sm text-neutral-600">
-          Não conformidades indisponíveis no momento: a API ainda não publica esta consulta.
+          Não conformidades indisponíveis para o seu perfil: só o Supervisor consulta os achados de campo.
         </p>
       ) : items.length === 0 ? (
         <p className="px-6 pb-6 text-sm text-neutral-600">Nenhuma não conformidade registrada nesta inspeção.</p>

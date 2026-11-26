@@ -11,15 +11,11 @@ import {
   loadTemplateDetail,
   loadTemplateVersions,
 } from '@/features/templates/templates-data'
+import { VersionAvailabilityAction } from '@/features/templates/version-availability-action'
 import { requireRole } from '@/lib/dal'
 import { MANAGER_ROLES } from '@/lib/domain/user'
 import { formatDateTime } from '@/lib/format'
 
-/**
- * Historico de versoes publicadas (issue #15 e documento 14.3): numero, autor,
- * data e se a versao aceita novos agendamentos (RN-022), com acesso ao
- * conteudo de cada uma.
- */
 export default async function TemplateVersionsPage(props: PageProps<'/inspection-templates/[templateId]/versions'>) {
   const user = await requireRole(MANAGER_ROLES)
   const { templateId } = await props.params
@@ -69,12 +65,19 @@ export default async function TemplateVersionsPage(props: PageProps<'/inspection
                   )}
                 </Td>
                 <Td className="text-right whitespace-nowrap">
-                  <Link
-                    href={`/inspection-templates/${template.id}/versions/${version.id}`}
-                    className="font-medium text-brand-700 hover:text-brand-800 hover:underline"
-                  >
-                    Ver conteúdo
-                  </Link>
+                  <span className="inline-flex items-center justify-end gap-4">
+                    <Link
+                      href={`/inspection-templates/${template.id}/versions/${version.id}`}
+                      className="font-medium text-brand-700 hover:text-brand-800 hover:underline"
+                    >
+                      Ver conteúdo
+                    </Link>
+                    <VersionAvailabilityAction
+                      versionId={version.id}
+                      versionNumber={version.versionNumber}
+                      active={version.activeForNewInspections}
+                    />
+                  </span>
                 </Td>
               </tr>
             ))}

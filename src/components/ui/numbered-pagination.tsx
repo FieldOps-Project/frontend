@@ -49,7 +49,7 @@ export function NumberedPagination({
   if (page.totalElements === 0) return null
 
   const from = page.page * page.size + 1
-  const to = from + page.content.length - 1
+  const to = page.page * page.size + page.content.length
   const href = (target: number) => withParams(pathname, { ...params, page: target === 0 ? undefined : target })
 
   return (
@@ -58,8 +58,12 @@ export function NumberedPagination({
       className="flex flex-wrap items-center justify-between gap-3 border-t border-neutral-200 px-6 py-4 text-sm text-neutral-700"
     >
       <p>
-        Mostrando <strong className="font-semibold text-neutral-900">{from}</strong> a{' '}
-        <strong className="font-semibold text-neutral-900">{to}</strong> de{' '}
+        {page.content.length > 0 && (
+          <>
+            Mostrando <strong className="font-semibold text-neutral-900">{from}</strong> a{' '}
+            <strong className="font-semibold text-neutral-900">{to}</strong> de{' '}
+          </>
+        )}
         <strong className="font-semibold text-neutral-900">{page.totalElements}</strong>{' '}
         {page.totalElements === 1 ? noun[0] : noun[1]}
       </p>

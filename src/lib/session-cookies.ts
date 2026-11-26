@@ -16,3 +16,11 @@ export const PANEL_DENIED_PATH = '/api/auth/denied'
 export function refreshPath(redirectTo: string): string {
   return `/api/auth/refresh?redirect=${encodeURIComponent(redirectTo)}`
 }
+
+export function loginPath(reason: { readonly inactive: boolean }, redirectTo?: string): string {
+  const params = new URLSearchParams({ [reason.inactive ? 'inactive' : 'expired']: '1' })
+  if (redirectTo) {
+    params.set('redirect', redirectTo)
+  }
+  return `/login?${params}`
+}

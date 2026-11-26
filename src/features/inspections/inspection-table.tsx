@@ -2,13 +2,12 @@ import Link from 'next/link'
 import { IoArrowForward, IoLocationOutline, IoPersonAddOutline, IoWarningOutline } from 'react-icons/io5'
 
 import { StatusBadge } from '@/components/ui/status-badge'
-import { INSPECTION_STATUS_LABELS, INSPECTION_STATUS_TONES } from '@/lib/domain/inspection'
+import { INSPECTION_STATUS_LABELS, INSPECTION_STATUS_TONES, inspectionReference } from '@/lib/domain/inspection'
 import {
   dayInSaoPaulo,
   dueLabel,
   initials,
   isAwaitingReview,
-  isOverdue,
   progressPercent,
   type InspectionListItem,
 } from '@/lib/domain/inspection-list'
@@ -74,7 +73,7 @@ function Progress({ item }: { item: InspectionListItem }) {
       </span>
       <span
         role="progressbar"
-        aria-label={`Progresso de ${item.code}`}
+        aria-label={`Progresso de ${inspectionReference(item.id)}`}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={percent}
@@ -87,7 +86,7 @@ function Progress({ item }: { item: InspectionListItem }) {
 }
 
 function PlannedDate({ item, today }: { item: InspectionListItem; today: string }) {
-  const late = isOverdue(item, today)
+  const late = item.overdue
   const label = dueLabel(item, today)
 
   return (
@@ -101,13 +100,15 @@ function PlannedDate({ item, today }: { item: InspectionListItem; today: string 
   )
 }
 
-/**
- * Tabela do acompanhamento (documento 14.10): identificador, cliente e local,
- * equipamento, tecnico, prioridade, estado com ultima atualizacao, progresso e
- * data prevista com atraso. Estado, prioridade e atraso aparecem em texto, nao
- * so em cor. Quem aguarda revisao leva direto a tela de revisao.
- */
-export function InspectionTable({ items, today }: { items: readonly InspectionListItem[]; today: string }) {
+export function InspectionTable({
+  items,
+  today,
+  canReview,
+}: {
+  items: readonly InspectionListItem[]
+  today: string
+  canReview: boolean
+}) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full border-collapse text-base">
@@ -146,7 +147,7 @@ export function InspectionTable({ items, today }: { items: readonly InspectionLi
               <td className={CELL}>
                 <div className="flex flex-col gap-1">
                   <Link href={detailHref(item)} className="font-medium text-brand-700 hover:underline">
-                    {item.code}
+                    {inspectionReference(item.id)}
                   </Link>
                   <span className="text-sm text-neutral-600">{item.title}</span>
                 </div>
@@ -178,7 +179,7 @@ export function InspectionTable({ items, today }: { items: readonly InspectionLi
                 <div className="flex flex-col items-start gap-1">
                   <StatusBadge label={INSPECTION_STATUS_LABELS[item.status]} tone={INSPECTION_STATUS_TONES[item.status]} />
                   <span className="text-xs text-neutral-500">Atualizada {formatDateTime(item.updatedAt)}</span>
-                  {isAwaitingReview(item) && (
+                  {canReview && isAwaitingReview(item) && (
                     <Link
                       href={reviewHref(item)}
                       className="inline-flex items-center gap-1 text-sm font-medium text-brand-700 hover:underline"

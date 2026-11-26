@@ -1,123 +1,184 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { DEMO_REVIEW_ID } from '@/features/inspections/review-fixture'
 import {
   loadInspectionNonConformities,
   loadNonConformity,
-  loadNonConformityPage,
+  loadNonConformityListing,
 } from '@/features/non-conformities/non-conformities-data'
-import { demoNonConformities } from '@/features/non-conformities/non-conformity-fixture'
+import type { NonConformityInspection, NonConformityRecord } from '@/lib/domain/non-conformity'
 
 vi.mock('server-only', () => ({}))
-vi.mock('next/navigation', () => ({
-  notFound: () => {
-    throw new Error('not found')
-  },
-}))
 
 const load = vi.fn()
 const loadOptional = vi.fn()
+const verifySession = vi.fn()
 
 vi.mock('@/lib/dal', () => ({
-  load: (path: string, query: unknown) => load(path, query),
-  loadOptional: (path: string, query: unknown) => loadOptional(path, query),
+  load: (path: string, query?: unknown) => load(path, query),
+  loadOptional: (path: string, query?: unknown) => loadOptional(path, query),
+  verifySession: () => verifySession(),
 }))
-vi.mock('@/features/catalog/lookups', () => ({ loadClients: async () => [] }))
+vi.mock('@/features/catalog/lookups', () => ({
+  loadClients: async () => [{ id: 'client-1', name: 'Indústria ABC' }],
+  loadSites: async () => [{ id: 'site-1', name: 'Fábrica Sorocaba' }],
+  loadEquipment: async () => [{ id: 'equipment-1', name: 'Gerador GD-001' }],
+}))
 
-const RANK = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 } as const
+function record(id: string, inspectionId: string, overrides: Partial<NonConformityRecord> = {}): NonConformityRecord {
+  return {
+    id,
+    inspectionId,
+    inspectionItemId: 'item-1',
+    title: `NC ${id}`,
+    description: '',
+    severity: 'MEDIUM',
+    status: 'OPEN',
+    createdBy: 'user-1',
+    createdAtDevice: '2026-11-16T12:16:00Z',
+    serverReceivedAt: '2026-11-16T12:17:00Z',
+    ...overrides,
+  }
+}
+
+function inspection(id: string): NonConformityInspection {
+  return {
+    id,
+    title: `Inspeção ${id}`,
+    clientId: 'client-1',
+    siteId: 'site-1',
+    equipmentId: 'equipment-1',
+    itemSnapshots: [{ id: 'item-1', itemCode: 'GER-001', itemTitle: 'Placa', itemDescription: 'A placa está legível?' }],
+  }
+}
+
+function page(content: readonly NonConformityRecord[]) {
+  return { content, page: 0, size: 20, totalElements: content.length, totalPages: 1, first: true, last: true }
+}
+
+function routeApi(routes: Record<string, unknown>) {
+  const answer = async (path: string) => (path in routes ? routes[path] : null)
+  load.mockImplementation(answer)
+  loadOptional.mockImplementation(answer)
+}
 
 beforeEach(() => {
-  vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'development')
+  verifySession.mockResolvedValue({ id: 'u1', role: 'SUPERVISOR' })
 })
 
 afterEach(() => {
-  vi.unstubAllEnvs()
-  load.mockReset()
-  loadOptional.mockReset()
+  vi.clearAllMocks()
 })
 
-describe('demonstracao', () => {
-  it('liga toda nao conformidade a uma inspecao executada (RN-052)', () => {
-    const all = demoNonConformities()
-    expect(all.length).toBeGreaterThan(5)
-    for (const nc of all) {
-      expect(nc.inspectionCode).toBeTruthy()
-      expect(nc.status).toBe('OPEN')
-    }
+describe('loadNonConformityListing', () => {
+  it('manda so os filtros que a API aceita, com a pagina pedida', async () => {
+    routeApi({ '/non-conformities': page([]), '/users': { content: [] } })
+
+    await loadNonConformityListing({ severity: 'CRITICAL', clientId: 'client-1' }, 2)
+
+    expect(load).toHaveBeenCalledWith('/non-conformities', { severity: 'CRITICAL', clientId: 'client-1', page: 2, size: 20 })
   })
 
-  it('traz a pergunta, a resposta e a observacao de origem da inspecao em revisao', () => {
-    const fromReview = demoNonConformities().filter((nc) => nc.inspectionId === DEMO_REVIEW_ID)
-    expect(fromReview).toHaveLength(3)
-    expect(fromReview[0]?.origin).toMatchObject({ itemCode: '1.2', answer: 'Não Conforme' })
-    expect(fromReview[0]?.evidences.length).toBeGreaterThan(0)
-  })
-})
+  it('consulta cada inspecao uma so vez, mesmo com varias nao conformidades nela', async () => {
+    routeApi({
+      '/non-conformities': page([record('a', 'insp-1'), record('b', 'insp-1'), record('c', 'insp-2')]),
+      '/inspections/insp-1': inspection('insp-1'),
+      '/inspections/insp-2': inspection('insp-2'),
+      '/users': { content: [{ id: 'user-1', name: 'Técnico Demo' }] },
+    })
 
-async function demoPage(filters: Parameters<typeof loadNonConformityPage>[0]) {
-  const page = await loadNonConformityPage(filters, 0)
-  if (!page) throw new Error('a demonstracao sempre responde')
-  return page
-}
+    const { page: result, clients } = await loadNonConformityListing({}, 0)
 
-describe('loadNonConformityPage', () => {
-  it('ordena da mais grave para a menos grave', async () => {
-    const page = await demoPage({})
-    const ranks = page.content.map((nc) => RANK[nc.severity])
-    expect(ranks).toEqual([...ranks].sort((a, b) => a - b))
-    expect(page.content[0]?.severity).toBe('CRITICAL')
-  })
-
-  it('filtra por criticidade, cliente e periodo', async () => {
-    const all = demoNonConformities()
-    const first = all[0]
-    if (!first) throw new Error('sem dados')
-
-    const bySeverity = await demoPage({ severity: 'HIGH' })
-    expect(bySeverity.content.every((nc) => nc.severity === 'HIGH')).toBe(true)
-
-    const byClient = await demoPage({ clientId: first.clientId })
-    expect(byClient.content.every((nc) => nc.clientId === first.clientId)).toBe(true)
-
-    const future = await demoPage({ from: '2999-01-01' })
-    expect(future.totalElements).toBe(0)
+    const inspectionCalls = loadOptional.mock.calls.filter(([path]) => String(path).startsWith('/inspections/'))
+    expect(inspectionCalls).toHaveLength(2)
+    expect(result.content.map((item) => item.inspectionTitle)).toEqual(['Inspeção insp-1', 'Inspeção insp-1', 'Inspeção insp-2'])
+    expect(result.content[0]).toMatchObject({
+      clientName: 'Indústria ABC',
+      siteName: 'Fábrica Sorocaba',
+      equipmentName: 'Gerador GD-001',
+      itemCode: 'GER-001',
+      createdByName: 'Técnico Demo',
+    })
+    expect(clients).toEqual([{ value: 'client-1', label: 'Indústria ABC' }])
   })
 
-  it('fora da demonstracao, manda os filtros e a ordem para a API', async () => {
-    vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'production')
-    loadOptional.mockResolvedValue({ content: [] })
+  it('mantem a ordem e a paginacao que a API devolveu', async () => {
+    routeApi({
+      '/non-conformities': { ...page([record('a', 'insp-1'), record('b', 'insp-1')]), page: 3, totalPages: 9, totalElements: 180 },
+      '/inspections/insp-1': inspection('insp-1'),
+    })
 
-    await loadNonConformityPage({ severity: 'CRITICAL', from: '2026-11-01' }, 2)
-    expect(loadOptional).toHaveBeenCalledWith('/non-conformities', expect.objectContaining({
-      severity: 'CRITICAL',
-      from: '2026-11-01',
-      page: 2,
-      sort: 'severity,desc',
-    }))
+    const { page: result } = await loadNonConformityListing({}, 3)
+
+    expect(result.content.map((item) => item.id)).toEqual(['a', 'b'])
+    expect(result).toMatchObject({ page: 3, totalPages: 9, totalElements: 180 })
   })
 
-  it('devolve indisponivel enquanto a API nao publica o endpoint', async () => {
-    vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'production')
-    loadOptional.mockResolvedValue(null)
+  it('segue sem os nomes que nao consegue resolver', async () => {
+    routeApi({ '/non-conformities': page([record('a', 'insp-1')]) })
 
-    expect(await loadNonConformityPage({}, 0)).toBeNull()
+    const { page: result } = await loadNonConformityListing({}, 0)
+
+    expect(result.content[0]).toMatchObject({ inspectionTitle: null, clientName: null, createdByName: null })
   })
 })
 
-describe('leituras do detalhe', () => {
-  it('abre o detalhe pelo identificador', async () => {
-    const [first] = demoNonConformities()
-    expect((await loadNonConformity(first?.id ?? '')).title).toBe(first?.title)
+describe('loadNonConformity', () => {
+  it('traz so as evidencias da propria nao conformidade, da mais antiga a mais nova', async () => {
+    const photo = (id: string, nonConformityId: string | null, capturedAtDevice: string) => ({
+      id,
+      nonConformityId,
+      capturedAtDevice,
+      inspectionId: 'insp-1',
+      responseId: null,
+      description: null,
+      latitude: null,
+      longitude: null,
+      uploadedAt: '2026-11-16T13:00:00Z',
+      serverReceivedAt: '2026-11-16T13:00:00Z',
+    })
+    routeApi({
+      '/non-conformities/a': record('a', 'insp-1'),
+      '/inspections/insp-1': inspection('insp-1'),
+      '/inspections/insp-1/evidence': [
+        photo('e2', 'a', '2026-11-16T12:20:00Z'),
+        photo('outra', 'b', '2026-11-16T12:10:00Z'),
+        photo('e1', 'a', '2026-11-16T12:18:00Z'),
+        photo('solta', null, '2026-11-16T12:00:00Z'),
+      ],
+      '/users': { content: [] },
+    })
+
+    const detail = await loadNonConformity('a')
+
+    expect(detail.evidences.map((evidence) => evidence.id)).toEqual(['e1', 'e2'])
+    expect(detail.itemQuestion).toBe('A placa está legível?')
+  })
+})
+
+describe('loadInspectionNonConformities', () => {
+  it('lista os achados da inspecao do mais grave para o menos grave, com o item de cada um', async () => {
+    routeApi({
+      '/non-conformities': page([
+        record('baixa', 'insp-1', { severity: 'LOW' }),
+        record('critica', 'insp-1', { severity: 'CRITICAL' }),
+      ]),
+      '/inspections/insp-1': inspection('insp-1'),
+    })
+
+    const findings = await loadInspectionNonConformities('insp-1')
+
+    expect(load).toHaveBeenCalledWith('/non-conformities', { inspectionId: 'insp-1', size: 100 })
+    expect(findings?.map((finding) => [finding.id, finding.itemCode])).toEqual([
+      ['critica', 'GER-001'],
+      ['baixa', 'GER-001'],
+    ])
   })
 
-  it('lista as da inspecao, a mais grave primeiro', async () => {
-    const list = (await loadInspectionNonConformities(DEMO_REVIEW_ID)) ?? []
-    expect(list.map((nc) => nc.severity)).toEqual(['CRITICAL', 'HIGH', 'MEDIUM'])
-  })
+  it.each(['ADMIN', 'TECHNICIAN'])('nao consulta a API para o perfil %s, que ela recusaria', async (role) => {
+    verifySession.mockResolvedValue({ id: 'u2', role })
 
-  it('devolve nulo quando a API nao publica a listagem por inspecao', async () => {
-    vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'production')
-    loadOptional.mockResolvedValue(null)
-    expect(await loadInspectionNonConformities(DEMO_REVIEW_ID)).toBeNull()
+    expect(await loadInspectionNonConformities('insp-1')).toBeNull()
+    expect(load).not.toHaveBeenCalled()
+    expect(loadOptional).not.toHaveBeenCalled()
   })
 })

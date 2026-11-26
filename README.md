@@ -45,6 +45,20 @@ As variáveis ficam em `.env.local`, criado a partir de `.env.example`. O `.env.
 A `API_BASE_URL` precisa ser alcançável **a partir do servidor do Next**, e não do navegador
 do usuário. Se a API estiver em rede privada, o painel precisa estar na mesma rede.
 
+## Rodando contra o backend de demonstração
+
+O painel não usa dados de exemplo: todas as telas leem a API. Para ver dados, suba o backend com o
+profile `demo` (veja o README do repositório `backend`) e aponte `API_BASE_URL` para ele.
+
+| E-mail                      | Perfil     | Senha       |
+| --------------------------- | ---------- | ----------- |
+| `admin@fieldops.local`      | ADMIN      | `Demo@1234` |
+| `supervisor@fieldops.local` | SUPERVISOR | `Demo@1234` |
+
+O perfil `TECHNICIAN` usa o aplicativo, não o painel. Os perfis enxergam áreas diferentes, como a API
+define: não conformidades, evidências e decisões de revisão são do supervisor; o administrador acompanha
+inspeções, cadastros, modelos e auditoria.
+
 ## Estrutura
 
 ```text
@@ -71,22 +85,24 @@ bootstrap para que a navegação seja verificável antes das telas ficarem pront
 ## Dashboard
 
 O `/dashboard` segue o documento 14.5 e a issue #28: total de inspeções por estado,
-revisões pendentes, inspeções atrasadas (com a variação desde ontem), não conformidades
-recentes e os atalhos **Revisar Pendências** e **Criar Inspeção**.
+revisões pendentes, inspeções atrasadas, não conformidades por criticidade e os atalhos
+**Revisar Pendências** e **Criar Inspeção**. Administrador e supervisor abrem a tela
+(a API recusa o técnico).
 
-- **Cada número é um link** para `/inspections` com o filtro correspondente
-  (`?status=`, `?review=1`, `?overdue=1`). Atraso e "aguardando revisão" usam as mesmas
-  regras da listagem (`lib/domain/inspection-list.ts`), e um teste garante que os números
-  batem.
-- **Contrato esperado da API** (`lib/domain/dashboard.ts`): `GET /dashboard/summary`
-  devolve `inspectionsByStatus`, `awaitingReview`, `overdue` e `overdueYesterday`
-  (backend#36); as recentes vêm de `GET /non-conformities?size=3&sort=reportedAt,desc`
-  (backend#23).
-- **Dados de demonstração** só com `NEXT_PUBLIC_APP_ENV=development`
-  (`features/dashboard/dashboard-fixture.ts`), derivados das mesmas inspeções de demonstração
-  da listagem. O único ponto de troca para a API é `features/dashboard/dashboard-data.ts`.
-- Em outros ambientes, enquanto a API não publica esses endpoints, só o bloco afetado avisa
-  que está indisponível; o restante da tela continua funcionando.
+- **Cada número é um link** para a listagem filtrada: `/inspections?status=`,
+  `/inspections?overdue=1`, a fila de revisão (`/inspections/review-queue`) e, para as
+  criticidades, `/non-conformities?severity=`.
+- **Quem revisa é só o supervisor** (`begin-review`, `approve` e `reject` são dele na API):
+  para o administrador o cartão de revisões pendentes é só informativo e o atalho Revisar
+  Pendências não aparece. Pelo mesmo motivo, as criticidades só viram link para o supervisor,
+  único perfil do painel que lê as não conformidades.
+- **Contrato** (`lib/domain/dashboard.ts`): `GET /dashboard/summary` devolve
+  `inspectionsByStatus` e `nonConformitiesBySeverity` como listas, `overdueInspections` e
+  `inspectionsAwaitingReview`. `toDashboardSummary` converte para totais por estado, e
+  "aguardando revisão" soma `SUBMITTED` e `UNDER_REVIEW` (o número da API conta só
+  `UNDER_REVIEW`). O supervisor vê só as inspeções dele. O filtro de período da API (`from` e
+  `to`) ainda não tem controle na tela.
+- O único ponto de leitura é `features/dashboard/dashboard-data.ts`.
 
 ## Modelos de inspeção
 
@@ -106,117 +122,154 @@ por categoria, e a situação de cada modelo com a versão vigente ("Publicado �
   do que impede publicar, cada item levando ao ponto exato) e **Publicar versão** (confirmação de
   que a versão fica imutável e o número gerado). A conferência local repete as regras do backend;
   se a API recusar com `422 TEMPLATE_PUBLISH_INVALID`, valem as pendências dela. As versões
-  publicadas ficam em `/versions` (número, autor, data e se aceitam novos agendamentos) e o
+  publicadas ficam em `/versions` (número, autor, data e se aceitam novos agendamentos, com o botão de liberar ou retirar) e o
   conteúdo de cada uma em `/versions/{versionId}`.
 - **Inativar e reativar** só para modelos já publicados, como a API exige. A confirmação avisa
   que as inspeções existentes não são afetadas (RN-022).
 - **Contrato** em `lib/domain/inspection-template.ts` e `lib/domain/template-builder.ts`, igual
   às respostas da API (`/inspection-templates`, `/sections`, `/items`, `/versions`).
-- **Demonstração com memória** em `NEXT_PUBLIC_APP_ENV=development`
-  (`features/templates/template-demo-store.ts` e `template-draft-demo-store.ts`, com o modelo
-  "Inspeção de Máquinas Pesadas" igual ao do Stitch): o que for criado ou alterado fica guardado até
-  o servidor de desenvolvimento reiniciar. O único ponto de troca para a API é
-  `features/templates/templates-data.ts`.
+- **Disponibilidade da versão**: em `/versions`, cada versão publicada pode ser liberada ou
+  retirada dos novos agendamentos (`PATCH /inspection-template-versions/{id}/availability`). As
+  inspeções existentes não são afetadas.
 
 ## Detalhe da inspeção
 
-O `/inspections/{id}` segue a issue #18 e o documento 14.9. Clicar no código da inspeção na
-listagem abre o detalhe; o link **Revisar** continua indo direto para a revisão.
+O `/inspections/{id}` segue a issue #18 e o documento 14.9. Clicar na referência da inspeção na
+listagem abre o detalhe; o link **Revisar** continua indo direto para a revisão. A API não tem
+código de apresentação: a referência `INS-XXXXXXXX` vem do início do identificador
+(`inspectionReference`).
 
-- **Planejamento**: cliente, local, equipamento, técnico, supervisor, prioridade, prazo (com
-  atraso), modelo e instruções.
-- **Execução**: horários do dispositivo e do servidor lado a lado (RN-074), com "Aguardando
-  sincronização" quando o servidor ainda não recebeu; localização registrada com precisão e
-  horário; progresso dos itens.
-- **Linha do tempo** (autor, ação, horário do servidor e, quando houver, do dispositivo), com
-  mudanças de estado, fotografias e não conformidades (issue #24), a partir de
-  `GET /inspections/{id}/history`, e o link "Ver na auditoria". Se a API não responder, só esse
-  bloco aparece como indisponível.
+- **Montagem**: `loadInspectionDetail` lê `GET /inspections/{id}` e compõe a tela em paralelo com
+  cliente, local, equipamento, técnico, supervisor, versão do modelo e `GET /inspections/{id}/history`.
+  Nome de pessoa que a API nega ou não acha vira "—", sem derrubar a página.
+- **Histórico sem JSON**: `previousValue` e `newValue` chegam como `chave=valor;chave=valor` (ou
+  JSON, no relatório exportado). `lib/domain/audit-values.ts` lê os dois formatos; dele saem as
+  mudanças de estado, o motivo do cancelamento e os horários de início e conclusão
+  (`lib/domain/inspection-history.ts`).
+- **Planejamento**, **Execução** (horários do dispositivo e do servidor lado a lado, RN-074, e a
+  quantidade de itens do checklist) e **Linha do tempo**, com o link "Ver na auditoria".
 - **Ações conforme o estado** (documento 7.6): **Cancelar** em atribuída, em execução e
-  reprovada, com motivo obrigatório e botão desativado enquanto ele estiver vazio (RN-029);
-  aprovada nunca oferece cancelar (RN-030). **Revisar** só em enviada e em revisão. **Editar
-  planejamento** (`/inspections/{id}/edit`) só em rascunho e atribuída: técnico, supervisor, data,
-  prioridade e instruções; modelo, cliente, local e equipamento ficam bloqueados.
-- **Contrato** em `lib/domain/inspection-detail.ts`. O cancelamento usa o endpoint que já existe
-  (`POST /inspections/{id}/cancel`, `{ reason }`); detalhe, histórico e `PUT /inspections/{id}`
-  ainda não existem na API.
-- **Demonstração com memória** em `NEXT_PUBLIC_APP_ENV=development`
-  (`features/inspections/inspection-demo-store.ts`): as inspeções da listagem abrem com detalhe e
-  histórico, e cancelar ou replanejar aparece também na listagem e no dashboard até o servidor
-  reiniciar. O único ponto de troca para a API é `features/inspections/detail-data.ts`.
+  reprovada, com motivo obrigatório de até 1000 caracteres (RN-029); aprovada nunca oferece
+  cancelar (RN-030). **Revisar** só em enviada e em revisão. **Editar planejamento**
+  (`/inspections/{id}/edit`, `PUT /inspections/{id}`) só em rascunho e atribuída: título, técnico,
+  supervisor, data, prioridade e instruções; modelo, cliente, local e equipamento ficam bloqueados.
+- **Baixar relatório (PDF)**: `/api/inspections/{id}/report` repassa `GET /inspections/{id}/report.pdf`
+  com o token da sessão. Cada download grava um evento de auditoria na API, então nada chama o
+  endpoint ao abrir a página.
+- **Agendamento** (`/inspections/new`, `POST /inspections`): exige título (até 255) e aceita
+  instruções de até 2000 caracteres. O equipamento é obrigatório, como na API, exceto quando a
+  categoria do modelo é local, ambiente, site, location ou environment
+  (`requiresEquipment` em `lib/domain/inspection-scheduling.ts`). Os modelos do seletor vêm de
+  `GET /inspection-templates?status=ACTIVE` e das versões com `activeForNewInspections`.
 
 ## Não conformidades
 
 O `/non-conformities` segue a issue #20 e o documento 14.12. No MVP a não conformidade é
 registrada e consultada, não tratada: só existe o estado "Aberta" e a tela não oferece mudança de
-estado.
+estado. A API libera a consulta apenas a técnico e supervisor, então o item de menu e as páginas
+são do **supervisor**; o administrador que digita o endereço vai para `/forbidden`.
 
-- **Listagem** com filtros por criticidade, cliente e período (na URL), paginação e ordem padrão
-  da mais grave para a menos grave. A criticidade vai sempre escrita no selo (RN-054).
+- **Listagem** com filtros por criticidade e cliente (na URL) e paginação no servidor. A ordem é a
+  da API (da mais antiga para a mais recente, por recebimento): ela não ordena por criticidade
+  nem filtra por período. A criticidade vai sempre escrita no selo (RN-054).
 - **Detalhe** (`/non-conformities/{id}`): descrição, criticidade, a inspeção a que pertence
-  (RN-052), horários de campo e do servidor, o **item de origem** com pergunta, resposta e
-  observação do técnico (RN-053) e as evidências.
-- **Bloco no detalhe da inspeção** com as não conformidades dela, cada uma levando ao detalhe; as
-  não conformidades recentes do dashboard também abrem o detalhe.
-- **Contrato** em `lib/domain/non-conformity.ts`. A API ainda não publica
-  `GET /non-conformities` nem `/{id}` (backend #23); em `development` a tela usa a demonstração
-  ligada às inspeções de exemplo. O único ponto de troca é
-  `features/non-conformities/non-conformities-data.ts`.
+  (RN-052), horários de campo e do servidor, o **item de origem** com a pergunta do checklist
+  (RN-053) e as evidências da própria não conformidade. A resposta e a observação do técnico não
+  aparecem: `GET /inspections/{id}/responses` é só do técnico.
+- **Bloco no detalhe da inspeção** com as não conformidades dela, da mais grave para a menos
+  grave, cada uma levando ao detalhe. Para quem não é supervisor o bloco avisa que não está
+  disponível ao perfil.
+- **Contexto derivado**: a API devolve só ids. Inspeção, item, cliente, local, equipamento e
+  autor saem de `GET /inspections/{id}` (uma chamada por inspeção, sem repetir) e das listas de
+  clientes, locais, equipamentos e usuários; `describeNonConformity`
+  (`lib/domain/non-conformity.ts`) junta tudo, e o que não resolve aparece como "—".
+- O único ponto de leitura é `features/non-conformities/non-conformities-data.ts`.
 
 ## Fila de revisão
 
-O `/inspections/review-queue` segue a issue #21: as inspeções enviadas e em revisão, da que espera
+O `/inspections/review-queue` segue a issue #21: as inspeções enviadas e em revisão, da atualizada
 há mais tempo para a mais recente.
 
-- **Tempo de espera** desde o envio confirmado pelo servidor, em linguagem natural ("enviada há 2
-  dias"), com a data completa no título; mais de um dia fica em destaque.
-- **Quem iniciou a revisão** aparece nas inspeções em revisão, para dois supervisores não
-  revisarem a mesma em paralelo.
-- **Navegação**: chega-se pelos atalhos do dashboard (Revisar Pendências e o cartão de revisões
-  pendentes) e pelo botão "Fila de revisão" da listagem, que mostra quantas aguardam. O botão
-  **Revisar** de cada linha abre a revisão com o link de volta para a fila; quem chega à revisão
-  pelo detalhe volta para o detalhe.
+- **Última atualização** em linguagem natural ("atualizada há 2 dias"), com a data completa no
+  título; mais de um dia fica em destaque. A listagem da API não traz o horário do envio, então a
+  espera é medida por `updatedAt`.
+- **Fila** montada com duas consultas a `GET /inspections` (`status=SUBMITTED` e
+  `status=UNDER_REVIEW`, até 100 de cada), unidas e ordenadas no cliente; o botão "Fila de revisão"
+  da listagem soma os `totalElements` das duas.
+- **Navegação**: chega-se pelos atalhos do dashboard e pelo botão da listagem. O botão **Revisar**
+  abre a revisão com o link de volta para a fila; quem chega à revisão pelo detalhe volta para o
+  detalhe.
 - **Escopo** (RN-005): a API devolve ao supervisor as inspeções sob sua responsabilidade e ao
-  administrador todas. Fila vazia mostra "Tudo revisado!".
-- O único ponto de troca é `features/inspections/review-queue-data.ts`
-  (`GET /inspections?review=1&sort=submittedAtServer,asc`); em `development` a fila usa as
-  inspeções de demonstração.
+  administrador todas. Só o supervisor decide a revisão; o administrador vê a fila e abre o detalhe.
+  Fila vazia mostra "Tudo revisado!".
+
+## Revisão da inspeção
+
+`/inspections/{id}/review` lê tudo da API, sem dado de demonstração.
+
+- **Composição** (`loadInspectionReview`, em paralelo): o detalhe da inspeção, o checklist de
+  `GET /inspections/{id}` (`itemSnapshots`, agrupado por seção), as não conformidades e as evidências
+  já usadas no detalhe e o histórico `GET /inspections/{id}/reviews` (`reviewCycle` vira `cycle`; o nome
+  de quem decidiu vem de `GET /users/{id}` e degrada para vazio). Perfil sem permissão recebe `null`
+  nesses blocos e a tela explica a ausência.
+- **Respostas do técnico**: `GET /inspections/{id}/responses` é só do técnico (403 para supervisor e
+  administrador), então a tela mostra a estrutura do checklist (seção, código, título, tipo,
+  obrigatório) e destaca os itens com não conformidade. As respostas só existem no relatório em PDF,
+  oferecido em destaque (`/api/inspections/{id}/report`).
+- **Ações do supervisor**: **Iniciar revisão** (`POST /begin-review`) com a inspeção enviada;
+  **Aprovar** e **Reprovar** (`/approve` e `/reject`) só em revisão. Motivo e comentário aceitam até
+  2000 caracteres, como a API; os itens a corrigir são ids do snapshot, e os itens com não
+  conformidade já vêm marcados. O administrador vê a tela só para leitura.
+
+## Exportação e busca
+
+- **Exportar** da listagem (`/inspections/export`) repassa o CSV de `GET /inspections/export.csv`
+  com os mesmos filtros e a mesma ordem da tela (UTF-8 com BOM, separador `;`).
+- **Busca global** (`/search`) usa o filtro `search` da listagem; cada inspeção encontrada abre o
+  detalhe.
 
 ## Auditoria
 
-O `/audit` segue o desenho do Stitch "Auditoria de Sistema" e a issue #24: o registro de atividades
-do sistema, do evento mais recente para o mais antigo, somente leitura (RN-088).
+A API não tem consulta global de auditoria (`GET /audit-events` não existe). A única fonte é
+`GET /inspections/{id}/history` (ADMIN, SUPERVISOR e TECHNICIAN leem), um array ascendente e sem
+paginação. Por isso o `/audit` é a **Auditoria por inspeção**, somente leitura (RN-088), para
+administrador e supervisor; o supervisor só enxerga as inspeções que a própria listagem da API lhe
+devolve.
 
-- **Filtros** de período (últimos 7 dias por padrão), usuário, entidade e tipo de ação, na URL e
-  com paginação no servidor. O filtro de entidade não está no Stitch; entra porque a issue exige.
-- **Tabela**: código do evento, data e hora com segundos (e o horário do dispositivo quando a ação
-  veio do aplicativo), usuário ou "Sistema (Auto)", ação em linguagem de negócio, entidade com link
-  e descrição. Abaixo de 1280px cada evento vira um cartão.
-- **Exportar Relatório** baixa o CSV de todos os eventos filtrados (`/audit/export`), avisando no
-  fim se o relatório foi limitado.
-- **Linha do tempo** no detalhe da inspeção: mudanças de estado, fotografias e não conformidades,
-  com o link "Ver na auditoria" filtrado pela inspeção.
-- O único ponto de troca é `features/audit/audit-data.ts` (`GET /audit-events`); em `development`
-  os eventos saem das inspeções, fotos e não conformidades de demonstração.
+- **Escolher a inspeção**: busca (`GET /inspections?search=`) com paginação, ou o link "Ver na
+  auditoria" do detalhe (`?inspectionId=`), que abre a linha do tempo direto. Inspeção que o perfil
+  não pode ler cai no tratamento padrão de acesso negado ou não encontrada.
+- **Linha do tempo**: eventos do mais recente para o mais antigo, com data e hora do servidor (e a do
+  dispositivo quando houver), usuário, ação em linguagem de negócio, registro afetado
+  (inspeção, resposta, evidência, não conformidade ou relatório) e o detalhe lido de
+  `previousValue`/`newValue` (`lib/domain/audit-values.ts`). Inspeção sem eventos diz isso.
+- **Filtros** de período, usuário, registro e ação aplicados no navegador sobre o histórico
+  carregado; as opções saem dos próprios eventos. Filtros por cliente, local, equipamento, modelo ou
+  usuário-alvo não existem porque a API não registra esses eventos por inspeção.
+- **Atividade recente** (`?scope=recent`): junta o histórico das 25 inspeções atualizadas mais
+  recentemente (`sort=updatedAt,desc`), buscado em paralelo; a tela avisa do limite.
+- **Exportar CSV** baixa, no navegador, a linha do tempo já filtrada (UTF-8 com BOM, separador `;`,
+  com neutralização de fórmulas de planilha).
 
 ## Evidências
 
 As fotografias seguem a issue #19 e não têm URL pública.
 
-- **Imagem só com sessão válida**: o navegador pede `/api/evidence/{id}?variant=thumbnail|original`,
-  um Route Handler que confere a sessão na API (401 sem ela, 403 fora do painel) e repassa o
-  binário de `GET /evidence/{id}/file`. O escopo de cada inspeção é decidido pela API, e o 403 ou
-  404 dela é repassado. A resposta usa cache privado, nunca compartilhado entre usuários.
-- **Miniatura na lista, original só na ampliação**: as miniaturas carregam sob demanda; a
-  ampliação mostra a imagem inteira, a descrição, o horário de captura no dispositivo e as
-  coordenadas (com link para o mapa), e navega pelas setas.
-- **Galeria no detalhe da inspeção**, agrupada pelo item do checklist (RN-045). A revisão e o
-  detalhe da não conformidade usam as mesmas miniaturas junto do item.
+- **Imagem só com sessão válida**: o navegador pede `/api/evidence/{id}`, um Route Handler que
+  confere a sessão na API (401 sem ela, 403 para quem não é supervisor, como na API) e repassa o
+  binário de `GET /evidence/{id}`. O escopo de cada inspeção é decidido pela API, e o 403 ou 404
+  dela (arquivo apagado ou ainda não enviado) é repassado. A resposta usa cache privado, nunca
+  compartilhado entre usuários. A API não gera miniatura: a lista e a ampliação usam a mesma
+  imagem, a lista carregando sob demanda.
+- **Ampliação** com a descrição, o horário de captura no dispositivo e as coordenadas (com link
+  para o mapa), navegando pelas setas.
+- **Galeria no detalhe da inspeção**, agrupada pela não conformidade a que a foto pertence, com as
+  fotos sem não conformidade num grupo à parte (a API não liga a foto ao item do checklist). O
+  detalhe da não conformidade e a revisão usam as mesmas miniaturas.
 - **Arquivo pendente** (metadados recebidos, upload não confirmado) aparece como "Aguardando
   upload", sem imagem quebrada. Nenhuma tela oferece excluir evidência (RN-049).
-- **Contrato** em `lib/domain/evidence.ts`. A API ainda não publica as evidências (backend #22);
-  em `development` as imagens são desenhadas em SVG pelo próprio Route Handler. O único ponto de
-  troca da listagem é `features/evidence/evidence-data.ts`.
+- **Contrato** em `lib/domain/evidence.ts`; a listagem vem de
+  `GET /inspections/{id}/evidence`, em `features/evidence/evidence-data.ts`.
 
 O cabeçalho do painel tem a busca em todas as áreas (`/search`), notificações, ajuda
 (`/support`), o ambiente, o perfil e o menu da conta (configurações e sair).
@@ -272,7 +325,7 @@ build quando algum teste falha (passo "Testes" de `.github/workflows`).
 | 6 | Bloqueio de publicação inválida | `features/templates/builder/builder-actions-bar.test.tsx` e `features/templates/publication-check.test.ts` |
 | 7 | Criação de inspeção | `features/inspections/schedule-actions.test.ts` |
 | 8 | Estados de tela | `src/test/flows/screen-states.test.tsx` |
-| 9 | Aprovação | `src/test/flows/review.test.ts` |
+| 9 | Início da revisão e aprovação | `src/test/flows/review.test.ts` |
 | 10 | Motivo obrigatório na reprovação | `src/test/flows/review.test.ts` |
 | 11 | Erros da API (401, 403, 409, 422) com `fieldErrors` no campo certo | `src/test/flows/api-errors.test.ts` |
 

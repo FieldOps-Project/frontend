@@ -20,6 +20,7 @@ import {
 import { DEFAULT_PAGE_SIZE, type Page } from '@/lib/domain/page'
 import { MANAGER_ROLES } from '@/lib/domain/user'
 import { formatDateTime, orDash } from '@/lib/format'
+import { redirectPastLastPage } from '@/lib/page-range'
 import { oneOf, pageParam, param } from '@/lib/search-params'
 
 export default async function ClientsPage(props: PageProps<'/clients'>) {
@@ -37,6 +38,7 @@ export default async function ClientsPage(props: PageProps<'/clients'>) {
     size: DEFAULT_PAGE_SIZE,
     sort: 'name,asc',
   })
+  redirectPastLastPage(page, '/clients', filters)
 
   return (
     <div className="flex flex-col gap-6">

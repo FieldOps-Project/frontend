@@ -5,6 +5,7 @@ import { IoQrCodeOutline } from 'react-icons/io5'
 
 import { BUTTON_SECONDARY, INPUT } from '@/components/ui/styles'
 import { findEquipmentByQr, type QrLookupState } from '@/features/equipment/actions'
+import { QR_CODE_FORMAT_MESSAGE, QR_CODE_INPUT_PATTERN } from '@/lib/domain/equipment'
 
 const INITIAL: QrLookupState = {}
 
@@ -22,6 +23,8 @@ export function QrLookup() {
           name="qrCode"
           defaultValue={state.code}
           placeholder="EQP-…"
+          pattern={QR_CODE_INPUT_PATTERN}
+          title={QR_CODE_FORMAT_MESSAGE}
           aria-invalid={Boolean(state.error)}
           aria-describedby={state.error ? 'qr-lookup-error' : undefined}
           className={`${INPUT} w-56 font-mono`}

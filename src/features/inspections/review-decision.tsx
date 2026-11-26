@@ -2,10 +2,11 @@
 
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, useTransition, type FormEvent } from 'react'
-import { IoCheckmarkCircleOutline, IoCloseCircleOutline } from 'react-icons/io5'
+import { IoCheckmarkCircleOutline, IoCloseCircleOutline, IoPlayCircleOutline } from 'react-icons/io5'
 
 import { useToast } from '@/components/ui/toast'
-import { approveInspection, rejectInspection } from '@/features/inspections/review-actions'
+import { approveInspection, beginReview, rejectInspection } from '@/features/inspections/review-actions'
+import { REVIEW_TEXT_MAX_LENGTH } from '@/lib/domain/inspection-review'
 
 type CorrectableItem = { readonly id: string; readonly code: string; readonly title: string }
 
@@ -17,18 +18,12 @@ const REJECT_BUTTON =
 const APPROVE_BUTTON =
   'inline-flex h-11 items-center gap-2 rounded-field bg-success px-5 text-base font-semibold text-neutral-0 transition-colors hover:brightness-95 disabled:cursor-wait disabled:opacity-70'
 
+const BEGIN_BUTTON =
+  'inline-flex h-11 items-center gap-2 rounded-field bg-brand-700 px-5 text-base font-semibold text-neutral-0 transition-colors hover:bg-brand-800 disabled:cursor-wait disabled:opacity-70'
+
 const TEXTAREA =
   'w-full rounded-field border border-input-border bg-input px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-100 aria-[invalid=true]:border-danger'
 
-/**
- * Aprovar e reprovar (documento 14.11 e AC-REVIEW).
- *
- * As duas decisoes passam por um dialogo de confirmacao. Reprovar exige motivo
- * (RN-080) -- sem ele o botao de confirmar nao envia -- e permite marcar os
- * itens que voltam ao tecnico; as nao conformidades ja vem marcadas. Aprovar
- * aceita um comentario opcional (RN-081) e avisa que as respostas ficam
- * protegidas contra edicao (RN-082).
- */
 export function ReviewDecision({
   inspectionId,
   correctableItems,
@@ -130,7 +125,7 @@ export function ReviewDecision({
                     id="review-reason"
                     name="reason"
                     rows={4}
-                    maxLength={1000}
+                    maxLength={REVIEW_TEXT_MAX_LENGTH}
                     required
                     aria-invalid={Boolean(reasonError)}
                     aria-describedby={reasonError ? 'review-reason-error' : undefined}
@@ -172,7 +167,7 @@ export function ReviewDecision({
                 <label htmlFor="review-comments" className="text-sm font-medium text-neutral-700">
                   Comentário (opcional)
                 </label>
-                <textarea id="review-comments" name="comments" rows={3} maxLength={1000} className={TEXTAREA} />
+                <textarea id="review-comments" name="comments" rows={3} maxLength={REVIEW_TEXT_MAX_LENGTH} className={TEXTAREA} />
               </div>
             )}
 
@@ -198,5 +193,26 @@ export function ReviewDecision({
         )}
       </dialog>
     </>
+  )
+}
+
+export function BeginReview({ inspectionId }: { inspectionId: string }) {
+  const [pending, startTransition] = useTransition()
+  const notify = useToast()
+  const router = useRouter()
+
+  function handleClick() {
+    startTransition(async () => {
+      const result = await beginReview(inspectionId)
+      notify(result.message, result.ok ? 'success' : 'error')
+      if (result.ok) router.refresh()
+    })
+  }
+
+  return (
+    <button type="button" onClick={handleClick} disabled={pending} className={BEGIN_BUTTON}>
+      <IoPlayCircleOutline aria-hidden className="size-6" />
+      {pending ? 'Iniciando…' : 'Iniciar revisão'}
+    </button>
   )
 }

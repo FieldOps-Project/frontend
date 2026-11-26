@@ -36,22 +36,11 @@ function Coordinates({ photo }: { photo: EvidencePhoto }) {
   )
 }
 
-/**
- * Miniaturas das fotos de um item, com ampliacao (issue #19).
- *
- * A lista so carrega a miniatura, e preguicosa (`loading="lazy"`): inspecao com
- * dezenas de fotos abre sem baixar nenhum original. A resolucao integral vem so
- * na ampliacao, que mostra descricao, horario de captura e coordenadas. Foto com
- * arquivo pendente aparece como "Aguardando upload", sem imagem quebrada.
- * Nenhuma acao de exclusao e oferecida: evidencia de inspecao aprovada e
- * somente leitura (RN-049), e a exclusao auditada nao faz parte do painel.
- */
 export function EvidenceThumbnails({ photos, label }: { photos: readonly EvidencePhoto[]; label: string }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null)
   const dialogRef = useRef<HTMLDialogElement>(null)
   const viewable = photos.filter((photo) => !isPendingUpload(photo))
   const current = openIndex === null ? undefined : viewable[openIndex]
-  /** Posicao na lista completa, para "Foto N" ser o mesmo nome na miniatura e na ampliacao. */
   const currentPosition = current ? photos.indexOf(current) : -1
 
   useEffect(() => {
@@ -87,7 +76,7 @@ export function EvidenceThumbnails({ photos, label }: { photos: readonly Evidenc
                 className="overflow-hidden rounded-field border border-neutral-200 bg-neutral-100 transition-shadow hover:shadow-raised focus-visible:ring-2 focus-visible:ring-brand-600"
               >
                 <Image
-                  src={evidenceSrc(photo.id, 'thumbnail')}
+                  src={evidenceSrc(photo.id)}
                   alt=""
                   width={320}
                   height={240}
@@ -118,7 +107,7 @@ export function EvidenceThumbnails({ photos, label }: { photos: readonly Evidenc
           <div className="flex flex-col">
             <div className="relative bg-media">
               <Image
-                src={evidenceSrc(current.id, 'original')}
+                src={evidenceSrc(current.id)}
                 alt={photoLabel(current, currentPosition)}
                 width={1600}
                 height={1200}

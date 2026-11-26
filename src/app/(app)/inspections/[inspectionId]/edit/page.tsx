@@ -4,23 +4,20 @@ import { notFound } from 'next/navigation'
 import { IoArrowBack } from 'react-icons/io5'
 
 import { Notice } from '@/components/ui/notice'
-import { isDemoInspection, loadInspectionDetail, loadPlanningPeople } from '@/features/inspections/detail-data'
+import { loadInspectionDetail, loadPlanningPeople } from '@/features/inspections/detail-data'
 import { PlanningForm } from '@/features/inspections/planning-form'
 import { todayInSaoPaulo } from '@/features/inspections/schedule-validation'
 import { requireRole } from '@/lib/dal'
+import { inspectionReference } from '@/lib/domain/inspection'
 import { canEditPlanning, scheduledDateInSaoPaulo } from '@/lib/domain/inspection-detail'
 import { MANAGER_ROLES } from '@/lib/domain/user'
+import { orDash } from '@/lib/format'
 import { isId } from '@/lib/ids'
 
 export const metadata: Metadata = {
   title: 'Editar planejamento — FieldOps',
 }
 
-/**
- * Edicao do planejamento da inspecao (documento 14.9, issue #18). Depois que o
- * tecnico inicia a execucao, a rota mostra o bloqueio em vez do formulario,
- * mesmo para quem chegar pelo endereco direto.
- */
 export default async function EditInspectionPlanningPage(props: PageProps<'/inspections/[inspectionId]/edit'>) {
   await requireRole(MANAGER_ROLES)
   const { inspectionId } = await props.params
@@ -29,7 +26,7 @@ export default async function EditInspectionPlanningPage(props: PageProps<'/insp
     notFound()
   }
 
-  const [inspection, people] = await Promise.all([loadInspectionDetail(inspectionId), loadPlanningPeople(inspectionId)])
+  const [inspection, people] = await Promise.all([loadInspectionDetail(inspectionId), loadPlanningPeople()])
   const editable = canEditPlanning(inspection.status)
 
   return (
@@ -40,20 +37,13 @@ export default async function EditInspectionPlanningPage(props: PageProps<'/insp
           className="inline-flex w-fit items-center gap-1.5 text-sm font-medium text-brand-700 hover:underline"
         >
           <IoArrowBack aria-hidden className="size-4" />
-          {inspection.code}
+          {inspectionReference(inspection.id)}
         </Link>
         <h1 className="text-4xl font-semibold tracking-tight text-neutral-950">Editar planejamento</h1>
         <p className="text-base text-neutral-700">
           {inspection.title} · {inspection.clientName}
         </p>
       </header>
-
-      {isDemoInspection(inspection.id) && (
-        <Notice tone="warning">
-          Dados de demonstração: a API ainda não tem PUT /inspections/{'{id}'}. As alterações ficam guardadas até
-          reiniciar o servidor.
-        </Notice>
-      )}
 
       {editable ? (
         <div className="max-w-5xl">
@@ -63,6 +53,7 @@ export default async function EditInspectionPlanningPage(props: PageProps<'/insp
             technicians={people.technicians}
             supervisors={people.supervisors}
             initial={{
+              title: inspection.title,
               technicianId: inspection.technicianId,
               supervisorId: inspection.supervisorId,
               scheduledDate: scheduledDateInSaoPaulo(inspection.scheduledFor),
@@ -73,7 +64,7 @@ export default async function EditInspectionPlanningPage(props: PageProps<'/insp
               template: `${inspection.templateTitle} · v${inspection.templateVersionNumber}`,
               client: inspection.clientName,
               site: inspection.siteName,
-              equipment: inspection.equipmentName ?? 'Inspeção geral do local',
+              equipment: inspection.equipmentId === null ? 'Inspeção geral do local' : orDash(inspection.equipmentName),
             }}
           />
         </div>

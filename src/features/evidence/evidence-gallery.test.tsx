@@ -4,7 +4,12 @@ import { describe, expect, it } from 'vitest'
 import { EvidenceGallery } from '@/features/evidence/evidence-gallery'
 import type { Evidence } from '@/lib/domain/evidence'
 
-function evidence(id: string, itemCode: string | null, uploadedAt: string | null = '2026-11-18T12:00:00Z'): Evidence {
+function evidence(
+  id: string,
+  nonConformityId: string | null,
+  title: string | null,
+  uploadedAt: string | null = '2026-11-18T12:00:00Z',
+): Evidence {
   return {
     id,
     description: `Foto ${id}`,
@@ -14,33 +19,43 @@ function evidence(id: string, itemCode: string | null, uploadedAt: string | null
     uploadedAt,
     inspectionId: 'i1',
     responseId: null,
-    nonConformityId: null,
-    itemId: itemCode ? `item-${itemCode}` : null,
-    itemCode,
-    itemTitle: itemCode ? `Pergunta ${itemCode}` : null,
-    serverReceivedAt: null,
+    nonConformityId,
+    nonConformityTitle: title,
+    serverReceivedAt: '2026-11-18T12:00:00Z',
   }
 }
 
 describe('EvidenceGallery', () => {
-  it('agrupa as fotos junto da pergunta do item (RN-045)', () => {
-    render(<EvidenceGallery evidences={[evidence('a', '2.1'), evidence('b', '1.2'), evidence('c', null)]} />)
+  it('agrupa as fotos pela nao conformidade, com link para ela, e deixa as soltas no fim', () => {
+    render(
+      <EvidenceGallery
+        evidences={[evidence('a', 'nc-1', 'Etiqueta danificada'), evidence('b', null, null)]}
+      />,
+    )
 
-    const groups = screen.getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent)
-    expect(groups).toEqual(['1.2 Pergunta 1.2', '2.1 Pergunta 2.1', 'Sem item específico'])
-    expect(within(screen.getByRole('list', { name: 'Fotos do item 1.2' })).getByRole('button', { name: 'Ampliar Foto b' })).toBeInTheDocument()
+    const headings = screen.getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent)
+    expect(headings).toEqual(['Etiqueta danificada', 'Sem não conformidade'])
+    expect(screen.getByRole('link', { name: 'Etiqueta danificada' })).toHaveAttribute('href', '/non-conformities/nc-1')
+    expect(
+      within(screen.getByRole('list', { name: 'Fotos de Etiqueta danificada' })).getByRole('button', { name: 'Ampliar Foto a' }),
+    ).toBeInTheDocument()
+  })
+
+  it('pede a imagem ao Route Handler, sem variante', () => {
+    render(<EvidenceGallery evidences={[evidence('a', null, null)]} />)
+    expect(document.querySelector('img')?.getAttribute('src')).toBe('/api/evidence/a')
   })
 
   it('conta as fotos aguardando upload', () => {
-    render(<EvidenceGallery evidences={[evidence('a', '1.1'), evidence('b', '1.1', null)]} />)
+    render(<EvidenceGallery evidences={[evidence('a', null, null), evidence('b', null, null, null)]} />)
     expect(screen.getByText('1 aguardando upload')).toBeInTheDocument()
   })
 
-  it('trata vazio e API indisponivel', () => {
+  it('trata vazio e perfil sem acesso', () => {
     const { rerender } = render(<EvidenceGallery evidences={[]} />)
     expect(screen.getByText('Nenhuma fotografia registrada nesta inspeção.')).toBeInTheDocument()
 
     rerender(<EvidenceGallery evidences={null} />)
-    expect(screen.getByText(/indisponíveis no momento/)).toBeInTheDocument()
+    expect(screen.getByText(/Evidências indisponíveis para o seu perfil/)).toBeInTheDocument()
   })
 })

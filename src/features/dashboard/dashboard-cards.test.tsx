@@ -1,9 +1,11 @@
 import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
+import { DashboardHeader } from '@/features/dashboard/dashboard-header'
 import { DelayedInspectionsCard } from '@/features/dashboard/delayed-inspections-card'
 import { PendingReviewsCard } from '@/features/dashboard/pending-reviews-card'
 import { PipelineCard } from '@/features/dashboard/pipeline-card'
+import { SeverityBreakdownCard } from '@/features/dashboard/severity-breakdown-card'
 import { emptyStatusCounts } from '@/lib/domain/dashboard'
 
 const COUNTS = {
@@ -43,8 +45,8 @@ describe('PipelineCard', () => {
 })
 
 describe('PendingReviewsCard', () => {
-  it('leva ao filtro aguardando revisao e pede acao quando ha pendencia', () => {
-    render(<PendingReviewsCard count={45} />)
+  it('leva a fila de revisao e pede acao ao supervisor quando ha pendencia', () => {
+    render(<PendingReviewsCard count={45} reviewable />)
 
     const card = screen.getByRole('link', { name: 'Revisões Pendentes' })
     expect(card).toHaveAttribute('href', '/inspections/review-queue')
@@ -52,29 +54,71 @@ describe('PendingReviewsCard', () => {
     expect(card).toHaveTextContent('Requer Ação')
   })
 
+  it('so informa o numero a quem nao revisa, sem link para a fila', () => {
+    render(<PendingReviewsCard count={45} reviewable={false} />)
+
+    expect(screen.queryByRole('link')).not.toBeInTheDocument()
+    expect(screen.getByText('45')).toBeInTheDocument()
+    expect(screen.queryByText('Requer Ação')).not.toBeInTheDocument()
+  })
+
   it('nao pede acao sem pendencia', () => {
-    render(<PendingReviewsCard count={0} />)
+    render(<PendingReviewsCard count={0} reviewable />)
     expect(screen.queryByText('Requer Ação')).not.toBeInTheDocument()
     expect(screen.getByText('Nada pendente')).toBeInTheDocument()
   })
 })
 
 describe('DelayedInspectionsCard', () => {
-  it('leva ao filtro de atrasadas e mostra a variacao desde ontem', () => {
-    render(<DelayedInspectionsCard summary={{ overdue: 18, overdueYesterday: 15 }} />)
+  it('leva ao filtro de atrasadas e chama atencao quando ha atraso', () => {
+    render(<DelayedInspectionsCard count={18} />)
 
     const card = screen.getByRole('link', { name: 'Inspeções Atrasadas' })
     expect(card).toHaveAttribute('href', '/inspections?overdue=1')
     expect(card).toHaveTextContent('18')
-    expect(card).toHaveTextContent('+3 desde ontem')
+    expect(card).toHaveTextContent('Requer Atenção')
     expect(card).toHaveClass('bg-danger-soft/30')
   })
 
   it('fica neutro quando nada esta atrasado', () => {
-    render(<DelayedInspectionsCard summary={{ overdue: 0, overdueYesterday: 2 }} />)
+    render(<DelayedInspectionsCard count={0} />)
 
     const card = screen.getByRole('link', { name: 'Inspeções Atrasadas' })
-    expect(card).toHaveTextContent('−2 desde ontem')
+    expect(card).toHaveTextContent('Nenhuma atrasada')
     expect(card).not.toHaveClass('bg-danger-soft/30')
+  })
+})
+
+describe('SeverityBreakdownCard', () => {
+  const counts = { LOW: 1, MEDIUM: 2, HIGH: 3, CRITICAL: 4 }
+
+  it('lista as quatro criticidades da mais grave para a menos grave, com o total', () => {
+    render(<SeverityBreakdownCard counts={counts} linkable={false} />)
+
+    const items = within(screen.getByRole('list')).getAllByRole('listitem')
+    expect(items.map((item) => item.textContent)).toEqual(['Crítica4', 'Alta3', 'Média2', 'Baixa1'])
+    expect(screen.getByText('Total: 10')).toBeInTheDocument()
+    expect(screen.queryByRole('link')).not.toBeInTheDocument()
+  })
+
+  it('leva a listagem filtrada quando quem ve pode abrir as nao conformidades', () => {
+    render(<SeverityBreakdownCard counts={counts} linkable />)
+
+    expect(screen.getByRole('link', { name: 'Crítica: 4 não conformidades' })).toHaveAttribute(
+      'href',
+      '/non-conformities?severity=CRITICAL',
+    )
+    expect(screen.getByRole('link', { name: 'Baixa: 1 não conformidade' })).toBeInTheDocument()
+  })
+})
+
+describe('DashboardHeader', () => {
+  it('oferece revisar pendencias so a quem revisa', () => {
+    const { rerender } = render(<DashboardHeader canReview />)
+    expect(screen.getByRole('link', { name: 'Revisar Pendências' })).toHaveAttribute('href', '/inspections/review-queue')
+
+    rerender(<DashboardHeader canReview={false} />)
+    expect(screen.queryByRole('link', { name: 'Revisar Pendências' })).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Criar Inspeção' })).toBeInTheDocument()
   })
 })

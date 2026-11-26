@@ -1,8 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
-import { Notice } from '@/components/ui/notice'
-import { isDemoNonConformities, loadNonConformity } from '@/features/non-conformities/non-conformities-data'
+import { loadNonConformity } from '@/features/non-conformities/non-conformities-data'
 import {
   NonConformityContext,
   NonConformityEvidences,
@@ -10,20 +9,15 @@ import {
   NonConformityOrigin,
 } from '@/features/non-conformities/non-conformity-view'
 import { requireRole } from '@/lib/dal'
-import { MANAGER_ROLES } from '@/lib/domain/user'
+import { FIELD_FINDINGS_ROLES } from '@/lib/domain/non-conformity'
 import { isId } from '@/lib/ids'
 
 export const metadata: Metadata = {
   title: 'Não conformidade — FieldOps',
 }
 
-/**
- * Detalhe da nao conformidade (documento 14.12, issue #20): descricao,
- * criticidade, a inspecao a que pertence, o item que a originou e as
- * evidencias. Somente consulta -- no MVP nao ha tratamento nem mudanca de estado.
- */
 export default async function NonConformityPage(props: PageProps<'/non-conformities/[nonConformityId]'>) {
-  await requireRole(MANAGER_ROLES)
+  await requireRole(FIELD_FINDINGS_ROLES)
   const { nonConformityId } = await props.params
 
   if (!isId(nonConformityId)) {
@@ -35,10 +29,6 @@ export default async function NonConformityPage(props: PageProps<'/non-conformit
   return (
     <div className="flex flex-col gap-8">
       <NonConformityHeader item={item} />
-
-      {isDemoNonConformities() && (
-        <Notice tone="warning">Dados de demonstração: a API ainda não publica as não conformidades.</Notice>
-      )}
 
       <NonConformityContext item={item} />
 

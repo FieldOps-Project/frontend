@@ -84,15 +84,6 @@ function formatDay(day: string): string {
   return `${date}/${month}/${year}`
 }
 
-/**
- * Filtros do acompanhamento (issue #17).
- *
- * Cada mudanca vai direto para a URL -- a pagina e o filtro sao o mesmo link,
- * que sobrevive ao recarregamento e pode virar favorito -- e volta a primeira
- * pagina. A busca espera a pessoa parar de digitar. Os atalhos "somente
- * atrasadas" e "aguardando revisao" sao os recortes mais usados; os chips de
- * filtros ativos removem um filtro por vez.
- */
 export function InspectionFilters({
   pathname,
   filters,
@@ -106,8 +97,8 @@ export function InspectionFilters({
 }) {
   const router = useRouter()
   const [, startTransition] = useTransition()
-  const [query, setQuery] = useState(filters.q ?? '')
-  const lastApplied = useRef(filters.q ?? '')
+  const [query, setQuery] = useState(filters.search ?? '')
+  const lastApplied = useRef(filters.search ?? '')
 
   function apply(next: Filters) {
     startTransition(() => {
@@ -116,17 +107,16 @@ export function InspectionFilters({
   }
 
   function update(patch: Partial<Filters>) {
-    apply({ ...filters, q: lastApplied.current || undefined, ...patch })
+    apply({ ...filters, search: lastApplied.current || undefined, ...patch })
   }
 
   useEffect(() => {
     if (query === lastApplied.current) return
     const timer = setTimeout(() => {
       lastApplied.current = query
-      apply({ ...filters, q: query.trim() || undefined })
+      apply({ ...filters, search: query.trim() || undefined })
     }, SEARCH_DELAY_MS)
     return () => clearTimeout(timer)
-    // `filters` muda a cada navegacao; a busca so reage ao texto digitado.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query])
 
@@ -134,7 +124,7 @@ export function InspectionFilters({
   const clientName = new Map(clients.map((option) => [option.value, option.label]))
 
   const chips: { key: keyof Filters; label: string }[] = [
-    filters.q ? { key: 'q' as const, label: `Busca: ${filters.q}` } : null,
+    filters.search ? { key: 'search' as const, label: `Busca: ${filters.search}` } : null,
     filters.status ? { key: 'status' as const, label: `Status: ${INSPECTION_STATUS_LABELS[filters.status]}` } : null,
     filters.technicianId
       ? { key: 'technicianId' as const, label: `Técnico: ${technicianName.get(filters.technicianId) ?? '—'}` }
@@ -143,11 +133,10 @@ export function InspectionFilters({
     filters.priority ? { key: 'priority' as const, label: `Prioridade: ${INSPECTION_PRIORITY_LABELS[filters.priority]}` } : null,
     filters.date ? { key: 'date' as const, label: `Data: ${formatDay(filters.date)}` } : null,
     filters.overdue ? { key: 'overdue' as const, label: 'Somente atrasadas' } : null,
-    filters.review ? { key: 'review' as const, label: 'Aguardando revisão' } : null,
   ].filter((chip) => chip !== null)
 
   function remove(key: keyof Filters) {
-    if (key === 'q') {
+    if (key === 'search') {
       setQuery('')
       lastApplied.current = ''
     }
@@ -174,14 +163,12 @@ export function InspectionFilters({
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Buscar por ID, título, cliente..."
+            placeholder="Buscar por título, cliente, local..."
             className={`${INPUT} h-11 bg-neutral-50 pl-10 text-base`}
           />
         </label>
         <div className="flex flex-wrap items-center gap-4">
           <Toggle label="Somente atrasadas" checked={Boolean(filters.overdue)} onChange={(next) => update({ overdue: next })} />
-          <span aria-hidden className="hidden h-6 w-px bg-neutral-200 sm:block" />
-          <Toggle label="Aguardando revisão" checked={Boolean(filters.review)} onChange={(next) => update({ review: next })} />
         </div>
       </div>
 

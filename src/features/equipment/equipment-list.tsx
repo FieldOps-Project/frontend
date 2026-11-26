@@ -16,9 +16,9 @@ import {
 } from '@/lib/domain/equipment'
 import { DEFAULT_PAGE_SIZE, type Page } from '@/lib/domain/page'
 import { formatDate, orDash } from '@/lib/format'
-import { oneOf, pageParam, param, type RawSearchParams } from '@/lib/search-params'
+import { redirectPastLastPage } from '@/lib/page-range'
+import { idParam, oneOf, pageParam, param, type RawSearchParams } from '@/lib/search-params'
 
-/** Listagem de equipamentos, servida em `/equipment` e em `/sites/[id]/equipment`. */
 export async function EquipmentList({
   searchParams,
   pathname,
@@ -31,7 +31,7 @@ export async function EquipmentList({
   const filters = {
     search: param(searchParams, 'search'),
     status: oneOf(searchParams, 'status', EQUIPMENT_STATUSES),
-    siteId: siteId ? undefined : param(searchParams, 'siteId'),
+    siteId: siteId ? undefined : idParam(searchParams, 'siteId'),
   }
 
   const [page, sites, clients] = await Promise.all([
@@ -44,13 +44,14 @@ export async function EquipmentList({
     loadSites(),
     loadClients(),
   ])
+  redirectPastLastPage(page, pathname, filters)
   const sitesById = byId(sites)
   const clientsById = byId(clients)
 
   return (
     <section className={CARD}>
       <FilterBar pathname={pathname}>
-        <FilterSearch label="Buscar" defaultValue={filters.search} placeholder="Nome, patrimônio, série ou QR" />
+        <FilterSearch label="Buscar" defaultValue={filters.search} placeholder="Nome, patrimônio, série, fabricante, modelo ou QR" />
         {!siteId && (
           <FilterSelect
             name="siteId"

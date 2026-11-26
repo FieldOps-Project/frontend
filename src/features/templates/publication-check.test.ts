@@ -61,11 +61,38 @@ describe('pendencias da API', () => {
     expect(issues).toEqual([
       { message: 'A seção 2 “Sistema elétrico” não tem itens.', target: { kind: 'section', id: 's2' } },
       {
-        message: 'Item 1.2 “Pergunta i2”: a escolha única precisa de ao menos 2 opções, sem repetir.',
+        message: 'Item 1.2 “Pergunta i2”: a escolha única precisa de ao menos 2 opções, sem deixar opção em branco.',
         target: { kind: 'item', id: 'i2' },
       },
       { message: 'O modelo precisa de uma categoria.', target: { kind: 'template' } },
     ])
+  })
+
+  it('distingue pelo texto da API os tres motivos que chegam no campo de opcoes', () => {
+    const reasonFor = (message: string) =>
+      issuesFromApi([{ field: 'sections[0].items[1].options', message }], { sections: SECTIONS })[0]?.message
+
+    expect(reasonFor('Options are only accepted for SINGLE_CHOICE items')).toBe(
+      'Item 1.2 “Pergunta i2”: opções só valem para itens de escolha única.',
+    )
+    expect(reasonFor('SINGLE_CHOICE options must be unique')).toBe(
+      'Item 1.2 “Pergunta i2”: as opções da escolha única não podem se repetir.',
+    )
+    expect(reasonFor('SINGLE_CHOICE items require at least two non-blank options')).toBe(
+      'Item 1.2 “Pergunta i2”: a escolha única precisa de ao menos 2 opções, sem deixar opção em branco.',
+    )
+  })
+
+  it('distingue tipo ausente de tipo nao suportado pelo aplicativo', () => {
+    const reasonFor = (message: string) =>
+      issuesFromApi([{ field: 'sections[0].items[0].responseType', message }], { sections: SECTIONS })[0]?.message
+
+    expect(reasonFor('Every item must declare a response type')).toBe(
+      'Item 1.1 “Pergunta i1”: escolha o tipo de resposta do item.',
+    )
+    expect(reasonFor('Response type PHOTO is not supported by the mobile app')).toBe(
+      'Item 1.1 “Pergunta i1”: o tipo de resposta não é suportado pelo aplicativo (RN-023).',
+    )
   })
 
   it('mantem a mensagem da API quando o caminho e desconhecido', () => {
