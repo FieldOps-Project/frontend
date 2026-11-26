@@ -47,6 +47,25 @@ function itemMessage(section: TemplateSection, sectionIndex: number, itemIndex: 
   return item ? `Item ${label} “${item.title}”: ${reason}` : `Item ${label}: ${reason}`
 }
 
+function optionsReason(message: string): string {
+  if (/only accepted/i.test(message)) return 'opções só valem para itens de escolha única.'
+  if (/unique/i.test(message)) return 'as opções da escolha única não podem se repetir.'
+  return 'a escolha única precisa de ao menos 2 opções, sem deixar opção em branco.'
+}
+
+function responseTypeReason(message: string): string {
+  if (/must declare/i.test(message)) return 'escolha o tipo de resposta do item.'
+  return 'o tipo de resposta não é suportado pelo aplicativo (RN-023).'
+}
+
+function itemReason(property: string | undefined, message: string): string {
+  if (property === 'responseType') return responseTypeReason(message)
+  if (property === 'displayOrder') return 'a ordem está duplicada. Reordene os itens da seção.'
+  if (property === 'options') return optionsReason(message)
+  if (property === 'evidenceRequiredOnFailure') return 'observação e evidência na falha só valem para conformidade ou sim/não.'
+  return message
+}
+
 /**
  * Traduz as pendencias que a API devolve no `422 TEMPLATE_PUBLISH_INVALID`
  * (`fieldErrors` com caminhos como `sections[1].items` ou
@@ -80,16 +99,7 @@ export function issuesFromApi(
     const itemIndex = Number(match[2])
     const item = section.items[itemIndex]
     const target: IssueTarget = item ? { kind: 'item', id: item.id } : { kind: 'section', id: section.id }
-    const reason =
-      match[3] === 'responseType'
-        ? 'o tipo de resposta não é suportado pelo aplicativo (RN-023).'
-        : match[3] === 'displayOrder'
-          ? 'a ordem está duplicada. Reordene os itens da seção.'
-          : match[3] === 'options'
-            ? 'a escolha única precisa de ao menos 2 opções, sem repetir.'
-            : match[3] === 'evidenceRequiredOnFailure'
-              ? 'observação e evidência na falha só valem para conformidade ou sim/não.'
-              : message
+    const reason = itemReason(match[3], message)
     return { message: itemMessage(section, sectionIndex, itemIndex, reason), target }
   })
 }
