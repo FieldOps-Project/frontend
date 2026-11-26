@@ -106,17 +106,15 @@ por categoria, e a situação de cada modelo com a versão vigente ("Publicado �
   do que impede publicar, cada item levando ao ponto exato) e **Publicar versão** (confirmação de
   que a versão fica imutável e o número gerado). A conferência local repete as regras do backend;
   se a API recusar com `422 TEMPLATE_PUBLISH_INVALID`, valem as pendências dela. As versões
-  publicadas ficam em `/versions` (número, autor, data e se aceitam novos agendamentos) e o
+  publicadas ficam em `/versions` (número, autor, data e se aceitam novos agendamentos, com o botão de liberar ou retirar) e o
   conteúdo de cada uma em `/versions/{versionId}`.
 - **Inativar e reativar** só para modelos já publicados, como a API exige. A confirmação avisa
   que as inspeções existentes não são afetadas (RN-022).
 - **Contrato** em `lib/domain/inspection-template.ts` e `lib/domain/template-builder.ts`, igual
   às respostas da API (`/inspection-templates`, `/sections`, `/items`, `/versions`).
-- **Demonstração com memória** em `NEXT_PUBLIC_APP_ENV=development`
-  (`features/templates/template-demo-store.ts` e `template-draft-demo-store.ts`, com o modelo
-  "Inspeção de Máquinas Pesadas" igual ao do Stitch): o que for criado ou alterado fica guardado até
-  o servidor de desenvolvimento reiniciar. O único ponto de troca para a API é
-  `features/templates/templates-data.ts`.
+- **Disponibilidade da versão**: em `/versions`, cada versão publicada pode ser liberada ou
+  retirada dos novos agendamentos (`PATCH /inspection-template-versions/{id}/availability`). As
+  inspeções existentes não são afetadas.
 
 ## Detalhe da inspeção
 

@@ -4,9 +4,12 @@ import { demoEvidences } from '@/features/evidence/evidence-fixture'
 import { demoInspectionDetail, demoInspectionHistory } from '@/features/inspections/detail-fixture'
 import { demoInspections } from '@/features/inspections/list-fixture'
 import { demoNonConformities } from '@/features/non-conformities/non-conformity-fixture'
-import { demoTemplateId } from '@/features/templates/template-demo-store'
 import type { AuditEvent } from '@/lib/domain/audit'
 import type { InspectionHistoryEvent } from '@/lib/domain/inspection-detail'
+
+function demoTemplateId(n: number): string {
+  return `e0000000-0000-4000-8000-${String(n).padStart(12, '0')}`
+}
 
 /**
  * Eventos de auditoria de demonstracao, servidos so em

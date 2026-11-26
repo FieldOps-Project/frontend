@@ -12,9 +12,8 @@ const MAX_LOOKUP_PAGES = 10
 
 type LookupQuery = Readonly<Record<string, string | undefined>>
 
-async function loadAllPages<T>(path: string, query: LookupQuery): Promise<readonly T[]> {
-  const fetchPage = (page: number) =>
-    load<Page<T>>(path, { ...query, page, size: MAX_PAGE_SIZE, sort: 'name,asc' })
+export async function loadAllPages<T>(path: string, query: LookupQuery, sort = 'name,asc'): Promise<readonly T[]> {
+  const fetchPage = (page: number) => load<Page<T>>(path, { ...query, page, size: MAX_PAGE_SIZE, sort })
 
   const first = await fetchPage(0)
   const remaining = Math.min(first.totalPages, MAX_LOOKUP_PAGES) - 1

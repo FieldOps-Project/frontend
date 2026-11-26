@@ -77,8 +77,8 @@ export type SectionInput = {
   readonly description: string | null
 }
 
-/** Corpo de criacao e edicao de item. */
 export type ItemInput = {
+  readonly code: string | null
   readonly title: string
   readonly description: string | null
   readonly responseType: ResponseType
@@ -92,6 +92,7 @@ export type ItemInput = {
 export const BUILDER_LIMITS = {
   sectionTitle: 255,
   sectionDescription: 1000,
+  itemCode: 50,
   itemTitle: 255,
   itemDescription: 1000,
   options: 50,

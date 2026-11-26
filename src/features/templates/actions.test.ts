@@ -1,7 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { changeTemplateStatus, createTemplate } from '@/features/templates/actions'
-import { listDemoTemplates, resetDemoTemplates } from '@/features/templates/template-demo-store'
+import { ApiError } from '@/lib/api/errors'
 
 vi.mock('server-only', () => ({}))
 
@@ -49,12 +49,10 @@ async function redirectOf(promise: Promise<unknown>): Promise<string> {
 
 afterEach(() => {
   send.mockReset()
-  vi.unstubAllEnvs()
 })
 
 describe('createTemplate', () => {
   it('devolve os erros por campo sem chamar a API', async () => {
-    vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'production')
     const state = await createTemplate({ status: 'idle' }, form({ title: '', category: '' }))
 
     expect(state).toMatchObject({
@@ -64,19 +62,7 @@ describe('createTemplate', () => {
     expect(send).not.toHaveBeenCalled()
   })
 
-  it('em desenvolvimento guarda o rascunho e abre o construtor', async () => {
-    vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'development')
-    resetDemoTemplates()
-
-    const target = await redirectOf(createTemplate({ status: 'idle' }, form({ title: 'Novo modelo', category: 'Testes' })))
-    const [created] = listDemoTemplates({ category: 'Testes' })
-
-    expect(created).toMatchObject({ title: 'Novo modelo', status: 'DRAFT', createdBy: 'user-1' })
-    expect(target).toBe(`/inspection-templates/${created?.id}/edit?notice=created`)
-  })
-
-  it('com a API envia o corpo do contrato e abre o construtor do modelo criado', async () => {
-    vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'production')
+  it('envia o corpo do contrato e abre o construtor do modelo criado', async () => {
     send.mockResolvedValueOnce({ id: 'f0000000-0000-4000-8000-000000000001' })
 
     const target = await redirectOf(
@@ -92,39 +78,28 @@ describe('createTemplate', () => {
 })
 
 describe('changeTemplateStatus', () => {
-  beforeEach(() => {
-    resetDemoTemplates()
-  })
-
-  it('em desenvolvimento inativa modelo publicado', async () => {
-    vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'development')
-    const [published] = listDemoTemplates({ status: 'ACTIVE' })
-
-    const result = await changeTemplateStatus(published!.id, 'INACTIVE')
-
-    expect(result).toEqual({ ok: true, message: 'Modelo inativado. As inspeções existentes não foram afetadas.' })
-    expect(listDemoTemplates({ status: 'INACTIVE' }).some((t) => t.id === published!.id)).toBe(true)
-  })
-
-  it('em desenvolvimento recusa rascunho nunca publicado com mensagem', async () => {
-    vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'development')
-    const [draft] = listDemoTemplates({ status: 'DRAFT' })
-
-    await expect(changeTemplateStatus(draft!.id, 'INACTIVE')).resolves.toEqual({
-      ok: false,
-      message: 'Publique o modelo antes de mudar a situação dele.',
-    })
-  })
-
-  it('com a API usa o PATCH de situacao', async () => {
-    vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'production')
+  it('usa o PATCH de situacao', async () => {
     send.mockResolvedValueOnce({})
 
-    await changeTemplateStatus('f0000000-0000-4000-8000-000000000001', 'ACTIVE')
+    const result = await changeTemplateStatus('f0000000-0000-4000-8000-000000000001', 'INACTIVE')
 
     expect(send).toHaveBeenCalledWith('/inspection-templates/f0000000-0000-4000-8000-000000000001/status', {
       method: 'PATCH',
-      body: { status: 'ACTIVE' },
+      body: { status: 'INACTIVE' },
     })
+    expect(result).toEqual({ ok: true, message: 'Modelo inativado. As inspeções existentes não foram afetadas.' })
+  })
+
+  it('devolve a recusa da API como mensagem', async () => {
+    send.mockRejectedValueOnce(new ApiError({ status: 422, code: 'TEMPLATE_NOT_PUBLISHED', message: 'x' }))
+
+    await expect(changeTemplateStatus('f0000000-0000-4000-8000-000000000001', 'INACTIVE')).resolves.toMatchObject({
+      ok: false,
+    })
+  })
+
+  it('recusa identificador que nao e UUID antes de chamar a API', async () => {
+    await expect(changeTemplateStatus('../users', 'ACTIVE')).rejects.toThrow('Identificador invalido.')
+    expect(send).not.toHaveBeenCalled()
   })
 })
