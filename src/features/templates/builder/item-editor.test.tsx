@@ -86,6 +86,40 @@ describe('ItemEditor', () => {
     expect(updateItem).toHaveBeenCalledWith('t1', 'i1', expect.objectContaining({ required: false, responseType: 'CONFORMITY' }))
   })
 
+  it('mostra o codigo do item e o reenvia ao salvar, para a edicao nao apaga-lo', async () => {
+    const withCode = { ...ITEM, code: 'GER-GER-002' }
+    updateItem.mockResolvedValueOnce({ ok: true, message: 'Item salvo.', data: withCode })
+    render(wrap(<ItemEditor templateId="t1" sectionId="s1" number="1.2" item={withCode} onDone={vi.fn()} />))
+
+    expect(screen.getByRole('textbox', { name: 'Código (opcional)' })).toHaveValue('GER-GER-002')
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar Item' }))
+
+    await waitFor(() => expect(updateItem).toHaveBeenCalled())
+    expect(updateItem).toHaveBeenCalledWith('t1', 'i1', expect.objectContaining({ code: 'GER-GER-002' }))
+  })
+
+  it('permite informar o codigo de um item novo', async () => {
+    createItem.mockResolvedValueOnce({ ok: true, message: 'Item adicionado.', data: ITEM })
+    render(wrap(<ItemEditor templateId="t1" sectionId="s1" number="1.1" onDone={vi.fn()} />))
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Pergunta do item' }), { target: { value: 'Extintor' } })
+    fireEvent.change(screen.getByRole('textbox', { name: 'Código (opcional)' }), { target: { value: 'EXT-03' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar Item' }))
+
+    await waitFor(() => expect(createItem).toHaveBeenCalled())
+    expect(createItem).toHaveBeenCalledWith('t1', 's1', expect.objectContaining({ code: 'EXT-03' }))
+  })
+
+  it('mostra no campo o erro de codigo devolvido pela API', async () => {
+    createItem.mockResolvedValueOnce({ ok: false, message: 'Revise.', fieldErrors: { code: 'Use no máximo 50 caracteres.' } })
+    render(wrap(<ItemEditor templateId="t1" sectionId="s1" number="1.1" onDone={vi.fn()} />))
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Pergunta do item' }), { target: { value: 'Extintor' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar Item' }))
+
+    expect(await screen.findByText('Use no máximo 50 caracteres.')).toBeInTheDocument()
+  })
+
   it('fecha sem salvar ao cancelar', () => {
     const onDone = vi.fn()
     render(wrap(<ItemEditor templateId="t1" sectionId="s1" number="1.2" item={ITEM} onDone={onDone} />))

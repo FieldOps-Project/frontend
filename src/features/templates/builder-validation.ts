@@ -14,7 +14,7 @@ import {
  */
 export type SectionErrors = Partial<Record<'title' | 'description', string>>
 
-export type ItemErrors = Partial<Record<'title' | 'description' | 'responseType' | 'options', string>>
+export type ItemErrors = Partial<Record<'code' | 'title' | 'description' | 'responseType' | 'options', string>>
 
 function clean(value: string | null | undefined): string {
   return value?.trim() ?? ''
@@ -35,6 +35,7 @@ export function validateSection(values: { title?: string | null; description?: s
 }
 
 export function validateItem(values: {
+  code?: string | null
   title?: string | null
   description?: string | null
   responseType?: string | null
@@ -43,6 +44,10 @@ export function validateItem(values: {
   const errors: ItemErrors = {}
   const title = clean(values.title)
   const type = clean(values.responseType)
+
+  if (clean(values.code).length > BUILDER_LIMITS.itemCode) {
+    errors.code = `Use no máximo ${BUILDER_LIMITS.itemCode} caracteres.`
+  }
 
   if (title === '') errors.title = 'Escreva a pergunta do item.'
   else if (title.length > BUILDER_LIMITS.itemTitle) errors.title = `Use no máximo ${BUILDER_LIMITS.itemTitle} caracteres.`
