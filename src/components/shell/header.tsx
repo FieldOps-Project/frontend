@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { MdHelpOutline } from 'react-icons/md'
 
-import { HeaderSearch } from '@/components/shell/header-search'
 import { EnvironmentLabel } from '@/components/shell/environment-label'
 import { MobileNav } from '@/components/shell/mobile-nav'
 import { NotificationsButton } from '@/components/shell/notifications-button'
@@ -13,14 +12,19 @@ import type { NavigationItem } from '@/lib/navigation'
 import type { SessionUser } from '@/lib/session'
 
 /**
- * Cabecalho do painel, no desenho do Stitch: busca, notificacoes, ajuda,
- * ambiente, perfil e o menu da conta (documento 14.4).
+ * Cabecalho do painel, no desenho do Stitch: notificacoes, ajuda, ambiente,
+ * perfil e o menu da conta (documento 14.4).
  *
  * Componente de servidor; so as partes que abrem painel sao de cliente.
  *
  * Em tela estreita o que se pode perder primeiro sai antes: ajuda, perfil e o
  * rotulo de producao (que continua no menu do avatar). Ambiente que nao e
  * producao nunca some.
+ *
+ * Sem busca global: o desenho do Stitch previa uma barra "pesquisar em todo o
+ * painel" aqui, mas busca textual ampla e P1 no documento 08 (secao 8.3), e o
+ * que o MVP exige -- pesquisar e filtrar cadastros (documento 14.6, PBI-017) --
+ * ja vive nos filtros de cada lista.
  */
 export function Header({
   user,
@@ -34,8 +38,6 @@ export function Header({
   return (
     <header className="flex h-[4.5rem] shrink-0 items-center gap-2 border-b border-neutral-200 bg-neutral-0 px-3 sm:gap-3 sm:px-6 lg:px-10">
       <MobileNav items={items} />
-
-      <HeaderSearch />
 
       <div className="flex-1" />
 
