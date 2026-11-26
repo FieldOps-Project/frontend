@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { IoCreateOutline, IoEyeOutline } from 'react-icons/io5'
+import { IoCreateOutline, IoDocumentTextOutline, IoEyeOutline } from 'react-icons/io5'
 
 import { FlashNotice } from '@/components/ui/notice'
 import { loadInspectionEvidences } from '@/features/evidence/evidence-data'
@@ -32,6 +32,9 @@ export const metadata: Metadata = {
 const REVIEW_BUTTON =
   'inline-flex h-11 items-center gap-2 rounded-field bg-brand-700 px-5 text-base font-semibold text-neutral-0 transition-colors hover:bg-brand-800'
 
+const REPORT_LINK =
+  'inline-flex h-11 items-center gap-2 rounded-field border border-neutral-200 bg-neutral-0 px-5 text-base font-semibold text-brand-700 transition-colors hover:bg-neutral-100'
+
 const EDIT_LINK =
   'inline-flex h-9 items-center gap-1.5 rounded-field border border-neutral-200 px-3 text-sm font-medium text-brand-700 transition-colors hover:bg-neutral-100'
 
@@ -60,6 +63,10 @@ export default async function InspectionDetailPage(props: PageProps<'/inspection
         inspection={inspection}
         actions={
           <div className="flex shrink-0 flex-wrap gap-3">
+            <a href={`/api/inspections/${inspection.id}/report`} download className={REPORT_LINK}>
+              <IoDocumentTextOutline aria-hidden className="size-5" />
+              Baixar relatório (PDF)
+            </a>
             {cancelable && <CancelInspection inspectionId={inspection.id} reference={inspectionReference(inspection.id)} />}
             {reviewable && (
               <Link href={`/inspections/${inspection.id}/review`} className={REVIEW_BUTTON}>
