@@ -2,8 +2,38 @@ import 'server-only'
 
 import { demoInspectionDetail } from '@/features/inspections/detail-fixture'
 import { DEMO_REVIEW, DEMO_REVIEW_ID } from '@/features/inspections/review-fixture'
-import { CONFORMITY_LABELS, reviewItems, type ReviewPhoto, type Severity } from '@/lib/domain/inspection-review'
-import type { NonConformityDetail, NonConformityOrigin } from '@/lib/domain/non-conformity'
+import { CONFORMITY_LABELS, reviewItems, type ReviewItem, type ReviewPhoto, type Severity } from '@/lib/domain/inspection-review'
+import type { NonConformityStatus } from '@/lib/domain/non-conformity'
+
+export type NonConformityOrigin = {
+  readonly itemId: string
+  readonly itemCode: string
+  readonly question: string
+  readonly responseType: ReviewItem['responseType']
+  readonly answer: string | null
+  readonly observation: string | null
+}
+
+export type NonConformityDetail = {
+  readonly id: string
+  readonly title: string
+  readonly description: string
+  readonly severity: Severity
+  readonly status: NonConformityStatus
+  readonly inspectionId: string
+  readonly inspectionCode: string
+  readonly clientId: string
+  readonly clientName: string
+  readonly siteName: string
+  readonly equipmentName: string | null
+  readonly itemCode: string | null
+  readonly itemTitle: string | null
+  readonly createdByName: string
+  readonly createdAtDevice: string
+  readonly serverReceivedAt: string | null
+  readonly origin: NonConformityOrigin | null
+  readonly evidences: readonly ReviewPhoto[]
+}
 
 /**
  * Nao conformidades de demonstracao, servidas so em `NEXT_PUBLIC_APP_ENV=development`
