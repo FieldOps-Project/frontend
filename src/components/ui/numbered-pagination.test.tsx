@@ -31,6 +31,15 @@ describe('pageWindow', () => {
 })
 
 describe('NumberedPagination', () => {
+  it('nao inventa intervalo para pagina sem itens', () => {
+    const pastEnd = { ...page(0, 124), content: [], page: 99, first: false, last: true }
+    render(<NumberedPagination page={pastEnd} pathname="/inspections" params={{}} />)
+
+    const label = screen.getByRole('navigation', { name: 'Paginação' }).querySelector('p')
+    expect(label).toHaveTextContent('124 resultados')
+    expect(label).not.toHaveTextContent('Mostrando')
+  })
+
   it('conta o intervalo mostrado e marca a pagina atual', () => {
     render(<NumberedPagination page={page(0, 124)} pathname="/inspections" params={{ review: '1' }} />)
 
