@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { changeTemplateStatus, createTemplate } from '@/features/templates/actions'
+import { changeTemplateStatus, changeVersionAvailability, createTemplate } from '@/features/templates/actions'
 import { ApiError } from '@/lib/api/errors'
 
 vi.mock('server-only', () => ({}))
@@ -100,6 +100,49 @@ describe('changeTemplateStatus', () => {
 
   it('recusa identificador que nao e UUID antes de chamar a API', async () => {
     await expect(changeTemplateStatus('../users', 'ACTIVE')).rejects.toThrow('Identificador invalido.')
+    expect(send).not.toHaveBeenCalled()
+  })
+})
+
+describe('changeVersionAvailability', () => {
+  const VERSION = 'f0000000-0000-4000-8000-0000000000aa'
+
+  it('libera a versao com o corpo do contrato', async () => {
+    send.mockResolvedValueOnce({})
+
+    const result = await changeVersionAvailability(VERSION, true)
+
+    expect(send).toHaveBeenCalledWith(`/inspection-template-versions/${VERSION}/availability`, {
+      method: 'PATCH',
+      body: { activeForNewInspections: true },
+    })
+    expect(result).toEqual({ ok: true, message: 'Versão liberada para novos agendamentos.' })
+  })
+
+  it('retira a versao dos novos agendamentos', async () => {
+    send.mockResolvedValueOnce({})
+
+    const result = await changeVersionAvailability(VERSION, false)
+
+    expect(send).toHaveBeenCalledWith(`/inspection-template-versions/${VERSION}/availability`, {
+      method: 'PATCH',
+      body: { activeForNewInspections: false },
+    })
+    expect(result).toMatchObject({ ok: true, message: expect.stringContaining('retirada') })
+  })
+
+  it('devolve a recusa da API como resultado', async () => {
+    send.mockRejectedValueOnce(new ApiError({ status: 422, code: 'TEMPLATE_VERSION_NOT_PUBLISHED', message: 'x' }))
+
+    await expect(changeVersionAvailability(VERSION, true)).resolves.toMatchObject({ ok: false })
+  })
+
+  it('recusa valor que nao e booleano e identificador malformado', async () => {
+    await expect(changeVersionAvailability(VERSION, 'true' as unknown as boolean)).resolves.toEqual({
+      ok: false,
+      message: 'Situação inválida.',
+    })
+    await expect(changeVersionAvailability('abc', true)).rejects.toThrow('Identificador invalido.')
     expect(send).not.toHaveBeenCalled()
   })
 })

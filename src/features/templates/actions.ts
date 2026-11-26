@@ -69,3 +69,28 @@ export async function changeTemplateStatus(id: string, status: 'ACTIVE' | 'INACT
 
   return { ok: true, message: STATUS_MESSAGES[status] }
 }
+
+const AVAILABILITY_MESSAGES = {
+  true: 'Versão liberada para novos agendamentos.',
+  false: 'Versão retirada dos novos agendamentos. As inspeções existentes não foram afetadas.',
+} as const
+
+export async function changeVersionAvailability(versionId: string, active: boolean): Promise<ActionResult> {
+  await requireRole(MANAGER_ROLES)
+  const id = assertId(versionId)
+
+  if (typeof active !== 'boolean') {
+    return { ok: false, message: 'Situação inválida.' }
+  }
+
+  try {
+    await send(`/inspection-template-versions/${id}/availability`, {
+      method: 'PATCH',
+      body: { activeForNewInspections: active },
+    })
+  } catch (error) {
+    return actionError(error)
+  }
+
+  return { ok: true, message: AVAILABILITY_MESSAGES[`${active}`] }
+}
