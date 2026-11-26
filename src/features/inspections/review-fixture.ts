@@ -1,6 +1,50 @@
 import 'server-only'
 
-import type { InspectionReview, ReviewItem, ReviewPhoto, ReviewSection } from '@/lib/domain/inspection-review'
+import type { InspectionStatus } from '@/lib/domain/inspection'
+import type { Conformity, ReviewPhoto, Severity } from '@/lib/domain/inspection-review'
+
+type ReviewItem = {
+  readonly id: string
+  readonly code: string
+  readonly title: string
+  readonly required: boolean
+  readonly responseType: 'CONFORMITY' | 'NUMBER' | 'BOOLEAN' | 'TEXT_SHORT'
+  readonly conformity: Conformity | null
+  readonly displayValue: string | null
+  readonly observation: string | null
+  readonly photos: readonly ReviewPhoto[]
+}
+
+type ReviewSection = {
+  readonly id: string
+  readonly order: number
+  readonly title: string
+  readonly items: readonly ReviewItem[]
+}
+
+type InspectionReview = {
+  readonly id: string
+  readonly code: string
+  readonly title: string
+  readonly status: InspectionStatus
+  readonly technicianName: string
+  readonly equipmentName: string
+  readonly siteName: string
+  readonly startedAtDevice: string | null
+  readonly completedAtDevice: string | null
+  readonly submittedAtServer: string | null
+  readonly startLocation: { readonly latitude: number; readonly longitude: number; readonly accuracy: number | null } | null
+  readonly sections: readonly ReviewSection[]
+  readonly nonConformities: readonly {
+    readonly id: string
+    readonly itemId: string | null
+    readonly itemCode: string | null
+    readonly title: string
+    readonly description: string
+    readonly severity: Severity
+  }[]
+  readonly reviews: readonly never[]
+}
 
 /**
  * Inspecao de demonstracao da tela de revisao.
