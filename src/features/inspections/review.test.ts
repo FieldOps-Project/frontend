@@ -162,13 +162,14 @@ describe('loadInspectionReview', () => {
     { id: 'i1', sectionTitle: 'Geral', sectionOrder: 1, itemCode: 'G-1', itemTitle: 'Placa', itemDescription: 'Legível?', responseType: 'CONFORMITY', required: true, itemOrder: 1 },
   ]
 
-  function respond(reviews: unknown) {
+  function respond(reviews: unknown, responses: unknown = null) {
     load.mockResolvedValue({ itemSnapshots: SNAPSHOTS })
     loadInspectionDetail.mockResolvedValue({ id: INSPECTION_ID, status: 'UNDER_REVIEW' })
     loadInspectionNonConformities.mockResolvedValue([])
     loadInspectionEvidences.mockResolvedValue([])
     loadIfPermitted.mockImplementation(async (path: string) => {
       if (path.endsWith('/reviews')) return reviews
+      if (path.endsWith('/responses')) return responses
       return path === `/users/${SUPERVISOR_ID}` ? { name: 'Supervisor Demo' } : null
     })
   }
@@ -188,6 +189,26 @@ describe('loadInspectionReview', () => {
       { cycle: 1, reviewerName: 'Supervisor Demo', itemCodes: ['G-1'] },
       { cycle: 2, reviewerName: 'Supervisor Demo', itemCodes: [] },
     ])
+  })
+
+  it('junta a resposta do tecnico ao item do checklist pelo identificador do snapshot', async () => {
+    respond([], [
+      { id: 'a1', inspectionItemId: 'i1', valueText: null, valueNumber: null, valueBoolean: null, valueDate: null, conformity: 'CONFORMING', observation: 'Legível', answeredAtDevice: '2026-11-23T12:15:00Z' },
+    ])
+
+    const review = await loadInspectionReview(INSPECTION_ID)
+
+    expect(loadIfPermitted).toHaveBeenCalledWith(`/inspections/${INSPECTION_ID}/responses`)
+    expect(review.answers?.get('i1')).toMatchObject({ conformity: 'CONFORMING', observation: 'Legível' })
+    expect(review.answers?.get('i2')).toBeUndefined()
+  })
+
+  it('deixa as respostas nulas quando o perfil nao pode le-las', async () => {
+    respond([], null)
+
+    const review = await loadInspectionReview(INSPECTION_ID)
+
+    expect(review.answers).toBeNull()
   })
 
   it('deixa o historico nulo quando o perfil nao pode ler as revisoes', async () => {

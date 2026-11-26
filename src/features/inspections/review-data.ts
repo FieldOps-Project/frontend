@@ -5,11 +5,13 @@ import { loadInspectionDetail } from '@/features/inspections/detail-data'
 import { loadInspectionNonConformities } from '@/features/non-conformities/non-conformities-data'
 import { load, loadIfPermitted } from '@/lib/dal'
 import {
+  buildAnswers,
   buildSections,
   describeReview,
   reviewItems,
   type InspectionReview,
   type ItemSnapshotRecord,
+  type ResponseApiRecord,
   type ReviewApiRecord,
   type ReviewRecord,
   type ReviewSection,
@@ -40,14 +42,15 @@ async function loadSections(inspectionId: string): Promise<readonly ReviewSectio
 }
 
 export async function loadInspectionReview(id: string): Promise<InspectionReview> {
-  const [inspection, sections, nonConformities, evidences, records] = await Promise.all([
+  const [inspection, sections, nonConformities, evidences, records, responses] = await Promise.all([
     loadInspectionDetail(id),
     loadSections(id),
     loadInspectionNonConformities(id),
     loadInspectionEvidences(id),
     loadIfPermitted<readonly ReviewApiRecord[]>(`/inspections/${id}/reviews`),
+    loadIfPermitted<readonly ResponseApiRecord[]>(`/inspections/${id}/responses`),
   ])
   const reviews = records === null ? null : await describeReviews(records, sections)
 
-  return { inspection, sections, nonConformities, evidences, reviews }
+  return { inspection, sections, nonConformities, evidences, reviews, answers: responses === null ? null : buildAnswers(responses) }
 }

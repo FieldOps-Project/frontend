@@ -62,7 +62,7 @@ export default async function InspectionReviewPage(props: PageProps<'/inspection
         }
       />
 
-      <ReportCallout inspectionId={inspection.id} />
+      <ReportCallout inspectionId={inspection.id} withAnswers={review.answers !== null} />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <ExecutionDetails inspection={inspection} />

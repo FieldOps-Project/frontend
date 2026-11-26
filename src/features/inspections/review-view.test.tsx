@@ -36,14 +36,25 @@ const REVIEW: InspectionReview = {
   nonConformities: [{ id: 'n1', title: 'Etiqueta', description: 'd', severity: 'MEDIUM', itemCode: 'GER-002' }],
   evidences: [],
   reviews: [],
+  answers: null,
 }
 
 describe('ReportCallout', () => {
-  it('leva ao PDF e avisa que as respostas estao la', () => {
-    render(<ReportCallout inspectionId={INSPECTION_ID} />)
+  it('leva ao PDF e avisa que as respostas estao la quando a tela nao as mostra', () => {
+    render(<ReportCallout inspectionId={INSPECTION_ID} withAnswers={false} />)
 
     const link = screen.getByRole('link', { name: /Baixar relatório \(PDF\) para ver as respostas/ })
     expect(link).toHaveAttribute('href', `/api/inspections/${INSPECTION_ID}/report`)
+  })
+
+  it('oferece o PDF como relatorio completo quando as respostas estao na tela', () => {
+    render(<ReportCallout inspectionId={INSPECTION_ID} withAnswers />)
+
+    expect(screen.getByRole('link', { name: 'Baixar relatório (PDF)' })).toHaveAttribute(
+      'href',
+      `/api/inspections/${INSPECTION_ID}/report`,
+    )
+    expect(screen.queryByText(/para ver as respostas/)).not.toBeInTheDocument()
   })
 })
 
@@ -59,6 +70,28 @@ describe('ChecklistStructure', () => {
     expect(within(items[1] as HTMLElement).getByText('Opcional')).toBeInTheDocument()
     expect(within(items[1] as HTMLElement).getByText('Leitura em horas')).toBeInTheDocument()
     expect(screen.queryByText(/Observação do técnico|Sem resposta|somente leitura/)).not.toBeInTheDocument()
+  })
+
+  it('mostra a resposta, a conformidade e a observacao do tecnico em cada item', () => {
+    const answers = new Map([
+      ['1', { value: null, conformity: 'NON_CONFORMING' as const, observation: 'Etiqueta ilegível', answeredAtDevice: '2026-11-23T12:15:00Z' }],
+      ['2', { value: '3.845', conformity: null, observation: null, answeredAtDevice: '2026-11-23T12:16:00Z' }],
+    ])
+    render(<ChecklistStructure review={{ ...REVIEW, answers }} />)
+
+    const items = screen.getAllByRole('listitem')
+    expect(within(items[0] as HTMLElement).getByText('Não conforme')).toBeInTheDocument()
+    expect(within(items[0] as HTMLElement).getByText('Observação do técnico: Etiqueta ilegível')).toBeInTheDocument()
+    expect(within(items[1] as HTMLElement).getByText('3.845')).toBeInTheDocument()
+  })
+
+  it('marca o item que o tecnico nao respondeu', () => {
+    const answers = new Map([['1', { value: 'Bom', conformity: null, observation: null, answeredAtDevice: '2026-11-23T12:15:00Z' }]])
+    render(<ChecklistStructure review={{ ...REVIEW, answers }} />)
+
+    const items = screen.getAllByRole('listitem')
+    expect(within(items[0] as HTMLElement).queryByText('Sem resposta')).not.toBeInTheDocument()
+    expect(within(items[1] as HTMLElement).getByText('Sem resposta')).toBeInTheDocument()
   })
 
   it('destaca so o item com nao conformidade', () => {

@@ -16,7 +16,15 @@ import {
   inspectionReference,
 } from '@/lib/domain/inspection'
 import type { InspectionDetail } from '@/lib/domain/inspection-detail'
-import { reviewItems, type InspectionReview, type ReviewItem, type ReviewSection } from '@/lib/domain/inspection-review'
+import {
+  RESPONSE_CONFORMITY_LABELS,
+  reviewItems,
+  type InspectionReview,
+  type ResponseConformity,
+  type ReviewAnswer,
+  type ReviewItem,
+  type ReviewSection,
+} from '@/lib/domain/inspection-review'
 import { RESPONSE_TYPE_LABELS } from '@/lib/domain/template-builder'
 import type { UserRole } from '@/lib/domain/user'
 import { formatDateTime, orDash } from '@/lib/format'
@@ -81,21 +89,22 @@ export function StageHint({ role }: { role: UserRole }) {
   )
 }
 
-export function ReportCallout({ inspectionId }: { inspectionId: string }) {
+export function ReportCallout({ inspectionId, withAnswers }: { inspectionId: string; withAnswers: boolean }) {
   return (
     <section aria-labelledby="report-title" className="flex flex-col gap-4 rounded-card border border-brand-200 bg-brand-50 p-6 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex flex-col gap-1 text-brand-700">
         <h2 id="report-title" className="text-lg font-semibold">
-          Respostas do técnico
+          {withAnswers ? 'Relatório da inspeção' : 'Respostas do técnico'}
         </h2>
         <p className="max-w-2xl text-base">
-          Esta tela mostra a estrutura do checklist, as não conformidades e as evidências. Baixe o relatório em PDF para
-          conferir as respostas e observações de cada item.
+          {withAnswers
+            ? 'As respostas e observações do técnico estão em cada item do checklist. O relatório em PDF reúne tudo em um só arquivo.'
+            : 'Seu perfil não lê as respostas por esta tela. Baixe o relatório em PDF para conferir as respostas e observações de cada item.'}
         </p>
       </div>
       <a href={`/api/inspections/${inspectionId}/report`} download className={REPORT_BUTTON}>
         <IoDocumentTextOutline aria-hidden className="size-5" />
-        Baixar relatório (PDF) para ver as respostas
+        {withAnswers ? 'Baixar relatório (PDF)' : 'Baixar relatório (PDF) para ver as respostas'}
       </a>
     </section>
   )
@@ -133,7 +142,41 @@ export function ReviewSummary({ review }: { review: InspectionReview }) {
   )
 }
 
-function ChecklistItem({ item, flagged }: { item: ReviewItem; flagged: boolean }) {
+const CONFORMITY_TONES: Record<ResponseConformity, string> = {
+  CONFORMING: 'bg-success-soft text-success',
+  NON_CONFORMING: 'bg-danger-soft text-danger',
+  NOT_APPLICABLE: 'bg-neutral-100 text-neutral-700',
+}
+
+function Answer({ answer }: { answer: ReviewAnswer | undefined }) {
+  if (!answer) {
+    return <p className="text-sm italic text-neutral-600">Sem resposta</p>
+  }
+  return (
+    <div className="mt-1 flex flex-col gap-1 rounded-field bg-neutral-50 px-4 py-3">
+      <p className="flex flex-wrap items-center gap-2 text-base text-neutral-900">
+        {answer.value !== null && <span className="font-medium">{answer.value}</span>}
+        {answer.conformity && (
+          <span className={`rounded px-2 py-0.5 text-sm font-medium ${CONFORMITY_TONES[answer.conformity]}`}>
+            {RESPONSE_CONFORMITY_LABELS[answer.conformity]}
+          </span>
+        )}
+      </p>
+      {answer.observation && <p className="text-sm text-neutral-700">Observação do técnico: {answer.observation}</p>}
+      <p className="text-xs text-neutral-600">Respondido em {formatDateTime(answer.answeredAtDevice)}</p>
+    </div>
+  )
+}
+
+function ChecklistItem({
+  item,
+  flagged,
+  answers,
+}: {
+  item: ReviewItem
+  flagged: boolean
+  answers: InspectionReview['answers']
+}) {
   return (
     <li className={`flex flex-col gap-1 px-6 py-4 ${flagged ? 'border-l-4 border-danger' : ''}`}>
       <p className="text-base text-neutral-900">
@@ -145,11 +188,20 @@ function ChecklistItem({ item, flagged }: { item: ReviewItem; flagged: boolean }
         <span className="rounded bg-neutral-100 px-2 py-0.5">{item.required ? 'Obrigatório' : 'Opcional'}</span>
         {flagged && <span className="rounded bg-danger-soft px-2 py-0.5 text-danger">Com não conformidade</span>}
       </p>
+      {answers && <Answer answer={answers.get(item.id)} />}
     </li>
   )
 }
 
-function ChecklistSection({ section, flaggedCodes }: { section: ReviewSection; flaggedCodes: ReadonlySet<string> }) {
+function ChecklistSection({
+  section,
+  flaggedCodes,
+  answers,
+}: {
+  section: ReviewSection
+  flaggedCodes: ReadonlySet<string>
+  answers: InspectionReview['answers']
+}) {
   return (
     <div className={`${CARD} overflow-hidden`}>
       <h3 className="border-b border-neutral-200 bg-neutral-100 px-6 py-4 text-lg font-semibold text-neutral-900">
@@ -157,7 +209,7 @@ function ChecklistSection({ section, flaggedCodes }: { section: ReviewSection; f
       </h3>
       <ul className="divide-y divide-neutral-200">
         {section.items.map((item) => (
-          <ChecklistItem key={item.id} item={item} flagged={flaggedCodes.has(item.code)} />
+          <ChecklistItem key={item.id} item={item} flagged={flaggedCodes.has(item.code)} answers={answers} />
         ))}
       </ul>
     </div>
@@ -174,7 +226,7 @@ export function ChecklistStructure({ review }: { review: InspectionReview }) {
         Checklist da inspeção
       </h2>
       {review.sections.map((section) => (
-        <ChecklistSection key={section.order} section={section} flaggedCodes={flaggedCodes} />
+        <ChecklistSection key={section.order} section={section} flaggedCodes={flaggedCodes} answers={review.answers} />
       ))}
     </section>
   )
