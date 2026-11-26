@@ -195,3 +195,26 @@ describe('erros do agendamento', () => {
     expect(fieldErrorsFor(site)).toEqual({ siteId: 'O local está inativo e não pode receber novas inspeções.' })
   })
 })
+
+describe('erros que o backend passou a nomear', () => {
+  it('explica a perda de uma corrida de escrita sem chamar de erro inesperado', () => {
+    const error = new ApiError({
+      status: 503,
+      code: 'CONCURRENT_MODIFICATION',
+      message: 'The record was changed by another request while this one was being processed. Reload and try again.',
+    })
+
+    expect(messageFor(error)).toBe('Outra alteração foi salva ao mesmo tempo. Recarregue a página e tente de novo.')
+    expect(messageFor(error)).not.toMatch(/inesperado/)
+  })
+
+  it('leva o local inexistente ao campo de local', () => {
+    const error = new ApiError({
+      status: 404,
+      code: 'INSPECTION_SITE_NOT_FOUND',
+      message: 'Inspection site with id 1 not found',
+    })
+
+    expect(fieldErrorsFor(error)).toEqual({ siteId: 'O local escolhido não foi encontrado. Ele pode ter sido removido.' })
+  })
+})

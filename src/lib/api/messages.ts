@@ -17,6 +17,7 @@ const CODE_MESSAGES: Record<string, string> = {
   EQUIPMENT_NOT_FOUND: 'Nenhum equipamento encontrado com este QR Code.',
   INACTIVE_SITE: 'O local está inativo e não aceita novos equipamentos.',
   INSPECTION_SITE_INACTIVE: 'O local está inativo e não pode receber novas inspeções.',
+  INSPECTION_SITE_NOT_FOUND: 'O local escolhido não foi encontrado. Ele pode ter sido removido.',
   CLIENT_INACTIVE: 'O cliente está inativo e não pode receber novas inspeções.',
   INVALID_CLIENT_DOCUMENT: 'Documento inválido: informe um CPF (11 dígitos) ou CNPJ (14 dígitos).',
   INVALID_COORDINATES:
@@ -39,6 +40,7 @@ const CODE_MESSAGES: Record<string, string> = {
   TEMPLATE_VERSION_NOT_PUBLISHED: 'Só versões publicadas podem ser liberadas para novas inspeções.',
   TEMPLATE_PUBLISH_INVALID: 'O modelo tem pendências que impedem a publicação.',
   DATA_CONFLICT: 'Outra alteração foi salva ao mesmo tempo. Recarregue a página e tente de novo.',
+  CONCURRENT_MODIFICATION: 'Outra alteração foi salva ao mesmo tempo. Recarregue a página e tente de novo.',
   TECHNICIAN_NOT_ELIGIBLE: 'Somente técnico ativo pode receber a inspeção.',
   INVALID_TECHNICIAN: 'Escolha um técnico ativo.',
   INVALID_SUPERVISOR: 'Escolha um supervisor ativo.',
@@ -67,6 +69,7 @@ const CODE_FIELDS: Record<string, string> = {
   INACTIVE_SITE: 'siteId',
   CLIENT_INACTIVE: 'clientId',
   INSPECTION_SITE_INACTIVE: 'siteId',
+  INSPECTION_SITE_NOT_FOUND: 'siteId',
   INVALID_CLIENT_DOCUMENT: 'document',
   INVALID_COORDINATES: 'latitude',
   TEMPLATE_TITLE_ALREADY_EXISTS: 'title',
