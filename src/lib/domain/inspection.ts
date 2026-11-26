@@ -45,3 +45,9 @@ export type InspectionSummary = {
 export function isInspectionStatus(value: string): value is InspectionStatus {
   return (INSPECTION_STATUSES as readonly string[]).includes(value)
 }
+
+const REFERENCE_LENGTH = 8
+
+export function inspectionReference(id: string): string {
+  return `INS-${id.replaceAll('-', '').slice(0, REFERENCE_LENGTH).toUpperCase()}`
+}
