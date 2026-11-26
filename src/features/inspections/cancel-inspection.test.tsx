@@ -14,7 +14,6 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }))
 const ID = '3d8dc050-54f4-4d3b-9e5d-5fdb29ae3ed5'
 
 beforeAll(() => {
-  // O jsdom nao implementa o dialogo modal nativo.
   HTMLDialogElement.prototype.showModal = function showModal(this: HTMLDialogElement) {
     this.open = true
   }
@@ -26,7 +25,7 @@ beforeAll(() => {
 describe('CancelInspection', () => {
   it('so libera a confirmacao com o motivo preenchido (RN-029)', async () => {
     cancelInspection.mockResolvedValue({ ok: true, message: 'Inspeção cancelada.' })
-    render(<CancelInspection inspectionId={ID} code="INS-2023-089" />)
+    render(<CancelInspection inspectionId={ID} reference="INS-3D8DC050" />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancelar inspeção' }))
     const confirm = screen.getByRole('button', { name: 'Confirmar cancelamento' })

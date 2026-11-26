@@ -3,9 +3,9 @@ import 'server-only'
 import { demoInspectionChanges } from '@/features/inspections/inspection-demo-store'
 import { DEMO_TECHNICIANS, demoInspections, seedInspections } from '@/features/inspections/list-fixture'
 import { DEMO_REVIEW_ID } from '@/features/inspections/review-fixture'
-import { DEMO_TEMPLATE_VERSIONS } from '@/features/inspections/scheduling-data'
 import type { InspectionStatus } from '@/lib/domain/inspection'
-import type { InspectionDetail, InspectionHistoryEvent } from '@/lib/domain/inspection-detail'
+import type { InspectionDetail } from '@/lib/domain/inspection-detail'
+import type { InspectionHistoryEvent } from '@/lib/domain/inspection-history'
 import type { InspectionListItem } from '@/lib/domain/inspection-list'
 
 /**
@@ -59,14 +59,24 @@ function derivedId(prefix: string, inspectionId: string): string {
 }
 
 function templateOf(item: InspectionListItem) {
-  const version = DEMO_TEMPLATE_VERSIONS.find((candidate) => candidate.templateTitle === item.title)
-  return version
-    ? { templateVersionId: version.versionId, templateTitle: version.templateTitle, templateVersionNumber: version.versionNumber }
-    : { templateVersionId: derivedId('5', item.id), templateTitle: item.title, templateVersionNumber: 1 }
+  return { templateVersionId: derivedId('5', item.id), templateTitle: item.title, templateVersionNumber: 1 }
+}
+
+export type DemoRecordedLocation = {
+  readonly latitude: number
+  readonly longitude: number
+  readonly accuracy: number | null
+  readonly capturedAtDevice: string
+}
+
+export type DemoInspectionDetail = InspectionDetail & {
+  readonly code: string
+  readonly answeredItems: number
+  readonly startLocation: DemoRecordedLocation | null
 }
 
 type Execution = Pick<
-  InspectionDetail,
+  DemoInspectionDetail,
   'startedAtDevice' | 'startedAtServer' | 'completedAtDevice' | 'submittedAtServer' | 'startLocation'
 >
 
@@ -100,13 +110,13 @@ function executionOf(seed: InspectionListItem, index: number, now: Date): Execut
 function event(
   inspectionId: string,
   n: number,
-  fields: Omit<InspectionHistoryEvent, 'id' | 'deviceOccurredAt' | 'note'> &
+  fields: Omit<InspectionHistoryEvent, 'id' | 'entityType' | 'actorId' | 'deviceOccurredAt' | 'note'> &
     Partial<Pick<InspectionHistoryEvent, 'deviceOccurredAt' | 'note'>>,
 ): InspectionHistoryEvent {
-  return { id: `${inspectionId}-event-${n}`, deviceOccurredAt: null, note: null, ...fields }
+  return { id: `${inspectionId}-event-${n}`, entityType: 'INSPECTION', actorId: null, deviceOccurredAt: null, note: null, ...fields }
 }
 
-type Base = Pick<InspectionDetail, 'supervisorName' | 'technicianName' | 'createdAt' | 'canceledAt'> & Execution
+type Base = Pick<DemoInspectionDetail, 'supervisorName' | 'technicianName' | 'createdAt' | 'canceledAt'> & Execution
 
 /** Historico de estados como a auditoria registraria ate o estado semeado (documento 10.12.1). */
 function seedHistory(seed: InspectionListItem, base: Base): InspectionHistoryEvent[] {
@@ -194,7 +204,7 @@ function seedHistory(seed: InspectionListItem, base: Base): InspectionHistoryEve
   return events
 }
 
-type DemoInspection = { readonly detail: InspectionDetail; readonly history: readonly InspectionHistoryEvent[] }
+type DemoInspection = { readonly detail: DemoInspectionDetail; readonly history: readonly InspectionHistoryEvent[] }
 
 function build(id: string, now: Date): DemoInspection | null {
   const seeds = seedInspections(now)
@@ -211,7 +221,7 @@ function build(id: string, now: Date): DemoInspection | null {
   const changes = demoInspectionChanges(id)
   const patch = changes?.patch ?? {}
 
-  const detail: InspectionDetail = {
+  const detail: DemoInspectionDetail = {
     id,
     code: current.code,
     title: current.title,
@@ -247,7 +257,7 @@ export function isDemoInspectionId(id: string, now: Date = new Date()): boolean 
   return seedInspections(now).some((candidate) => candidate.id === id)
 }
 
-export function demoInspectionDetail(id: string, now: Date = new Date()): InspectionDetail | null {
+export function demoInspectionDetail(id: string, now: Date = new Date()): DemoInspectionDetail | null {
   return build(id, now)?.detail ?? null
 }
 

@@ -14,13 +14,14 @@ import {
   type PlanningErrors,
   type PlanningField,
 } from '@/features/inspections/planning-validation'
-import { INSTRUCTIONS_MAX_LENGTH, isPastDate } from '@/features/inspections/schedule-validation'
+import { INSTRUCTIONS_MAX_LENGTH, TITLE_MAX_LENGTH, isPastDate } from '@/features/inspections/schedule-validation'
 import { INSPECTION_PRIORITIES, INSPECTION_PRIORITY_LABELS, type InspectionPriority } from '@/lib/domain/inspection-scheduling'
 import { errorOf, IDLE, valueOf } from '@/lib/form-state'
 
 type Person = { readonly id: string; readonly name: string }
 
 export type PlanningFormInitial = {
+  readonly title: string
   readonly technicianId: string | null
   readonly supervisorId: string | null
   readonly scheduledDate: string
@@ -28,7 +29,6 @@ export type PlanningFormInitial = {
   readonly instructions: string | null
 }
 
-/** O que nao muda na edicao, mostrado como referencia. */
 export type PlanningFormFixed = {
   readonly template: string
   readonly client: string
@@ -42,12 +42,6 @@ const SUBMIT =
 const SECTION = 'flex flex-col gap-6 rounded-card border border-neutral-200 bg-neutral-0 p-6 sm:p-8'
 const SECTION_TITLE = 'flex items-center gap-3 border-b border-neutral-200 pb-4 text-lg font-semibold text-neutral-900'
 
-/**
- * Edicao do planejamento (documento 14.9, issue #18), no mesmo desenho do
- * agendamento. Modelo, cliente, local e equipamento aparecem bloqueados: eles
- * definem o snapshot e o lugar da inspecao, e trocar qualquer um deles e
- * agendar outra inspecao.
- */
 export function PlanningForm({
   inspectionId,
   initial,
@@ -163,6 +157,15 @@ export function PlanningForm({
           <IoInformationCircleOutline aria-hidden className="size-6 text-neutral-600" />
           Detalhes da execução
         </h2>
+        <TextField
+          name="title"
+          label="Título"
+          required
+          maxLength={TITLE_MAX_LENGTH}
+          defaultValue={valueOf(state, 'title', initial.title)}
+          onChange={() => clearError('title')}
+          error={errorFor('title')}
+        />
         <div className="grid gap-6 md:grid-cols-2">
           <div className="flex flex-col gap-1.5">
             <TextField

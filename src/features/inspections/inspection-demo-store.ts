@@ -1,6 +1,7 @@
 import 'server-only'
 
-import type { InspectionDetail, InspectionHistoryEvent } from '@/lib/domain/inspection-detail'
+import type { InspectionDetail } from '@/lib/domain/inspection-detail'
+import type { InspectionHistoryEvent } from '@/lib/domain/inspection-history'
 
 /**
  * Memoria das inspecoes de demonstracao, servidas so em

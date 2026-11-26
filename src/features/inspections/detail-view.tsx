@@ -5,14 +5,19 @@ import {
   IoBanOutline,
   IoCalendarOutline,
   IoGitCommitOutline,
-  IoLocationOutline,
   IoLockClosedOutline,
   IoTimeOutline,
 } from 'react-icons/io5'
 
-import { INSPECTION_STATUS_LABELS, INSPECTION_STATUS_TONES } from '@/lib/domain/inspection'
-import { historyActionLabel, type InspectionDetail, type InspectionHistoryEvent } from '@/lib/domain/inspection-detail'
-import { dueLabel, progressPercent } from '@/lib/domain/inspection-list'
+import {
+  INSPECTION_STATUS_LABELS,
+  INSPECTION_STATUS_TONES,
+  inspectionReference,
+  type InspectionStatus,
+} from '@/lib/domain/inspection'
+import { historyActionLabel, type InspectionDetail } from '@/lib/domain/inspection-detail'
+import type { InspectionHistoryEvent } from '@/lib/domain/inspection-history'
+import { dueLabel } from '@/lib/domain/inspection-list'
 import { INSPECTION_PRIORITY_LABELS, type InspectionPriority } from '@/lib/domain/inspection-scheduling'
 import type { StatusTone } from '@/lib/domain/page'
 import { formatDateTime, orDash } from '@/lib/format'
@@ -58,7 +63,6 @@ function SectionTitle({ id, icon, children, aside }: { id: string; icon: ReactNo
   )
 }
 
-/** Cabecalho: codigo, estado e titulo; as acoes permitidas no estado ficam a direita. */
 export function DetailHeader({ inspection, actions }: { inspection: InspectionDetail; actions: ReactNode }) {
   return (
     <header className="-mx-4 -mt-6 flex flex-col gap-4 border-b border-neutral-200 bg-neutral-0 px-4 py-5 sm:-mx-6 sm:px-6">
@@ -69,7 +73,7 @@ export function DetailHeader({ inspection, actions }: { inspection: InspectionDe
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 flex-col gap-2">
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-3xl font-bold tracking-tight text-neutral-950">{inspection.code}</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-neutral-950">{inspectionReference(inspection.id)}</h1>
             <span
               className={`inline-flex items-center gap-1.5 rounded-field border px-2.5 py-1 text-sm font-medium tracking-wide uppercase ${
                 STATUS_PILL[INSPECTION_STATUS_TONES[inspection.status]]
@@ -88,7 +92,6 @@ export function DetailHeader({ inspection, actions }: { inspection: InspectionDe
   )
 }
 
-/** Cancelamento registrado: quem, quando e por que (RN-029). */
 export function CancellationNotice({ inspection }: { inspection: InspectionDetail }) {
   if (inspection.status !== 'CANCELED') return null
 
@@ -113,7 +116,6 @@ export function CancellationNotice({ inspection }: { inspection: InspectionDetai
   )
 }
 
-/** Dados de planejamento (documento 14.9): o que foi agendado e para quem. */
 export function PlanningDetails({
   inspection,
   today,
@@ -135,9 +137,13 @@ export function PlanningDetails({
       <dl className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <Detail label="Cliente">{inspection.clientName}</Detail>
         <Detail label="Local">{inspection.siteName}</Detail>
-        <Detail label="Equipamento">{inspection.equipmentName ?? 'Inspeção geral do local'}</Detail>
+        <Detail label="Equipamento">{inspection.equipmentId === null ? 'Inspeção geral do local' : orDash(inspection.equipmentName)}</Detail>
         <Detail label="Técnico">
-          {inspection.technicianName ?? <span className="text-neutral-600 italic">Não atribuído</span>}
+          {inspection.technicianId === null ? (
+            <span className="text-neutral-600 italic">Não atribuído</span>
+          ) : (
+            orDash(inspection.technicianName)
+          )}
         </Detail>
         <Detail label="Supervisor">{orDash(inspection.supervisorName)}</Detail>
         <Detail label="Prioridade">
@@ -184,14 +190,17 @@ function TimePair({ device, server }: { device: string | null; server: string | 
   )
 }
 
-/**
- * Execucao: horarios do dispositivo e do servidor lado a lado (RN-074) -- e a
- * diferenca entre eles que explica o fluxo offline --, localizacao registrada
- * com precisao e horario (RN-061/062) e progresso (RN-040).
- */
+const NOT_STARTED_STATUSES: readonly InspectionStatus[] = ['DRAFT', 'ASSIGNED']
+
+function missingExecutionMessage(status: InspectionStatus): string {
+  if (status === 'CANCELED') return 'A inspeção foi cancelada antes de o técnico iniciar a execução.'
+  if (NOT_STARTED_STATUSES.includes(status)) {
+    return 'O técnico ainda não iniciou a execução. Os horários aparecem aqui depois da sincronização.'
+  }
+  return 'O histórico não registra os horários desta execução.'
+}
+
 export function ExecutionDetails({ inspection }: { inspection: InspectionDetail }) {
-  const percent = progressPercent(inspection)
-  const location = inspection.startLocation
   const started = inspection.startedAtDevice !== null
 
   return (
@@ -200,113 +209,55 @@ export function ExecutionDetails({ inspection }: { inspection: InspectionDetail 
         Execução
       </SectionTitle>
 
-      <div className="flex flex-col gap-3">
-        <div className="flex items-end justify-between">
-          <span className="text-base text-neutral-700">Progresso</span>
-          <span className="text-base text-neutral-900">
-            <span className="text-2xl font-semibold text-brand-700">{percent}%</span>{' '}
-            <span className="text-sm text-neutral-600">
-              ({inspection.answeredItems}/{inspection.applicableItems} itens)
-            </span>
-          </span>
-        </div>
-        <div
-          role="progressbar"
-          aria-label="Progresso do checklist"
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={percent}
-          className="h-2 overflow-hidden rounded-full bg-neutral-100"
-        >
-          <div className="h-full rounded-full bg-brand-700" style={{ width: `${percent}%` }} />
-        </div>
-      </div>
+      <dl>
+        <Detail label="Itens do checklist">{inspection.applicableItems}</Detail>
+      </dl>
 
       {started ? (
-        <>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[20rem] text-left text-sm">
-              <caption className="sr-only">Horários do dispositivo e do servidor</caption>
-              <thead>
-                <tr className="border-b border-neutral-200">
-                  <th scope="col" className={`${LABEL} py-2 pr-4`}>
-                    Etapa
-                  </th>
-                  <th scope="col" className={`${LABEL} py-2 pr-4`}>
-                    Dispositivo
-                  </th>
-                  <th scope="col" className={`${LABEL} py-2`}>
-                    Servidor
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-100">
-                <tr>
-                  <th scope="row" className="py-3 pr-4 font-medium text-neutral-700">
-                    Início
-                  </th>
-                  <TimePair device={inspection.startedAtDevice} server={inspection.startedAtServer} />
-                </tr>
-                <tr>
-                  <th scope="row" className="py-3 pr-4 font-medium text-neutral-700">
-                    Conclusão
-                  </th>
-                  <TimePair device={inspection.completedAtDevice} server={inspection.submittedAtServer} />
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <dl>
-            <Detail label="Localização registrada (início)">
-              {location ? (
-                <span className="flex flex-col items-start gap-1">
-                  <span className="flex flex-wrap items-center gap-2">
-                    <IoLocationOutline aria-hidden className="size-5 text-neutral-600" />
-                    <code className="rounded bg-neutral-100 px-2.5 py-1 font-mono text-sm text-neutral-900">
-                      {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
-                    </code>
-                    <a
-                      href={`https://www.openstreetmap.org/?mlat=${location.latitude}&mlon=${location.longitude}#map=17/${location.latitude}/${location.longitude}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-sm font-medium text-brand-700 hover:underline"
-                    >
-                      Ver no mapa<span className="sr-only"> (abre em nova aba)</span>
-                    </a>
-                  </span>
-                  <span className="text-xs text-neutral-600">
-                    {location.accuracy !== null ? `Precisão de ${location.accuracy} m · ` : 'Precisão não informada · '}
-                    capturada em {formatDateTime(location.capturedAtDevice)}
-                  </span>
-                </span>
-              ) : (
-                <span className="text-neutral-600">O dispositivo não registrou localização.</span>
-              )}
-            </Detail>
-          </dl>
-        </>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[20rem] text-left text-sm">
+            <caption className="sr-only">Horários do dispositivo e do servidor</caption>
+            <thead>
+              <tr className="border-b border-neutral-200">
+                <th scope="col" className={`${LABEL} py-2 pr-4`}>
+                  Etapa
+                </th>
+                <th scope="col" className={`${LABEL} py-2 pr-4`}>
+                  Dispositivo
+                </th>
+                <th scope="col" className={`${LABEL} py-2`}>
+                  Servidor
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-neutral-100">
+              <tr>
+                <th scope="row" className="py-3 pr-4 font-medium text-neutral-700">
+                  Início
+                </th>
+                <TimePair device={inspection.startedAtDevice} server={inspection.startedAtServer} />
+              </tr>
+              <tr>
+                <th scope="row" className="py-3 pr-4 font-medium text-neutral-700">
+                  Conclusão
+                </th>
+                <TimePair device={inspection.completedAtDevice} server={inspection.submittedAtServer} />
+              </tr>
+            </tbody>
+          </table>
+        </div>
       ) : (
-        <p className="text-sm text-neutral-600">
-          {inspection.status === 'CANCELED'
-            ? 'A inspeção foi cancelada antes de o técnico iniciar a execução.'
-            : 'O técnico ainda não iniciou a execução. Horários e localização aparecem aqui depois da sincronização.'}
-        </p>
+        <p className="text-sm text-neutral-600">{missingExecutionMessage(inspection.status)}</p>
       )}
     </section>
   )
 }
 
-/**
- * Linha do tempo da inspecao a partir da auditoria (documento 10.12.1, issues
- * #18 e #24): mudancas de estado, fotografias e nao conformidades, com os
- * eventos completos na area de auditoria.
- */
 export function StatusHistory({
   events,
   inspectionId,
 }: {
-  events: readonly InspectionHistoryEvent[] | null
+  events: readonly InspectionHistoryEvent[]
   inspectionId: string
 }) {
   return (
@@ -325,11 +276,7 @@ export function StatusHistory({
       >
         Linha do tempo
       </SectionTitle>
-      {events === null ? (
-        <p className="text-sm text-neutral-600">
-          Linha do tempo indisponível no momento: a API ainda não publica a auditoria desta inspeção.
-        </p>
-      ) : events.length === 0 ? (
+      {events.length === 0 ? (
         <p className="text-sm text-neutral-600">Nenhum evento registrado.</p>
       ) : (
         <ol className="relative flex flex-col gap-5 border-l-2 border-neutral-200 pl-6">

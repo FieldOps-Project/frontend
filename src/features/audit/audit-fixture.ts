@@ -5,7 +5,7 @@ import { demoInspectionDetail, demoInspectionHistory } from '@/features/inspecti
 import { demoInspections } from '@/features/inspections/list-fixture'
 import { demoNonConformities } from '@/features/non-conformities/non-conformity-fixture'
 import type { AuditEvent } from '@/lib/domain/audit'
-import type { InspectionHistoryEvent } from '@/lib/domain/inspection-detail'
+import type { InspectionHistoryEvent } from '@/lib/domain/inspection-history'
 
 function demoTemplateId(n: number): string {
   return `e0000000-0000-4000-8000-${String(n).padStart(12, '0')}`
@@ -170,6 +170,8 @@ export function demoInspectionTimeline(inspectionId: string, now: Date = new Dat
     .map((event, index) => ({
       id: `${inspectionId}-timeline-${index + 1}`,
       action: event.action,
+      entityType: event.entityType,
+      actorId: event.actorId,
       actorName: event.actorName,
       occurredAt: event.occurredAt,
       deviceOccurredAt: event.deviceOccurredAt,

@@ -1,21 +1,19 @@
-import { INSTRUCTIONS_MAX_LENGTH } from '@/features/inspections/schedule-validation'
+import {
+  filled,
+  validateInstructions,
+  validateScheduledDate,
+  validateTitle,
+} from '@/features/inspections/schedule-validation'
 import { isInspectionPriority } from '@/lib/domain/inspection-scheduling'
 
-/**
- * Validacao da edicao do planejamento, a mesma no navegador e na Server Action.
- *
- * So mudam tecnico, supervisor, data prevista, prioridade e instrucoes. Modelo,
- * cliente, local e equipamento definem o snapshot e o lugar da inspecao: para
- * troca-los, cancela-se e agenda-se outra. Tecnico e data continuam
- * obrigatorios (RN-025).
- */
-export type PlanningField = 'technicianId' | 'supervisorId' | 'scheduledDate' | 'priority' | 'instructions'
+export type PlanningField = 'title' | 'technicianId' | 'supervisorId' | 'scheduledDate' | 'priority' | 'instructions'
 
 export type PlanningValues = Partial<Record<PlanningField, string>>
 
 export type PlanningErrors = Partial<Record<PlanningField, string>>
 
 export const PLANNING_FIELD_ORDER: readonly PlanningField[] = [
+  'title',
   'technicianId',
   'supervisorId',
   'scheduledDate',
@@ -23,29 +21,21 @@ export const PLANNING_FIELD_ORDER: readonly PlanningField[] = [
   'instructions',
 ]
 
-const DATE = /^\d{4}-\d{2}-\d{2}$/
-
-function filled(value: string | undefined): boolean {
-  return Boolean(value && value.trim() !== '')
-}
-
 export function validatePlanning(values: PlanningValues): PlanningErrors {
   const errors: PlanningErrors = {}
 
+  const title = validateTitle(values.title)
+  if (title) errors.title = title
+
   if (!filled(values.technicianId)) errors.technicianId = 'A atribuição do técnico é obrigatória.'
 
-  if (!filled(values.scheduledDate)) {
-    errors.scheduledDate = 'A data prevista é obrigatória.'
-  } else if (!DATE.test(values.scheduledDate ?? '') || Number.isNaN(Date.parse(`${values.scheduledDate}T00:00:00Z`))) {
-    errors.scheduledDate = 'Informe uma data válida.'
-  }
+  const scheduledDate = validateScheduledDate(values.scheduledDate)
+  if (scheduledDate) errors.scheduledDate = scheduledDate
 
-  if (!filled(values.priority) || !isInspectionPriority(values.priority)) {
-    errors.priority = 'Selecione a prioridade.'
-  }
-  if ((values.instructions ?? '').length > INSTRUCTIONS_MAX_LENGTH) {
-    errors.instructions = `Use no máximo ${INSTRUCTIONS_MAX_LENGTH} caracteres.`
-  }
+  if (!isInspectionPriority(values.priority)) errors.priority = 'Selecione a prioridade.'
+
+  const instructions = validateInstructions(values.instructions)
+  if (instructions) errors.instructions = instructions
 
   return errors
 }

@@ -17,14 +17,7 @@ const CONFIRM_BUTTON =
 const TEXTAREA =
   'w-full rounded-field border border-input-border bg-input px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-100'
 
-/**
- * Cancelar inspecao (documento 14.9 e AC-SCHEDULING).
- *
- * O dialogo pede a justificativa e o botao de confirmar fica indisponivel
- * enquanto o motivo estiver vazio (RN-029, issue #18). So aparece nos estados
- * que aceitam cancelamento: quem decide e a pagina, com `canCancel`.
- */
-export function CancelInspection({ inspectionId, code }: { inspectionId: string; code: string }) {
+export function CancelInspection({ inspectionId, reference }: { inspectionId: string; reference: string }) {
   const [open, setOpen] = useState(false)
   const [reason, setReason] = useState('')
   const [pending, startTransition] = useTransition()
@@ -72,7 +65,7 @@ export function CancelInspection({ inspectionId, code }: { inspectionId: string;
           <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4 p-6">
             <div className="flex flex-col gap-1">
               <h2 id="cancel-inspection-title" className="text-lg font-semibold text-neutral-900">
-                Cancelar {code}
+                Cancelar {reference}
               </h2>
               <p className="text-sm text-neutral-600">
                 A inspeção sai da agenda do técnico na próxima sincronização. Seu nome, o horário e o motivo ficam

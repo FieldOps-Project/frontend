@@ -1,128 +1,135 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { loadInspectionDetail, loadInspectionHistory } from '@/features/inspections/detail-data'
-import { recordDemoInspectionChange, resetDemoInspections } from '@/features/inspections/inspection-demo-store'
-import { demoInspections } from '@/features/inspections/list-fixture'
-import { DEMO_REVIEW_ID } from '@/features/inspections/review-fixture'
 
 vi.mock('server-only', () => ({}))
-
-class NotFoundSignal extends Error {}
-
-vi.mock('next/navigation', () => ({
-  notFound: () => {
-    throw new NotFoundSignal()
-  },
-}))
+vi.mock('@/features/catalog/lookups', () => ({ loadActiveUsers: vi.fn() }))
 
 const load = vi.fn()
-const loadOptional = vi.fn()
+const loadIfPermitted = vi.fn()
 
 vi.mock('@/lib/dal', () => ({
   load: (path: string) => load(path),
-  loadOptional: (path: string) => loadOptional(path),
+  loadIfPermitted: (path: string) => loadIfPermitted(path),
 }))
 
-vi.mock('@/features/catalog/lookups', () => ({ loadActiveUsers: async () => [] }))
+const ID = 'd0000000-0000-4000-8000-000000000501'
+const TECHNICIAN = 'd0000000-0000-4000-8000-000000000003'
+const SUPERVISOR = 'd0000000-0000-4000-8000-000000000002'
 
-const ASSIGNED_ID = 'c0000000-0000-4000-8000-000000000089'
-const CANCELED_ID = 'c0000000-0000-4000-8000-000000000097'
-const API_ID = '3d8dc050-54f4-4d3b-9e5d-5fdb29ae3ed5'
+const INSPECTION = {
+  id: ID,
+  templateVersionId: 'tv1',
+  clientId: 'c1',
+  siteId: 's1',
+  equipmentId: 'e1',
+  technicianId: TECHNICIAN,
+  supervisorId: SUPERVISOR,
+  title: 'Inspeção preventiva',
+  instructions: null,
+  priority: 'HIGH',
+  status: 'IN_PROGRESS',
+  scheduledFor: '2026-11-20T12:00:00Z',
+  createdAt: '2026-11-18T12:00:00Z',
+  updatedAt: '2026-11-18T12:00:00Z',
+  itemSnapshots: [{ id: 'a' }, { id: 'b' }],
+}
 
-beforeEach(() => {
-  vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'development')
-  resetDemoInspections()
-})
+const HISTORY = [
+  {
+    id: 'h1',
+    action: 'INSPECTION_STARTED',
+    entityType: 'INSPECTION',
+    entityId: ID,
+    actorId: TECHNICIAN,
+    actorName: 'Técnico Demo',
+    occurredAt: '2026-11-20T15:05:00Z',
+    deviceOccurredAt: '2026-11-20T12:00:00Z',
+    requestId: null,
+    deviceId: null,
+    previousValue: 'status=ASSIGNED',
+    newValue: 'status=IN_PROGRESS;startedAtDevice=2026-11-20T12:00:00Z;startedAtServer=2026-11-20T15:05:00Z',
+  },
+]
+
+function respond(overrides: Record<string, unknown> = {}) {
+  const responses: Record<string, unknown> = {
+    [`/inspections/${ID}`]: INSPECTION,
+    [`/inspections/${ID}/history`]: HISTORY,
+    '/inspection-template-versions/tv1': { title: 'Checklist de geradores', versionNumber: 3 },
+    '/clients/c1': { name: 'Indústria ABC' },
+    '/sites/s1': { name: 'Fábrica Sorocaba' },
+    ...overrides,
+  }
+  load.mockImplementation(async (path: string) => responses[path])
+  loadIfPermitted.mockImplementation(async (path: string) => responses[path] ?? null)
+}
 
 afterEach(() => {
-  vi.unstubAllEnvs()
   load.mockReset()
-  loadOptional.mockReset()
+  loadIfPermitted.mockReset()
 })
 
-describe('detalhe de demonstracao', () => {
-  it('abre toda inspecao da listagem com os mesmos dados de planejamento', async () => {
-    for (const item of demoInspections()) {
-      const detail = await loadInspectionDetail(item.id)
-      expect(detail).toMatchObject({ code: item.code, status: item.status, clientName: item.clientName })
-    }
+describe('loadInspectionDetail', () => {
+  it('compoe o detalhe com os nomes lidos da API e os horarios do historico', async () => {
+    respond({
+      '/equipment/e1': { name: 'Gerador GD-001' },
+      [`/users/${TECHNICIAN}`]: { name: 'Técnico Demo' },
+      [`/users/${SUPERVISOR}`]: { name: 'Supervisor Demo' },
+    })
+
+    expect(await loadInspectionDetail(ID)).toMatchObject({
+      id: ID,
+      templateTitle: 'Checklist de geradores',
+      templateVersionNumber: 3,
+      clientName: 'Indústria ABC',
+      siteName: 'Fábrica Sorocaba',
+      equipmentName: 'Gerador GD-001',
+      technicianName: 'Técnico Demo',
+      supervisorName: 'Supervisor Demo',
+      applicableItems: 2,
+      startedAtDevice: '2026-11-20T12:00:00Z',
+      startedAtServer: '2026-11-20T15:05:00Z',
+      submittedAtServer: null,
+    })
   })
 
-  it('so tem horarios de execucao depois que o tecnico inicia', async () => {
-    const assigned = await loadInspectionDetail(ASSIGNED_ID)
-    expect(assigned.startedAtDevice).toBeNull()
-    expect(assigned.startLocation).toBeNull()
+  it('degrada para nome nulo quando a API nega ou nao acha a pessoa', async () => {
+    respond()
 
-    const reviewed = await loadInspectionDetail(DEMO_REVIEW_ID)
-    expect(reviewed.startedAtDevice).not.toBeNull()
-    expect(reviewed.startLocation?.accuracy).not.toBeNull()
-    expect(Date.parse(reviewed.submittedAtServer ?? '')).toBeGreaterThan(Date.parse(reviewed.completedAtDevice ?? ''))
+    expect(await loadInspectionDetail(ID)).toMatchObject({
+      technicianId: TECHNICIAN,
+      technicianName: null,
+      supervisorName: null,
+      equipmentName: null,
+    })
   })
 
-  it('registra quem cancelou, quando e por que (RN-029)', async () => {
-    const canceled = await loadInspectionDetail(CANCELED_ID)
-    expect(canceled).toMatchObject({ status: 'CANCELED', canceledByName: expect.any(String), canceledReason: expect.any(String) })
-    const history = await loadInspectionHistory(CANCELED_ID)
-    expect(history?.at(-1)).toMatchObject({ action: 'INSPECTION_CANCELED', newStatus: 'CANCELED' })
-  })
+  it('nao consulta equipamento nem pessoas que a inspecao nao tem', async () => {
+    respond({ [`/inspections/${ID}`]: { ...INSPECTION, equipmentId: null, technicianId: null, supervisorId: null } })
 
-  it('monta o historico em ordem, terminando no estado atual', async () => {
-    const history = (await loadInspectionHistory(DEMO_REVIEW_ID)) ?? []
-    expect(history.flatMap((event) => (event.newStatus ? [event.newStatus] : []))).toEqual([
-      'DRAFT',
-      'ASSIGNED',
-      'IN_PROGRESS',
-      'SUBMITTED',
-      'UNDER_REVIEW',
-    ])
-    const times = history.map((event) => Date.parse(event.deviceOccurredAt ?? event.occurredAt))
-    expect(times).toEqual([...times].sort((a, b) => a - b))
+    expect(await loadInspectionDetail(ID)).toMatchObject({ equipmentId: null, technicianName: null, supervisorName: null })
+    expect(loadIfPermitted).not.toHaveBeenCalled()
   })
+})
 
-  it('inclui fotografias e nao conformidades na linha do tempo (issue #24)', async () => {
-    const actions = ((await loadInspectionHistory(DEMO_REVIEW_ID)) ?? []).map((event) => event.action)
-    expect(actions).toContain('EVIDENCE_ADDED')
-    expect(actions).toContain('NON_CONFORMITY_CREATED')
-  })
+describe('loadInspectionHistory', () => {
+  it('traduz o historico da API em eventos com o estado derivado', async () => {
+    respond()
 
-  it('mostra na listagem, no detalhe e no historico o que foi mudado na demonstracao', async () => {
-    recordDemoInspectionChange(
-      ASSIGNED_ID,
-      { status: 'CANCELED', canceledByName: 'Ana Supervisora', canceledReason: 'Teste', canceledAt: '2026-11-18T12:00:00Z' },
+    expect(await loadInspectionHistory(ID)).toEqual([
       {
-        id: 'e1',
-        action: 'INSPECTION_CANCELED',
-        actorName: 'Ana Supervisora',
-        occurredAt: '2026-11-18T12:00:00Z',
-        deviceOccurredAt: null,
+        id: 'h1',
+        action: 'INSPECTION_STARTED',
+        entityType: 'INSPECTION',
+        actorId: TECHNICIAN,
+        actorName: 'Técnico Demo',
+        occurredAt: '2026-11-20T15:05:00Z',
+        deviceOccurredAt: '2026-11-20T12:00:00Z',
         previousStatus: 'ASSIGNED',
-        newStatus: 'CANCELED',
-        note: 'Teste',
+        newStatus: 'IN_PROGRESS',
+        note: null,
       },
-    )
-
-    expect(demoInspections().find((item) => item.id === ASSIGNED_ID)?.status).toBe('CANCELED')
-    expect(await loadInspectionDetail(ASSIGNED_ID)).toMatchObject({ status: 'CANCELED', canceledReason: 'Teste' })
-    expect((await loadInspectionHistory(ASSIGNED_ID))?.at(-1)?.note).toBe('Teste')
-  })
-})
-
-describe('fora da demonstracao', () => {
-  it('le o detalhe e o historico da API', async () => {
-    load.mockResolvedValue({ id: API_ID })
-    loadOptional.mockResolvedValue(null)
-
-    await loadInspectionDetail(API_ID)
-    expect(load).toHaveBeenCalledWith(`/inspections/${API_ID}`)
-    expect(await loadInspectionHistory(API_ID)).toBeNull()
-    expect(loadOptional).toHaveBeenCalledWith(`/inspections/${API_ID}/history`)
-  })
-
-  it('nao serve a demonstracao fora do ambiente de desenvolvimento', async () => {
-    vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'production')
-    load.mockResolvedValue({ id: ASSIGNED_ID })
-
-    await loadInspectionDetail(ASSIGNED_ID)
-    expect(load).toHaveBeenCalledWith(`/inspections/${ASSIGNED_ID}`)
+    ])
   })
 })

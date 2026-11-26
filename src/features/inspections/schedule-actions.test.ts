@@ -1,7 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { createInspection } from '@/features/inspections/schedule-actions'
-import { DEMO_TEMPLATE_VERSIONS } from '@/features/inspections/scheduling-data'
+import { ApiError } from '@/lib/api/errors'
+import { INSTRUCTIONS_MAX_LENGTH, TITLE_MAX_LENGTH } from '@/features/inspections/schedule-validation'
 
 vi.mock('server-only', () => ({}))
 
@@ -18,28 +19,18 @@ vi.mock('next/navigation', () => ({
 }))
 
 const send = vi.fn()
+const requireRole = vi.fn()
 
 vi.mock('@/lib/dal', () => ({
-  requireRole: async () => ({ role: 'SUPERVISOR' }),
+  requireRole: (roles: readonly string[]) => requireRole(roles),
   send: (path: string, request: unknown) => send(path, request),
-  formError: (error: Error) => ({ status: 'error', message: error.message, fieldErrors: {}, values: {} }),
+  formError: (error: ApiError, values: Record<string, string>) => ({
+    status: 'error',
+    message: error.message,
+    fieldErrors: Object.fromEntries(error.fieldErrors.map(({ field, message }) => [field, message])),
+    values,
+  }),
 }))
-
-const CLIENT = { id: 'c1', name: 'Indústria Alfa' }
-const OTHER_CLIENT_SITE = { id: 's2', clientId: 'c2', name: 'Outro' }
-const SITE = { id: 's1', clientId: 'c1', name: 'Unidade Sorocaba' }
-const EQUIPMENT = { id: 'e1', siteId: 's1', name: 'HVAC Unit B' }
-const OTHER_SITE_EQUIPMENT = { id: 'e2', siteId: 's2', name: 'Compressor' }
-const TECHNICIAN = { id: 't1', name: 'Carlos Mendes' }
-
-vi.mock('@/features/catalog/lookups', () => ({
-  loadClients: async () => [CLIENT],
-  loadSites: async () => [SITE, OTHER_CLIENT_SITE],
-  loadEquipment: async () => [EQUIPMENT, OTHER_SITE_EQUIPMENT],
-  loadActiveUsers: async (role: string) => (role === 'TECHNICIAN' ? [TECHNICIAN] : []),
-}))
-
-const [EQUIPMENT_MODEL, , SITE_MODEL] = DEMO_TEMPLATE_VERSIONS
 
 function form(values: Record<string, string>) {
   const data = new FormData()
@@ -48,11 +39,13 @@ function form(values: Record<string, string>) {
 }
 
 const VALID = {
-  templateVersionId: EQUIPMENT_MODEL?.versionId ?? '',
+  templateVersionId: 'v1',
   clientId: 'c1',
   siteId: 's1',
   equipmentId: 'e1',
   technicianId: 't1',
+  supervisorId: 'u1',
+  title: 'Inspeção preventiva do gerador',
   scheduledDate: '2026-11-03',
   priority: 'HIGH',
   instructions: 'Levar escada.',
@@ -67,16 +60,17 @@ async function submit(values: Record<string, string>) {
   }
 }
 
-beforeEach(() => {
-  vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'development')
-})
-
 afterEach(() => {
-  send.mockReset()
-  vi.unstubAllEnvs()
+  vi.clearAllMocks()
 })
 
 describe('createInspection', () => {
+  it('exige o perfil de quem agenda', async () => {
+    await submit(VALID)
+
+    expect(requireRole).toHaveBeenCalledWith(['ADMIN', 'SUPERVISOR'])
+  })
+
   it('devolve os obrigatorios no campo certo e preserva o que foi digitado', async () => {
     const { state } = await submit({ instructions: 'Levar escada.' })
 
@@ -87,6 +81,7 @@ describe('createInspection', () => {
         clientId: 'A seleção do cliente é obrigatória.',
         siteId: 'A seleção do local é obrigatória.',
         technicianId: 'A atribuição do técnico é obrigatória.',
+        title: 'O título é obrigatório.',
         scheduledDate: 'A data prevista é obrigatória.',
       },
       values: { instructions: 'Levar escada.' },
@@ -94,49 +89,78 @@ describe('createInspection', () => {
     expect(send).not.toHaveBeenCalled()
   })
 
-  it('recusa local de outro cliente', async () => {
-    const { state } = await submit({ ...VALID, siteId: 's2', equipmentId: 'e2' })
+  it('respeita os limites de titulo e instrucoes da API', async () => {
+    const { state } = await submit({
+      ...VALID,
+      title: 'a'.repeat(TITLE_MAX_LENGTH + 1),
+      instructions: 'a'.repeat(INSTRUCTIONS_MAX_LENGTH + 1),
+    })
 
     expect(state).toMatchObject({
-      fieldErrors: { siteId: 'O local não pertence ao cliente selecionado ou está inativo.' },
+      fieldErrors: {
+        title: `Use no máximo ${TITLE_MAX_LENGTH} caracteres.`,
+        instructions: `Use no máximo ${INSTRUCTIONS_MAX_LENGTH} caracteres.`,
+      },
     })
   })
 
-  it('recusa equipamento de outro local (RN-014)', async () => {
-    const { state } = await submit({ ...VALID, equipmentId: 'e2' })
+  it('envia o agendamento no contrato da API, com titulo e data no fuso da operacao', async () => {
+    const { redirectedTo } = await submit(VALID)
 
-    expect(state).toMatchObject({
-      fieldErrors: { equipmentId: 'O equipamento não pertence ao local selecionado ou está inativo.' },
+    expect(redirectedTo).toBe('/inspections?notice=scheduled')
+    expect(send).toHaveBeenCalledWith('/inspections', {
+      method: 'POST',
+      body: {
+        templateVersionId: 'v1',
+        clientId: 'c1',
+        siteId: 's1',
+        equipmentId: 'e1',
+        technicianId: 't1',
+        supervisorId: 'u1',
+        title: 'Inspeção preventiva do gerador',
+        instructions: 'Levar escada.',
+        priority: 'HIGH',
+        scheduledFor: '2026-11-03T00:00:00-03:00',
+      },
     })
   })
 
-  it('so atribui a tecnico ativo (RN-027)', async () => {
-    const { state } = await submit({ ...VALID, technicianId: 'inativo' })
+  it('manda equipamento, supervisor e instrucoes como nulos quando nao informados', async () => {
+    await submit({ ...VALID, equipmentId: '', supervisorId: '', instructions: '' })
 
-    expect(state).toMatchObject({ fieldErrors: { technicianId: 'Somente técnico ativo pode receber a inspeção.' } })
+    expect(send).toHaveBeenCalledWith('/inspections', {
+      method: 'POST',
+      body: expect.objectContaining({ equipmentId: null, supervisorId: null, instructions: null }),
+    })
   })
 
-  it('dispensa o equipamento quando o modelo inspeciona o local (RN-026)', async () => {
-    const { state } = await submit({ ...VALID, templateVersionId: SITE_MODEL?.versionId ?? '', equipmentId: '' })
+  it('leva o erro de equipamento obrigatorio da API para o campo, sem checar a regra no servidor do painel', async () => {
+    send.mockRejectedValue(
+      new ApiError({
+        status: 422,
+        code: 'EQUIPMENT_REQUIRED',
+        message: 'Este modelo exige um equipamento.',
+        fieldErrors: [{ field: 'equipmentId', message: 'Este modelo exige um equipamento.' }],
+      }),
+    )
 
-    expect(state?.status).toBe('success')
+    const { state } = await submit({ ...VALID, equipmentId: '' })
+
+    expect(state).toMatchObject({ status: 'error', fieldErrors: { equipmentId: 'Este modelo exige um equipamento.' } })
   })
 
-  it('na demonstracao valida tudo e nao envia nada', async () => {
+  it('mostra o erro de scheduledFor da API no campo de data', async () => {
+    send.mockRejectedValue(
+      new ApiError({
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        message: 'Revise os campos destacados.',
+        fieldErrors: [{ field: 'scheduledFor', message: 'must not be null' }],
+      }),
+    )
+
     const { state } = await submit(VALID)
 
-    expect(state).toMatchObject({ status: 'success' })
-    expect(send).not.toHaveBeenCalled()
-  })
-
-  it('fora da demonstracao recusa modelo que nao esta publicado', async () => {
-    vi.stubEnv('NEXT_PUBLIC_APP_ENV', 'production')
-
-    const { state } = await submit(VALID)
-
-    expect(state).toMatchObject({
-      fieldErrors: { templateVersionId: 'Este modelo não está disponível para novas inspeções.' },
-    })
-    expect(send).not.toHaveBeenCalled()
+    expect(state).toMatchObject({ fieldErrors: { scheduledDate: 'must not be null' } })
   })
 })
